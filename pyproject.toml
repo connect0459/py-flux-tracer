@@ -1,0 +1,75 @@
+[project]
+name = "py_flux_tracer"
+# version属性は"setuptools_scm"が自動的に設定
+dynamic = ["version"]
+description = "This package provides methods for analyzing atmospheric observation data, primarily eddy covariance methods."
+authors = [{ name = "connect0459", email = "connect0459@gmail.com" }]
+# PILの代わりにfork先のpillowをインストール
+# 詳細は<https://pillow.readthedocs.io/en/stable/>を参照
+dependencies = [
+  "folium>=0.18.0", # 地図
+  "jpholiday",
+  "matplotlib",
+  "numpy",
+  "openpyxl>=3.1.5",
+  "pandas",
+  "pillow", # 画像
+  "scipy",
+  "seaborn>=0.13.2",
+  "tqdm",
+]
+readme = "README.md"
+requires-python = ">= 3.11"
+# PyPIで公開するための追加情報
+license = "MIT"
+classifiers = [
+  "Development Status :: 3 - Alpha",                        # "Alpha":開発初期段階を示す
+  "Intended Audience :: Science/Research",                  # "Science/Research":科学研究者向け
+  "License :: OSI Approved :: MIT License",                 # MITライセンスで公開
+  "Programming Language :: Python :: 3",                    # Python 3 系列に対応
+  "Programming Language :: Python :: 3.11",                 # 特にPython 3.11 に対応
+  "Topic :: Scientific/Engineering :: Atmospheric Science", # "Atmospheric Science":大気科学分野
+]
+keywords = [
+  "omu",
+  "meteorology",
+  "eddy",
+  "covariance",
+  "flux",
+  "powerspectrum",
+  "cospectrum",
+  "spectrum",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/omu-meteorology/py_flux_tracer"
+"Bug Tracker" = "https://github.com/omu-meteorology/py_flux_tracer/issues"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/py_flux_tracer"]
+
+[tool.uv]
+managed = true
+dev-dependencies = [
+  "build>=1.2.2.post1",
+  "geopy>=2.4.1",         # MobileMeasurements
+  "hatchling>=1.25.0",
+  "ipykernel>=6.29.5",
+  "nbformat>=5.10.4",     # MobileMeasurements
+  "plotly>=5.24.1",       # MobileMeasurements
+  "pytest>=8.3.4",
+  "python-dotenv>=1.0.1",
+  "ruff>=0.6.8",
+  "twine>=5.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

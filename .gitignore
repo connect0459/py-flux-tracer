@@ -1,0 +1,26 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# venv
+.venv
+
+.pytest_cache
+.ruff_cache
+
+# 環境変数ファイルを無視
+*.env
+
+# # privateディレクトリを無視
+# workspace/**/private/*
+# # .gitkeepは管理対象に含める
+# !workspace/**/.gitkeep
+
+# workspaceディレクトリを無視
+workspace/*
+# .gitkeepは管理対象に含める
+!workspace/**/.gitkeep
