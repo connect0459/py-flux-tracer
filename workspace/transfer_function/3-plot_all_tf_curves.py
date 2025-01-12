@@ -116,8 +116,8 @@ def plot_tf_curve(
 
 # メイン処理
 if __name__ == "__main__":
-    tf_csv_path: str = "/home/connect0459/labo/omu-eddy-covariance/workspace/senior_thesis/private/TF_Ultra_a.csv"
-    output_dir: str = "/home/connect0459/labo/omu-eddy-covariance/workspace/senior_thesis/private/outputs/tf"
+    tf_csv_path: str = "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/TF_Ultra_a.csv"
+    output_dir: str = "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/outputs/tf"
     custom_colors = [
         "#00ff00",
         "#3cb371",

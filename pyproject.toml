@@ -7,13 +7,16 @@ authors = [{ name = "connect0459", email = "connect0459@gmail.com" }]
 # PILの代わりにfork先のpillowをインストール
 # 詳細は<https://pillow.readthedocs.io/en/stable/>を参照
 dependencies = [
-  "folium>=0.18.0",  # 地図
+  "folium>=0.18.0",   # 地図
+  "geopy>=2.4.1",     # MobileMeasurements
   "jpholiday",
   "matplotlib",
+  "nbformat>=5.10.4", # MobileMeasurements
   "numpy",
   "openpyxl>=3.1.5",
   "pandas",
-  "pillow",          # 画像
+  "pillow",           # 画像
+  "plotly>=5.24.1",   # MobileMeasurements
   "scipy",
   "seaborn>=0.13.2",
   "tqdm",
@@ -60,11 +63,8 @@ packages = ["src/py_flux_tracer"]
 managed = true
 dev-dependencies = [
   "build>=1.2.2.post1",
-  "geopy>=2.4.1",         # MobileMeasurements
   "hatchling>=1.25.0",
   "ipykernel>=6.29.5",
-  "nbformat>=5.10.4",     # MobileMeasurements
-  "plotly>=5.24.1",       # MobileMeasurements
   "pytest>=8.3.4",
   "python-dotenv>=1.0.1",
   "ruff>=0.6.8",

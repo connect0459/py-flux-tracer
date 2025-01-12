@@ -48,10 +48,10 @@ def test_my_function():
 
 ## テストファイルを実行
 
-特定のファイル（例: `tests/commons/test_hotspot_data.py`）を実行：
+特定のファイル（例: `tests/commons/test_dataclasses.py`）を実行：
 
 ```bash
-uv run pytest tests/commons/test_hotspot_data.py -v
+uv run pytest tests/commons/test_dataclasses.py -v
 ```
 
 特定のディレクトリ（例: `tests/commons`）を実行：

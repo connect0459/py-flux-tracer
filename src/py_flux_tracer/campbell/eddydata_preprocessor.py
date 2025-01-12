@@ -118,7 +118,7 @@ class EddyDataPreprocessor:
             key2_list (list[str]): 比較変数の列名のリスト。
             median_range (float): 中央値を中心とした範囲。
             metadata_rows (int): メタデータの行数。
-            output_dir (str | None): 出力ディレクトリのパス。Noneの場合はプロットを表示。
+            output_dir (str | None): 出力ディレクトリのパス。Noneの場合は保存しない。
             output_tag (str): 出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。
             plot_range_tuple (tuple): ヒストグラムの表示範囲。
             print_results (bool): 結果をコンソールに表示するかどうか。
@@ -130,6 +130,10 @@ class EddyDataPreprocessor:
         Returns:
             dict[str, float]: 各変数の遅れ時間（平均値を採用）を含む辞書。
         """
+        if output_dir is None:
+            self.logger.warn(
+                "output_dirが指定されていません。解析結果を保存する場合は、有効なディレクトリを指定してください。"
+            )
         all_lags_indices: list[list[int]] = []
         results: dict[str, float] = {}
 
@@ -314,7 +318,9 @@ class EddyDataPreprocessor:
                     max_decimals = (
                         df[col].astype(str).str.extract(r"\.(\d+)")[0].str.len().max()
                     )
-                    decimal_places[col] = int(max_decimals) if pd.notna(max_decimals) else 0
+                    decimal_places[col] = (
+                        int(max_decimals) if pd.notna(max_decimals) else 0
+                    )
 
             # リサンプリングを実行
             resampling_period: int = int(1000 / self.fs)
@@ -333,7 +339,9 @@ class EddyDataPreprocessor:
             # DateTimeインデックスを削除する
             df = df_resampled.reset_index()
             # ミリ秒を1桁にフォーマット
-            df[index_column] = df[index_column].dt.strftime("%Y-%m-%d %H:%M:%S.%f").str[:-5]
+            df[index_column] = (
+                df[index_column].dt.strftime("%Y-%m-%d %H:%M:%S.%f").str[:-5]
+            )
 
         return df, metadata
 

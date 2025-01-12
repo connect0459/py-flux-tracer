@@ -14,7 +14,7 @@ from datetime import timedelta
 from dataclasses import dataclass
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.hotspot_data import HotspotData
-from ..commons.mira_utils import MiraUtils
+from .correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
 
 """
 堺市役所の位置情報
@@ -164,6 +164,7 @@ class MSAInputConfig:
     fs: float  # サンプリング周波数（Hz）
     lag: float  # 測器の遅れ時間（秒）
     path: Path | str  # ファイルパス
+    correction_type: str | None = None  # 適用する補正式の種類を表す文字列
 
     def __post_init__(self) -> None:
         """
@@ -189,6 +190,16 @@ class MSAInputConfig:
             raise ValueError(
                 f"Unsupported file extension: '{extension}'. Supported: {supported_extensions}"
             )
+        # 与えられたcorrection_typeがNoneでない場合、CORRECTION_TYPES_PATTERNに含まれているかを検証します
+        if self.correction_type is not None:
+            if not isinstance(self.correction_type, str):
+                raise ValueError(
+                    f"Invalid correction_type: {self.correction_type}. Must be a str instance."
+                )
+            if self.correction_type not in CORRECTION_TYPES_PATTERN:
+                raise ValueError(
+                    f"Invalid correction_type: {self.correction_type}. Must be one of {CORRECTION_TYPES_PATTERN}."
+                )
 
     @classmethod
     def validate_and_create(
@@ -196,6 +207,7 @@ class MSAInputConfig:
         fs: float,
         lag: float,
         path: Path | str,
+        correction_type: str | None,
     ) -> "MSAInputConfig":
         """
         入力値を検証し、MSAInputConfigインスタンスを生成するファクトリメソッド。
@@ -207,11 +219,12 @@ class MSAInputConfig:
             fs (float): サンプリング周波数。正のfloatである必要があります。
             lag (float): 遅延時間。0以上のfloatである必要があります。
             path (Path | str): 入力ファイルのパス。サポートされている拡張子は.txtと.csvです。
+            correction_type (str | None): 適用する補正式の種類を表す文字列。
 
         Returns:
             MSAInputConfig: 検証された入力設定を持つMSAInputConfigオブジェクト。
         """
-        return cls(fs=fs, lag=lag, path=path)
+        return cls(fs=fs, lag=lag, path=path, correction_type=correction_type)
 
 
 class MobileSpatialAnalyzer:
@@ -231,6 +244,14 @@ class MobileSpatialAnalyzer:
         correlation_threshold: float = 0.7,
         hotspot_area_meter: float = 50,
         window_minutes: float = 5,
+        column_mapping: dict[str, str] = {
+            "Time Stamp": "timestamp",
+            "CH4 (ppm)": "ch4_ppm",
+            "C2H6 (ppb)": "c2h6_ppb",
+            "H2O (ppm)": "h2o_ppm",
+            "Latitude": "latitude",
+            "Longitude": "longitude",
+        },
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -246,6 +267,8 @@ class MobileSpatialAnalyzer:
             correlation_threshold (float): 相関係数の閾値。デフォルトは0.7。
             hotspot_area_meter (float): ホットスポットの検出に使用するエリアの半径（メートル）。デフォルトは50メートル。
             window_minutes (float): 移動窓の大きさ（分）。デフォルトは5分。
+            column_mapping (dict[str, str]): 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。
+                - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をkeyに指定してください。
             logger (Logger | None): 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug (bool): ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
@@ -260,6 +283,7 @@ class MobileSpatialAnalyzer:
         self._ch4_enhance_threshold: float = ch4_enhance_threshold
         self._correlation_threshold: float = correlation_threshold
         self._hotspot_area_meter: float = hotspot_area_meter
+        self._column_mapping: dict[str, str] = column_mapping
         self._num_sections: int = num_sections
         # セクションの範囲
         section_size: float = 360 / num_sections
@@ -445,11 +469,12 @@ class MobileSpatialAnalyzer:
     def create_hotspots_map(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path,
-        output_filename: str = "hotspots_map",
+        output_dir: str | Path | None = None,
+        output_filename: str = "hotspots_map.html",
         center_marker_label: str = "Center",
         plot_center_marker: bool = True,
         radius_meters: float = 3000,
+        save_fig: bool = True,
     ) -> None:
         """
         ホットスポットの分布を地図上にプロットして保存
@@ -461,8 +486,8 @@ class MobileSpatialAnalyzer:
             center_marker_label (str): 中心を示すマーカーのラベルテキスト。デフォルトは"Center"。
             plot_center_marker (bool): 中心を示すマーカーの有無。デフォルトはTrue。
             radius_meters (float): 区画分けを示す線の長さ。デフォルトは3000。
+            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
         """
-        output_path: Path = Path(output_dir) / f"{output_filename}.html"
         # 地図の作成
         m = folium.Map(
             location=[self._center_lat, self._center_lon],
@@ -558,13 +583,18 @@ class MobileSpatialAnalyzer:
             ).add_to(m)
 
         # 地図を保存
-        m.save(str(output_path))
-        self.logger.info(f"地図を保存しました: {output_path}")
+        if save_fig and output_dir is None:
+            raise ValueError(
+                "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+            )
+            output_path: str = os.path.join(output_dir, output_filename)
+            m.save(str(output_path))
+            self.logger.info(f"地図を保存しました: {output_path}")
 
     def export_hotspots_to_csv(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path,
+        output_dir: str | Path | None = None,
         output_filename: str = "hotspots.csv",
     ) -> None:
         """
@@ -572,7 +602,7 @@ class MobileSpatialAnalyzer:
 
         Args:
             hotspots (list[HotspotData]): 出力するホットスポットのリスト
-            output_dir (str | Path): 出力先ディレクトリ
+            output_dir (str | Path | None): 出力先ディレクトリ
             filename (str): 出力ファイル名
         """
         # 日時の昇順でソート
@@ -596,12 +626,45 @@ class MobileSpatialAnalyzer:
             records.append(record)
 
         # DataFrameに変換してCSVに出力
+        if output_dir is None:
+            raise ValueError(
+                "output_dirが指定されていません。有効なディレクトリパスを指定してください。"
+            )
         output_path: str = os.path.join(output_dir, output_filename)
         df = pd.DataFrame(records)
         df.to_csv(output_path, index=False)
         self.logger.info(
             f"ホットスポット情報をCSVファイルに出力しました: {output_path}"
         )
+
+    def get_preprocessed_data(
+        self,
+    ) -> pd.DataFrame:
+        """
+        CH4とC2H6の相関解析のためのデータ前処理を行います。
+        コンストラクタで読み込んだすべてのデータの前処理を実行し、結合したDataFrameを返します。
+
+        Returns:
+            pd.DataFrame: 前処理済みの結合されたDataFrame
+        """
+        processed_dfs: list[pd.DataFrame] = []
+
+        # 各データソースに対して解析を実行
+        for source_name, df in self._data.items():
+            # パラメータの計算
+            processed_df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
+                df, self._window_size
+            )
+            # ソース名を列として追加
+            processed_df["source"] = source_name
+            processed_dfs.append(processed_df)
+
+        # すべてのDataFrameを結合
+        if not processed_dfs:
+            raise ValueError("処理対象のデータが存在しません。")
+
+        combined_df = pd.concat(processed_dfs, axis=0)
+        return combined_df
 
     def get_section_size(self) -> float:
         """
@@ -617,7 +680,7 @@ class MobileSpatialAnalyzer:
     def plot_ch4_delta_histogram(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path,
+        output_dir: str | Path | None,
         output_filename: str = "ch4_delta_histogram.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (8, 6),
@@ -634,8 +697,8 @@ class MobileSpatialAnalyzer:
 
         Args:
             hotspots (list[HotspotData]): プロットするホットスポットのリスト
-            output_dir (str | Path): 保存先のディレクトリパス
-            output_filename (str): 保存するファイル名。デフォルトは"ch4_delta_histogram"。
+            output_dir (str | Path | None): 保存先のディレクトリパス
+            output_filename (str): 保存するファイル名。デフォルトは"ch4_delta_histogram.png"。
             dpi (int): 解像度。デフォルトは200。
             figsize (tuple[int, int]): 図のサイズ。デフォルトは(8, 6)。
             fontsize (float): フォントサイズ。デフォルトは20。
@@ -731,38 +794,40 @@ class MobileSpatialAnalyzer:
 
         # グラフの保存または表示
         if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
             os.makedirs(output_dir, exist_ok=True)
             output_path: str = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight")
             self.logger.info(f"ヒストグラムを保存しました: {output_path}")
-
         if show_fig:
             plt.show()
         else:
             plt.close(fig=fig)
 
-        plt.close(fig)
-
     def plot_mapbox(
         self,
         df: pd.DataFrame,
         mapbox_access_token: str,
-        value_column: str,
-        output_dir: str | Path,
+        value_column_key: str,
+        output_dir: str | Path | None = None,
         output_filename: str = "mapbox_plot.html",
         lat_column: str = "latitude",
         lon_column: str = "longitude",
         colorscale: str = "Jet",
         center_lat: float | None = None,
         center_lon: float | None = None,
-        zoom: float = 12.2,
+        zoom: float = 12,
         width: int = 700,
         height: int = 700,
         tick_font_size: int = 12,
         label_font_size: int = 14,
         marker_size: int = 4,
+        colorbar_title: str | None = None,
         value_range: tuple[float, float] | None = None,
-        save_fig: bool = False,
+        save_fig: bool = True,
         show_fig: bool = True,
     ) -> None:
         """
@@ -771,50 +836,49 @@ class MobileSpatialAnalyzer:
         Args:
             df (pd.DataFrame): プロットするデータを含むDataFrame
             mapbox_access_token (str): Mapboxのアクセストークン
-            value_column (str): カラーマッピングに使用する列名
-            output_dir (str | Path): 出力ディレクトリのパス
+            value_column_key (str): カラーマッピングに使用する列名
+            output_dir (str | Path | None): 出力ディレクトリのパス
             output_filename (str): 出力ファイル名。デフォルトは"mapbox_plot.html"
             lat_column (str): 緯度の列名。デフォルトは"latitude"
             lon_column (str): 経度の列名。デフォルトは"longitude"
             colorscale (str): 使用するカラースケール。デフォルトは"Jet"
             center_lat (float | None): 中心緯度。デフォルトはNoneで、self._center_latを使用
             center_lon (float | None): 中心経度。デフォルトはNoneで、self._center_lonを使用
-            zoom (float): マップの初期ズームレベル。デフォルトは12.2
+            zoom (float): マップの初期ズームレベル。デフォルトは12
             width (int): プロットの幅（ピクセル）。デフォルトは700
             height (int): プロットの高さ（ピクセル）。デフォルトは700
             tick_font_size (int): カラーバーの目盛りフォントサイズ。デフォルトは12
             label_font_size (int): カラーバーのラベルフォントサイズ。デフォルトは14
             marker_size (int): マーカーのサイズ。デフォルトは4
+            colorbar_title (str | None): カラーバーのラベル
             value_range (tuple[float, float] | None): カラーマッピングの範囲。デフォルトはNoneで、データの最小値と最大値を使用
-            save_fig (bool): 図を保存するかどうか。デフォルトはFalse
+            save_fig (bool): 図を保存するかどうか。デフォルトはTrue
             show_fig (bool): 図を表示するかどうか。デフォルトはTrue
         """
-        # 保存時の出力ディレクトリチェック
-        if save_fig and output_dir is None:
-            raise ValueError(
-                "save_fig=Trueの場合、output_dirを指定する必要があります。"
-            )
-
         # 中心座標の設定
         center_lat = center_lat if center_lat is not None else self._center_lat
         center_lon = center_lon if center_lon is not None else self._center_lon
 
         # カラーマッピングの範囲を設定
+        cmin, cmax = 0, 0
         if value_range is None:
-            cmin = df[value_column].min()
-            cmax = df[value_column].max()
+            cmin = df[value_column_key].min()
+            cmax = df[value_column_key].max()
         else:
             cmin, cmax = value_range
+
+        # カラーバーのタイトルを設定
+        title_text = colorbar_title if colorbar_title is not None else value_column_key
 
         # Scattermapboxのデータを作成
         scatter_data = go.Scattermapbox(
             lat=df[lat_column],
             lon=df[lon_column],
-            text=df[value_column].astype(str),
+            text=df[value_column_key].astype(str),
             hoverinfo="text",
             mode="markers",
             marker=dict(
-                color=df[value_column],
+                color=df[value_column_key],
                 size=marker_size,
                 reversescale=False,
                 autocolorscale=False,
@@ -830,7 +894,9 @@ class MobileSpatialAnalyzer:
                     tickwidth=1.5,
                     tickcolor="black",
                     tickfont=dict(family="Arial", color="black", size=tick_font_size),
-                    title=dict(text=value_column, side="top"),
+                    title=dict(
+                        text=title_text, side="top"
+                    ),  # カラーバーのタイトルを設定
                     titlefont=dict(
                         family="Arial",
                         color="black",
@@ -857,11 +923,15 @@ class MobileSpatialAnalyzer:
 
         # 図の保存
         if save_fig:
+            # 保存時の出力ディレクトリチェック
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。"
+                )
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, output_filename)
             pyo.plot(fig, filename=output_path, auto_open=False)
             self.logger.info(f"Mapboxプロットを保存しました: {output_path}")
-
         # 図の表示
         if show_fig:
             pyo.iplot(fig)
@@ -869,25 +939,27 @@ class MobileSpatialAnalyzer:
     def plot_scatter_c2h6_ch4(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path,
+        output_dir: str | Path | None = None,
         output_filename: str = "scatter_c2h6_ch4.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (4, 4),
         fontsize: float = 12,
-        ratio_labels: dict[float, tuple[float, float, str]] | None = None,
         save_fig: bool = True,
         show_fig: bool = True,
+        ratio_labels: dict[float, tuple[float, float, str]] | None = None,
     ) -> None:
         """
         検出されたホットスポットのΔC2H6とΔCH4の散布図をプロットします。
 
         Args:
             hotspots (list[HotspotData]): プロットするホットスポットのリスト
-            output_dir (str | Path): 保存先のディレクトリパス
+            output_dir (str | Path | None): 保存先のディレクトリパス
             output_filename (str): 保存するファイル名。デフォルトは"scatter_c2h6_ch4"。
             dpi (int): 解像度。デフォルトは200。
             figsize (tuple[int, int]): 図のサイズ。デフォルトは(4, 4)。
             fontsize (float): フォントサイズ。デフォルトは12。
+            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
+            show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
             ratio_labels (dict[float, tuple[float, float, str]] | None): 比率線とラベルの設定。
                 キーは比率値、値は (x位置, y位置, ラベルテキスト) のタプル。
                 Noneの場合はデフォルト設定を使用。デフォルト値:
@@ -899,11 +971,7 @@ class MobileSpatialAnalyzer:
                     0.030: (1.0, 40, "0.03"),
                     0.076: (0.20, 42, "0.076 (Osaka)")
                 }
-            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
-            show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
         """
-        output_path: str = os.path.join(output_dir, output_filename)
-
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
 
@@ -961,6 +1029,11 @@ class MobileSpatialAnalyzer:
 
         # グラフの保存または表示
         if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            output_path: str = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight")
             self.logger.info(f"散布図を保存しました: {output_path}")
         if show_fig:
@@ -970,12 +1043,12 @@ class MobileSpatialAnalyzer:
 
     def plot_timeseries(
         self,
+        dpi: int = 200,
         source_name: str | None = None,
         figsize: tuple[float, float] = (8, 4),
-        dpi: int = 200,
-        save_fig: bool = False,
         output_dir: str | Path | None = None,
         output_filename: str = "timeseries.png",
+        save_fig: bool = False,
         show_fig: bool = True,
         ch4_key: str = "ch4_ppm",
         c2h6_key: str = "c2h6_ppb",
@@ -988,12 +1061,12 @@ class MobileSpatialAnalyzer:
         時系列データをプロットします。
 
         Args:
+            dpi (int): 図の解像度を指定します。デフォルトは200です。
             source_name (str | None): プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
             figsize (tuple[float, float]): 図のサイズを指定します。デフォルトは(8, 4)です。
-            dpi (int): 図の解像度を指定します。デフォルトは200です。
-            save_fig (bool): 図を保存するかどうかを指定します。デフォルトはFalseです。
             output_dir (str | Path | None): 保存先のディレクトリを指定します。save_fig=Trueの場合は必須です。
             output_filename (str): 保存するファイル名を指定します。デフォルトは"time_series.png"です。
+            save_fig (bool): 図を保存するかどうかを指定します。デフォルトはFalseです。
             show_fig (bool): 図を表示するかどうかを指定します。デフォルトはTrueです。
             ch4_key (str): CH4データのキーを指定します。デフォルトは"ch4_ppm"です。
             c2h6_key (str): C2H6データのキーを指定します。デフォルトは"c2h6_ppb"です。
@@ -1002,18 +1075,19 @@ class MobileSpatialAnalyzer:
             ylim_c2h6 (tuple[float, float] | None): C2H6プロットのy軸範囲を指定します。デフォルトはNoneです。
             ylim_h2o (tuple[float, float] | None): H2Oプロットのy軸範囲を指定します。デフォルトはNoneです。
         """
+        dfs_dict: dict[str, pd.DataFrame] = self._data.copy()
         # データソースの選択
-        if not self._data:
+        if not dfs_dict:
             raise ValueError("データが読み込まれていません。")
 
         if source_name is None:
-            source_name = list(self._data.keys())[0]
-        elif source_name not in self._data:
+            source_name = list(dfs_dict.keys())[0]
+        elif source_name not in dfs_dict:
             raise ValueError(
                 f"指定されたデータソース '{source_name}' が見つかりません。"
             )
 
-        df = self._data[source_name]
+        df = dfs_dict[source_name]
 
         # プロットの作成
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -1052,7 +1126,7 @@ class MobileSpatialAnalyzer:
         if save_fig:
             if output_dir is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。"
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             output_path = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight")
@@ -1178,15 +1252,7 @@ class MobileSpatialAnalyzer:
         df: pd.DataFrame = pd.read_csv(config.path, na_values=["No Data", "nan"])
 
         # カラム名の標準化（測器に依存しない汎用的な名前に変更）
-        column_mapping: dict[str, str] = {
-            "Time Stamp": "timestamp",
-            "CH4 (ppm)": "ch4_ppm",
-            "C2H6 (ppb)": "c2h6_ppb",
-            "H2O (ppm)": "h2o_ppm",
-            "Latitude": "latitude",
-            "Longitude": "longitude",
-        }
-        df = df.rename(columns=column_mapping)
+        df = df.rename(columns=self._column_mapping)
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         df.set_index("timestamp", inplace=True)
 
@@ -1208,20 +1274,8 @@ class MobileSpatialAnalyzer:
 
         df = df.dropna(subset=columns_to_shift)
 
-        # 水蒸気補正式の係数（実験的に求められた値）
-        coef_a: float = 2.0631  # 切片
-        coef_b: float = 1.0111e-06  # 1次の係数
-        coef_c: float = -1.8683e-10  # 2次の係数
         # 水蒸気干渉の補正を適用
-        df = MiraUtils.correct_h2o_interference(
-            df=df,
-            coef_a=coef_a,
-            coef_b=coef_b,
-            coef_c=coef_c,
-            ch4_key="ch4_ppm",
-            h2o_key="h2o_ppm",
-            h2o_threshold=2000,
-        )
+        df = CorrectingUtils.correct_df_by_type(df, config.correction_type)
 
         return df
 
@@ -1666,9 +1720,9 @@ class MobileSpatialAnalyzer:
     @staticmethod
     def plot_emission_analysis(
         emission_data_list: list[EmissionData],
-        output_dir: str,
-        output_filename: str = "emission_analysis.png",
         dpi: int = 300,
+        output_dir: str | Path | None = None,
+        output_filename: str = "emission_analysis.png",
         figsize: tuple[float, float] = (12, 5),
         add_legend: bool = True,
         hist_log_y: bool = False,
@@ -1687,7 +1741,7 @@ class MobileSpatialAnalyzer:
 
         Args:
             emission_data_list (list[EmissionData]): EmissionDataオブジェクトのリスト。
-            output_dir (str): 出力先ディレクトリのパス。
+            output_dir (str | Path | None): 出力先ディレクトリのパス。
             output_filename (str, optional): 保存するファイル名。デフォルトは"emission_analysis.png"。
             dpi (int, optional): プロットの解像度。デフォルトは300。
             figsize (tuple[float, float], optional): プロットのサイズ。デフォルトは(12, 5)。
@@ -1807,10 +1861,13 @@ class MobileSpatialAnalyzer:
 
         # 図の保存
         if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight", dpi=dpi)
-
         # 図の表示
         if show_fig:
             plt.show()

@@ -440,6 +440,8 @@ class FluxFootprintAnalyzer:
         lon_correction: float = 1,
         output_dir: str | None = None,
         output_filename: str = "footprint.png",
+        save_fig: bool = True,
+        show_fig: bool = True,
         satellite_image: ImageFile | None = None,
         xy_max: float = 5000,
     ) -> None:
@@ -464,6 +466,8 @@ class FluxFootprintAnalyzer:
             lat_correction (float, optional): 緯度方向の補正係数（デフォルトは1）。
             output_dir (str | None, optional): プロット画像の保存先パス。
             output_filename (str): プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
+            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
+            show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
             satellite_image (ImageFile | None, optional): 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
             xy_max (float, optional): 表示範囲の最大値（デフォルトは4000）。
         """
@@ -487,6 +491,8 @@ class FluxFootprintAnalyzer:
             lon_correction=lon_correction,
             output_dir=output_dir,
             output_filename=output_filename,
+            save_fig=save_fig,
+            show_fig=show_fig,
             satellite_image=satellite_image,
             xy_max=xy_max,
         )
@@ -512,6 +518,8 @@ class FluxFootprintAnalyzer:
         lon_correction: float = 1,
         output_dir: str | None = None,
         output_filename: str = "footprint.png",
+        save_fig: bool = True,
+        show_fig: bool = True,
         satellite_image: ImageFile | None = None,
         xy_max: float = 5000,
     ) -> None:
@@ -539,6 +547,8 @@ class FluxFootprintAnalyzer:
             lat_correction (float, optional): 緯度方向の補正係数（デフォルトは1）。
             output_dir (str | None, optional): プロット画像の保存先パス。
             output_filename (str): プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
+            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
+            show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
             satellite_image (ImageFile | None, optional): 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
             xy_max (float, optional): 表示範囲の最大値（デフォルトは5000）。
         """
@@ -744,7 +754,11 @@ class FluxFootprintAnalyzer:
             )
 
         # 15. 画像の保存
-        if output_dir:
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
             output_path: str = os.path.join(output_dir, output_filename)
             self.logger.info("プロットを保存中...")
             try:
@@ -752,8 +766,11 @@ class FluxFootprintAnalyzer:
                 self.logger.info(f"プロットが正常に保存されました: {output_path}")
             except Exception as e:
                 self.logger.error(f"プロットの保存中にエラーが発生しました: {str(e)}")
-
-        plt.close()
+        # 16. 画像の表示
+        if show_fig:
+            plt.show()
+        else:
+            plt.close(fig=fig)
 
     def _combine_all_csv(self, csv_dir_path: str, suffix: str = ".csv") -> pd.DataFrame:
         """

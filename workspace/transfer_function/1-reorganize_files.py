@@ -2,7 +2,7 @@ import os
 from py_flux_tracer import FftFileReorganizer
 
 # 変数定義
-base_path = "/home/connect0459/labo/omu-eddy-covariance/workspace/transfer_function/private/2024.08.06"
+base_path = "/home/connect0459/labo/py_flux_tracer/workspace/transfer_function/private/2024.08.06"
 flag_file_name: str = "Flg-202406211500_202408061100.csv"
 input_dir_names: list[str] = ["fft", "fft-detrend"]
 output_dir_names: list[str] = ["sorted", "sorted-detrend"]

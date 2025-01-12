@@ -16,65 +16,76 @@ inputs: list[MSAInputConfig] = [
     MSAInputConfig(
         lag=7,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
+        correction_type="pico_1",
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/omu-eddy-covariance/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
+        path="/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
+        correction_type="pico_1",
     ),
 ]
 
 
 # フォントファイルを登録（必要な場合のみで可）
 font_paths: list[str] = [
-    "/home/connect0459/labo/omu-eddy-covariance/storage/assets/fonts/arial.ttf",  # 英語のデフォルト
-    "/home/connect0459/labo/omu-eddy-covariance/storage/assets/fonts/msgothic.ttc",  # 日本語のデフォルト
+    "/home/connect0459/labo/py_flux_tracer/storage/assets/fonts/arial.ttf",  # 英語のデフォルト
+    "/home/connect0459/labo/py_flux_tracer/storage/assets/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
 for path in font_paths:
     fm.fontManager.addfont(path)
@@ -87,7 +98,7 @@ plot_count: int = 10000
 # plot_count: int = 50000
 
 # ファイルおよびディレクトリのパス
-project_root: str = "/home/connect0459/labo/omu-eddy-covariance"
+project_root: str = "/home/connect0459/labo/py_flux_tracer"
 work_dir: str = f"{project_root}/workspace/footprint"
 # I/O 用ディレクトリのパス
 output_dir: str = f"{work_dir}/private/outputs"  # 出力先のディレクトリ
@@ -127,15 +138,15 @@ if __name__ == "__main__":
         window_minutes=5,
         logging_debug=False,
     )
-    hotspots: list[HotspotData] = msa.analyze_hotspots(
-        duplicate_check_mode="time_all"
-    )
+    hotspots: list[HotspotData] = msa.analyze_hotspots(duplicate_check_mode="time_all")
 
     # インスタンスを作成
     ffa = FluxFootprintAnalyzer(z_m=111, logging_debug=False)
 
     # 航空写真の取得
-    local_image_path: str = "/home/connect0459/labo/omu-eddy-covariance/storage/assets/images/SAC-zoom_13.png"
+    local_image_path: str = (
+        "/home/connect0459/labo/py_flux_tracer/storage/assets/images/SAC-zoom_13.png"
+    )
     # image = ffa.get_satellite_image_from_api(
     #     api_key=gms_api_key,
     #     center_lat=center_lan,
@@ -155,7 +166,7 @@ if __name__ == "__main__":
 
         # with文でブロック終了時に__exit__を自動呼出し
         with MonthlyConverter(
-            "/home/connect0459/labo/omu-eddy-covariance/workspace/senior_thesis/private/monthly",
+            "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/monthly",
             file_pattern="SA.Ultra.*.xlsx",
         ) as converter:
             # 特定の期間のデータを読み込む

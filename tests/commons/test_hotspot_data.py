@@ -1,7 +1,7 @@
 from py_flux_tracer import HotspotData
 
 
-def test_hotspot_data_initialization():
+def test_dataclasses_initialization():
     """HotspotDataが正しく初期化されることを確認するテスト"""
     hotspot = HotspotData(
         angle=45.0,
@@ -24,7 +24,7 @@ def test_hotspot_data_initialization():
     assert hotspot.type == "gas"
 
 
-def test_hotspot_data_equality():
+def test_dataclasses_equality():
     """同じ値を持つHotspotDataインスタンスが等しいと判定されることを確認するテスト"""
     hotspot1 = HotspotData(
         angle=45.0,
@@ -51,7 +51,7 @@ def test_hotspot_data_equality():
     assert hotspot1 == hotspot2
 
 
-def test_hotspot_data_inequality():
+def test_dataclasses_inequality():
     """異なる値を持つHotspotDataインスタンスが等しくないと判定されることを確認するテスト"""
     hotspot1 = HotspotData(
         angle=45.0,
@@ -78,7 +78,7 @@ def test_hotspot_data_inequality():
     assert hotspot1 != hotspot2
 
 
-def test_hotspot_data_type_validation():
+def test_dataclasses_type_validation():
     """typeフィールドが有効な値のみを受け入れることを確認するテスト"""
     valid_types = ["bio", "gas", "comb"]
 

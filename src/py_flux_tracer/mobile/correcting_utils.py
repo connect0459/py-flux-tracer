@@ -1,10 +1,47 @@
 import numpy as np
 import pandas as pd
 
+"""
+CORRECTION_TYPES_PATTERN (list[str]): 補正式の種類を定義するリスト。correct_df_by_typeで使用する。
+"""
+CORRECTION_TYPES_PATTERN: list[str] = ["pico_1"]
 
-class MiraUtils:
+
+class CorrectingUtils:
     @staticmethod
-    def correct_h2o_interference(
+    def correct_df_by_type(df: pd.DataFrame, correction_type: str) -> pd.DataFrame:
+        """
+        指定された補正式に基づいてデータフレームを補正します。
+
+        Args:
+            df (pd.DataFrame): 補正対象のデータフレーム。
+            correction_type (str): 適用する補正式の種類。CORRECTION_TYPES_PATTERNから選択する。
+
+        Returns:
+            pd.DataFrame: 補正後のデータフレーム
+
+        Raises:
+            ValueError: 無効な補正式が指定された場合
+        """
+        if correction_type == "pico_1":
+            coef_a: float = 2.0631  # 切片
+            coef_b: float = 1.0111e-06  # 1次の係数
+            coef_c: float = -1.8683e-10  # 2次の係数
+            df_corrected: pd.DataFrame = CorrectingUtils._correct_h2o_interference(
+                df=df,
+                coef_a=coef_a,
+                coef_b=coef_b,
+                coef_c=coef_c,
+                ch4_key="ch4_ppm",
+                h2o_key="h2o_ppm",
+                h2o_threshold=2000,
+            )
+            return df_corrected
+        else:
+            raise ValueError(f"invalid correction_type: {correction_type}.")
+
+    @staticmethod
+    def _correct_h2o_interference(
         df: pd.DataFrame,
         coef_a: float,
         coef_b: float,
@@ -40,7 +77,7 @@ class MiraUtils:
         h2o = np.array(df[h2o_key])
 
         # 補正項の計算
-        correction_curve = coef_a + coef_b * h2o + coef_c * h2o * h2o
+        correction_curve = coef_a + coef_b * h2o + coef_c * pow(h2o, 2)
         max_correction = np.max(correction_curve)
         correction_term = -(correction_curve - max_correction)
 
