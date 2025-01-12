@@ -16,7 +16,7 @@
 2. GitHubリポジトリの Settings → Secrets → Actions に移動
 3. `PYPI_API_TOKEN` という名前で PyPI のAPIトークンを登録
 
-※2024-11-13現在、 [connect0459](https://github.com/omu-meteorology) が発行したトークンをセットしています。
+※2024-11-13現在、 [connect0459](https://github.com/connect0459) が発行したトークンをセットしています。
 
 ### 2. パッケージ設定
 

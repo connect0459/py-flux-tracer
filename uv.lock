@@ -953,65 +953,6 @@ wheels = [
 ]
 
 [[package]]
-name = "py_flux_tracer"
-version = "0.1.dev1+gb499039"
-source = { editable = "." }
-dependencies = [
-    { name = "folium" },
-    { name = "jpholiday" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "openpyxl" },
-    { name = "pandas" },
-    { name = "pillow" },
-    { name = "scipy" },
-    { name = "seaborn" },
-    { name = "tqdm" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "build" },
-    { name = "geopy" },
-    { name = "hatchling" },
-    { name = "ipykernel" },
-    { name = "nbformat" },
-    { name = "plotly" },
-    { name = "pytest" },
-    { name = "python-dotenv" },
-    { name = "ruff" },
-    { name = "twine" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "folium", specifier = ">=0.18.0" },
-    { name = "jpholiday" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "pandas" },
-    { name = "pillow" },
-    { name = "scipy" },
-    { name = "seaborn", specifier = ">=0.13.2" },
-    { name = "tqdm" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build", specifier = ">=1.2.2.post1" },
-    { name = "geopy", specifier = ">=2.4.1" },
-    { name = "hatchling", specifier = ">=1.25.0" },
-    { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "nbformat", specifier = ">=5.10.4" },
-    { name = "plotly", specifier = ">=5.24.1" },
-    { name = "pytest", specifier = ">=8.3.4" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-    { name = "ruff", specifier = ">=0.6.8" },
-    { name = "twine", specifier = ">=5.1.1" },
-]
-
-[[package]]
 name = "openpyxl"
 version = "3.1.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1235,6 +1176,65 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a578f1783a10da6df098ceaa4a57bbeaa96a6c0352786b/pure_eval-0.2.3.tar.gz", hash = "sha256:5f4e983f40564c576c7c8635ae88db5956bb2229d7e9237d03b3c0b0190eaf42", size = 19752 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842 },
+]
+
+[[package]]
+name = "py-flux-tracer"
+version = "0.1.dev2+g60ecaa1.d20250112"
+source = { editable = "." }
+dependencies = [
+    { name = "folium" },
+    { name = "jpholiday" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "scipy" },
+    { name = "seaborn" },
+    { name = "tqdm" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "build" },
+    { name = "geopy" },
+    { name = "hatchling" },
+    { name = "ipykernel" },
+    { name = "nbformat" },
+    { name = "plotly" },
+    { name = "pytest" },
+    { name = "python-dotenv" },
+    { name = "ruff" },
+    { name = "twine" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "folium", specifier = ">=0.18.0" },
+    { name = "jpholiday" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "scipy" },
+    { name = "seaborn", specifier = ">=0.13.2" },
+    { name = "tqdm" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "build", specifier = ">=1.2.2.post1" },
+    { name = "geopy", specifier = ">=2.4.1" },
+    { name = "hatchling", specifier = ">=1.25.0" },
+    { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "nbformat", specifier = ">=5.10.4" },
+    { name = "plotly", specifier = ">=5.24.1" },
+    { name = "pytest", specifier = ">=8.3.4" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+    { name = "ruff", specifier = ">=0.6.8" },
+    { name = "twine", specifier = ">=5.1.1" },
 ]
 
 [[package]]

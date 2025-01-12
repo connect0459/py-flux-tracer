@@ -14,7 +14,7 @@
 まず、GitHubからリポジトリをクローンします。
 
 ```bash
-git clone git@github.com:omu-meteorology/py_flux_tracer.git
+git clone git@github.com:connect0459/py_flux_tracer.git
 ```
 
 クローンできたら、カレントディレクトリを切り替えます。

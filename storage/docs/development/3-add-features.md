@@ -14,7 +14,7 @@
 
 まずは開発目的を記載するイシューを作成します。
 
-1. [Issues](https://github.com/omu-meteorology/py_flux_tracer/issues) からイシューページに飛ぶ
+1. [Issues](https://github.com/connect0459/py_flux_tracer/issues) からイシューページに飛ぶ
 2. 「New issue」をクリックして、タイトル、説明などを入力して「Submit new issue」で新しいイシューを作成
 
 ## ブランチの作成
