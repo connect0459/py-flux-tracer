@@ -79,6 +79,7 @@ west_sections_list: list[int] = [
 output_dir: str = (
     "/home/connect0459/labo/py_flux_tracer/workspace/mobile/private/outputs"
 )
+print_stats: bool = False
 
 if __name__ == "__main__":
     msa = MobileSpatialAnalyzer(
@@ -105,25 +106,28 @@ if __name__ == "__main__":
     gas_spots = [h for h in hotspots if h.type == "gas"]
     comb_spots = [h for h in hotspots if h.type == "comb"]
 
-    print("\nResults:")
-    print(f"  Bio:{len(bio_spots)},Gas:{len(gas_spots)},Comb:{len(comb_spots)}")
+    if print_stats:
+        print("\nResults:")
+        print(f"  Bio:{len(bio_spots)},Gas:{len(gas_spots)},Comb:{len(comb_spots)}")
 
-    # 区画ごとの分析を追加
-    # 各区画のホットスポット数をカウント
-    section_counts = {i: {"bio": 0, "gas": 0, "comb": 0} for i in range(num_sections)}
-    for spot in hotspots:
-        section_counts[spot.section][spot.type] += 1
+        # 区画ごとの分析を追加
+        # 各区画のホットスポット数をカウント
+        section_counts = {
+            i: {"bio": 0, "gas": 0, "comb": 0} for i in range(num_sections)
+        }
+        for spot in hotspots:
+            section_counts[spot.section][spot.type] += 1
 
-    # 区画ごとの結果を表示
-    print("\n区画ごとの分析結果:")
-    section_size: float = msa.get_section_size()
-    for section, counts in section_counts.items():
-        start_angle = -180 + section * section_size
-        end_angle = start_angle + section_size
-        print(f"\n区画 {section} ({start_angle:.1f}° ~ {end_angle:.1f}°):")
-        print(f"  Bio  : {counts['bio']}")
-        print(f"  Gas  : {counts['gas']}")
-        print(f"  Comb : {counts['comb']}")
+        # 区画ごとの結果を表示
+        print("\n区画ごとの分析結果:")
+        section_size: float = msa.get_section_size()
+        for section, counts in section_counts.items():
+            start_angle = -180 + section * section_size
+            end_angle = start_angle + section_size
+            print(f"\n区画 {section} ({start_angle:.1f}° ~ {end_angle:.1f}°):")
+            print(f"  Bio  : {counts['bio']}")
+            print(f"  Gas  : {counts['gas']}")
+            print(f"  Comb : {counts['comb']}")
 
     # sectionが0または1（西側）のホットスポットのみを残す
     # hotspots = [h for h in hotspots if h.section in west_sections_list]
@@ -132,7 +136,7 @@ if __name__ == "__main__":
     msa.create_hotspots_map(hotspots, output_dir=output_dir)
 
     # ホットスポットを散布図で表示
-    msa.plot_scatter_c2h6_ch4(hotspots, output_dir=output_dir)
+    msa.plot_scatter_c2h6_ch4(hotspots, output_dir=output_dir, show_fig=False)
 
     # ヒストグラムを作図
     msa.plot_ch4_delta_histogram(
@@ -185,5 +189,5 @@ if __name__ == "__main__":
             save_fig=True,
             show_fig=False,
             show_scatter=False,
-            # print_summary=True,
+            print_summary=False,
         )

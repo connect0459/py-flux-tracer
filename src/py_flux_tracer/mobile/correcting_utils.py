@@ -27,6 +27,7 @@ class CorrectingUtils:
             coef_a: float = 2.0631  # 切片
             coef_b: float = 1.0111e-06  # 1次の係数
             coef_c: float = -1.8683e-10  # 2次の係数
+            # 水蒸気補正
             df_corrected: pd.DataFrame = CorrectingUtils._correct_h2o_interference(
                 df=df,
                 coef_a=coef_a,
@@ -35,6 +36,10 @@ class CorrectingUtils:
                 ch4_key="ch4_ppm",
                 h2o_key="h2o_ppm",
                 h2o_threshold=2000,
+            )
+            # 負の値のエタン濃度の補正など
+            df_corrected = CorrectingUtils._remove_bias(
+                df=df_corrected, ch4_ppm_key="ch4_ppm", c2h6_ppb_key="c2h6_ppb"
             )
             return df_corrected
         else:
@@ -90,3 +95,27 @@ class CorrectingUtils:
             df = df.dropna(subset=[ch4_key])
 
         return df
+
+    @staticmethod
+    def _remove_bias(
+        df: pd.DataFrame,
+        ch4_ppm_key: str = "ch4_ppm",
+        c2h6_ppb_key: str = "c2h6_ppb",
+    ) -> pd.DataFrame:
+        """
+        データフレームからバイアスを除去します。
+
+        Args:
+            df (pd.DataFrame): バイアスを除去する対象のデータフレーム。
+            ch4_ppm_key (str): CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
+            c2h6_ppb_key (str): C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
+
+        Returns:
+            pd.DataFrame: バイアスが除去されたデータフレーム。
+        """
+        df_processed: pd.DataFrame = df.copy()
+        c2h6_min = np.percentile(df_processed[c2h6_ppb_key], 5)
+        df_processed[c2h6_ppb_key] = df_processed[c2h6_ppb_key] - c2h6_min
+        ch4_min = np.percentile(df_processed[ch4_ppm_key], 5)
+        df_processed[ch4_ppm_key] = df_processed[ch4_ppm_key] - ch4_min + 2.0
+        return df_processed

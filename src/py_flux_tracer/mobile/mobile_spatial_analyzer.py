@@ -812,6 +812,7 @@ class MobileSpatialAnalyzer:
         df: pd.DataFrame,
         mapbox_access_token: str,
         value_column_key: str,
+        sort_value_column: bool = True,
         output_dir: str | Path | None = None,
         output_filename: str = "mapbox_plot.html",
         lat_column: str = "latitude",
@@ -822,8 +823,10 @@ class MobileSpatialAnalyzer:
         zoom: float = 12,
         width: int = 700,
         height: int = 700,
+        tick_font_family: str = "Arial",
+        title_font_family: str = "Arial",
         tick_font_size: int = 12,
-        label_font_size: int = 14,
+        title_font_size: int = 14,
         marker_size: int = 4,
         colorbar_title: str | None = None,
         value_range: tuple[float, float] | None = None,
@@ -837,6 +840,7 @@ class MobileSpatialAnalyzer:
             df (pd.DataFrame): プロットするデータを含むDataFrame
             mapbox_access_token (str): Mapboxのアクセストークン
             value_column_key (str): カラーマッピングに使用する列名
+            sort_value_column (bool): value_columをソートするか否か。デフォルトはTrue。
             output_dir (str | Path | None): 出力ディレクトリのパス
             output_filename (str): 出力ファイル名。デフォルトは"mapbox_plot.html"
             lat_column (str): 緯度の列名。デフォルトは"latitude"
@@ -847,14 +851,19 @@ class MobileSpatialAnalyzer:
             zoom (float): マップの初期ズームレベル。デフォルトは12
             width (int): プロットの幅（ピクセル）。デフォルトは700
             height (int): プロットの高さ（ピクセル）。デフォルトは700
+            tick_font_family (str): カラーバーの目盛りフォントファミリー。デフォルトは"Arial"
+            title_font_family (str): カラーバーのラベルフォントファミリー。デフォルトは"Arial"
             tick_font_size (int): カラーバーの目盛りフォントサイズ。デフォルトは12
-            label_font_size (int): カラーバーのラベルフォントサイズ。デフォルトは14
+            title_font_size (int): カラーバーのラベルフォントサイズ。デフォルトは14
             marker_size (int): マーカーのサイズ。デフォルトは4
             colorbar_title (str | None): カラーバーのラベル
             value_range (tuple[float, float] | None): カラーマッピングの範囲。デフォルトはNoneで、データの最小値と最大値を使用
             save_fig (bool): 図を保存するかどうか。デフォルトはTrue
             show_fig (bool): 図を表示するかどうか。デフォルトはTrue
         """
+        df_mapping: pd.DataFrame = df.copy().dropna(subset=[value_column_key])
+        if sort_value_column:
+            df_mapping = df_mapping.sort_values(value_column_key)
         # 中心座標の設定
         center_lat = center_lat if center_lat is not None else self._center_lat
         center_lon = center_lon if center_lon is not None else self._center_lon
@@ -862,8 +871,8 @@ class MobileSpatialAnalyzer:
         # カラーマッピングの範囲を設定
         cmin, cmax = 0, 0
         if value_range is None:
-            cmin = df[value_column_key].min()
-            cmax = df[value_column_key].max()
+            cmin = df_mapping[value_column_key].min()
+            cmax = df_mapping[value_column_key].max()
         else:
             cmin, cmax = value_range
 
@@ -872,13 +881,13 @@ class MobileSpatialAnalyzer:
 
         # Scattermapboxのデータを作成
         scatter_data = go.Scattermapbox(
-            lat=df[lat_column],
-            lon=df[lon_column],
-            text=df[value_column_key].astype(str),
+            lat=df_mapping[lat_column],
+            lon=df_mapping[lon_column],
+            text=df_mapping[value_column_key].astype(str),
             hoverinfo="text",
             mode="markers",
             marker=dict(
-                color=df[value_column_key],
+                color=df_mapping[value_column_key],
                 size=marker_size,
                 reversescale=False,
                 autocolorscale=False,
@@ -893,14 +902,16 @@ class MobileSpatialAnalyzer:
                     ticklen=7,
                     tickwidth=1.5,
                     tickcolor="black",
-                    tickfont=dict(family="Arial", color="black", size=tick_font_size),
+                    tickfont=dict(
+                        family=tick_font_family, color="black", size=tick_font_size
+                    ),
                     title=dict(
                         text=title_text, side="top"
                     ),  # カラーバーのタイトルを設定
                     titlefont=dict(
-                        family="Arial",
+                        family=title_font_family,
                         color="black",
-                        size=label_font_size,
+                        size=title_font_size,
                     ),
                 ),
             ),
@@ -1234,21 +1245,21 @@ class MobileSpatialAnalyzer:
         """
         all_data: dict[str, pd.DataFrame] = {}
         for config in input_configs:
-            df: pd.DataFrame = self._load_data(config)
-            source_name: str = Path(config.path).stem
+            df, source_name = self._load_data(config)
             all_data[source_name] = df
         return all_data
 
-    def _load_data(self, config: MSAInputConfig) -> pd.DataFrame:
+    def _load_data(self, config: MSAInputConfig) -> tuple[pd.DataFrame, str]:
         """
-        測定データの読み込みと前処理
+        測定データを読み込み、前処理を行うメソッド。
 
         Args:
-            config (MSAInputConfig): 入力ファイルの設定
+            config (MSAInputConfig): 入力ファイルの設定を含むオブジェクト。
 
         Returns:
-            pd.DataFrame: 読み込んだデータフレーム
+            tuple[pd.DataFrame, str]: 読み込まれたデータフレームとそのソース名を含むタプル。
         """
+        source_name: str = Path(config.path).stem
         df: pd.DataFrame = pd.read_csv(config.path, na_values=["No Data", "nan"])
 
         # カラム名の標準化（測器に依存しない汎用的な名前に変更）
@@ -1274,10 +1285,15 @@ class MobileSpatialAnalyzer:
 
         df = df.dropna(subset=columns_to_shift)
 
-        # 水蒸気干渉の補正を適用
-        df = CorrectingUtils.correct_df_by_type(df, config.correction_type)
+        # 水蒸気干渉などの補正式を適用
+        if config.correction_type is not None:
+            df = CorrectingUtils.correct_df_by_type(df, config.correction_type)
+        else:
+            self.logger.warn(
+                f"'correction_type' is None, so no correction functions will be applied. Source: {source_name}"
+            )
 
-        return df
+        return df, source_name
 
     @staticmethod
     def _calculate_angle(
@@ -1437,6 +1453,62 @@ class MobileSpatialAnalyzer:
         return sections
 
     @staticmethod
+    def _is_duplicate_spot(
+        current_lat: float,
+        current_lon: float,
+        current_time: str,
+        used_positions: list[tuple[float, float, str, float]],
+        check_time_all: bool,
+        min_time_threshold_seconds: float,
+        max_time_threshold_hours: float,
+        area_meter: float,
+    ) -> bool:
+        """
+        与えられた地点が既存の地点と重複しているかを判定します。
+
+        Args:
+            current_lat (float): 判定する地点の緯度
+            current_lon (float): 判定する地点の経度
+            current_time (str): 判定する地点の時刻
+            used_positions (list[tuple[float, float, str, float]]): 既存の地点情報のリスト (lat, lon, time, value)
+            check_time_all (bool): 時間に関係なく重複チェックを行うかどうか
+            min_time_threshold_seconds (float): 重複とみなす最小時間の閾値（秒）
+            max_time_threshold_hours (float): 重複チェックを一時的に無視する最大時間の閾値（時間）
+            area_meter (float): 重複とみなす距離の閾値（m）
+
+        Returns:
+            bool: 重複している場合はTrue、そうでない場合はFalse
+        """
+        for used_lat, used_lon, used_time, _ in used_positions:
+            # 距離チェック
+            distance = MobileSpatialAnalyzer._calculate_distance(
+                lat1=current_lat, lon1=current_lon, lat2=used_lat, lon2=used_lon
+            )
+
+            if distance < area_meter:
+                # 時間差の計算（秒単位）
+                time_diff = pd.Timedelta(
+                    pd.to_datetime(current_time) - pd.to_datetime(used_time)
+                ).total_seconds()
+                time_diff_abs = abs(time_diff)
+
+                if check_time_all:
+                    # 時間に関係なく、距離が近ければ重複とみなす
+                    return True
+                else:
+                    # 時間窓による判定を行う
+                    if time_diff_abs <= min_time_threshold_seconds:
+                        # Case 1: 最小時間閾値以内は重複とみなす
+                        return True
+                    elif time_diff_abs > max_time_threshold_hours * 3600:
+                        # Case 2: 最大時間閾値を超えた場合は重複チェックをスキップ
+                        continue
+                    # Case 3: その間の時間差の場合は、距離が近ければ重複とみなす
+                    return True
+
+        return False
+
+    @staticmethod
     def _normalize_inputs(
         inputs: list[MSAInputConfig] | list[tuple[float, float, str | Path]],
     ) -> list[MSAInputConfig]:
@@ -1460,6 +1532,138 @@ class MobileSpatialAnalyzer:
         return normalized
 
     @staticmethod
+    def remove_c2h6_ch4_ratio_duplicates(
+        df: pd.DataFrame,
+        check_time_all: bool,
+        min_time_threshold_seconds: float,
+        max_time_threshold_hours: float,
+        area_meter: float,
+    ) -> pd.DataFrame:
+        """
+        C2H6/CH4比の重複を除去します。
+
+        Args:
+            df (pd.DataFrame): 対象のデータフレーム
+            check_time_all (bool): 時間に関係なく重複チェックを行うかどうか
+            min_time_threshold_seconds (float): 重複とみなす最小時間の閾値（秒）
+            max_time_threshold_hours (float): 重複チェックを一時的に無視する最大時間の閾値（時間）
+            area_meter (float): 重複とみなす距離の閾値（m）
+
+        Returns:
+            pd.DataFrame: 重複を除去したデータフレーム
+        """
+        # 値の降順でソート
+        df_sorted = df.sort_values('c2h6_ch4_ratio_delta', ascending=False)
+        used_positions: list[tuple[float, float, str, float]] = []
+        keep_indices: list[int] = []
+
+        for idx, row in df_sorted.iterrows():
+            is_duplicate = MobileSpatialAnalyzer._is_duplicate_spot(
+                current_lat=row['latitude'],
+                current_lon=row['longitude'],
+                current_time=row['timestamp'],
+                used_positions=used_positions,
+                check_time_all=check_time_all,
+                min_time_threshold_seconds=min_time_threshold_seconds,
+                max_time_threshold_hours=max_time_threshold_hours,
+                area_meter=area_meter,
+            )
+
+            if not is_duplicate:
+                keep_indices.append(idx)
+                used_positions.append(
+                    (row['latitude'], row['longitude'], row['timestamp'], row['c2h6_ch4_ratio_delta'])
+                )
+
+        # 重複除去後の値を新しいカラムに格納
+        df = df.copy()
+        df['c2h6_ch4_ratio_delta_unique'] = np.nan
+        df.loc[keep_indices, 'c2h6_ch4_ratio_delta_unique'] = df_sorted.loc[keep_indices, 'c2h6_ch4_ratio_delta']
+
+        return df
+
+    # @staticmethod
+    # def remove_hotspots_duplicates(
+    #     hotspots: list[HotspotData],
+    #     check_time_all: bool,
+    #     min_time_threshold_seconds: float,
+    #     max_time_threshold_hours: float,
+    #     hotspot_area_meter: float,
+    # ) -> list[HotspotData]:
+    #     """
+    #     重複するホットスポットを除外します。ΔCH4が大きい順に処理し、
+    #     重複範囲内で最も大きい値を持つホットスポットを残します。
+
+    #     時間による重複判定の仕様:
+    #     1. min_time_threshold_seconds以内の重複は常に除外
+    #     2. min_time_threshold_seconds < 時間差 <= max_time_threshold_hoursの場合は保持
+    #     3. max_time_threshold_hours以上離れた場合はcheck_time_allパラメータに従う
+
+    #     Args:
+    #         hotspots (list[HotspotData]): 元のホットスポットのリスト
+    #         check_time_all (bool): max_time_threshold_hours以上離れた場合も重複チェックを継続するかどうか
+    #         min_time_threshold_seconds (float): 重複とみなす最小時間の閾値（秒）
+    #         max_time_threshold_hours (float): 重複チェックを一時的に無視する最大時間の閾値（時間）
+    #         hotspot_area_meter (float): ホットスポットの影響範囲（m）。
+
+    #     Returns:
+    #         list[HotspotData]: 重複を除外したホットスポットのリスト
+    #     """
+    #     # ΔCH4の降順でソート
+    #     sorted_hotspots: list[HotspotData] = sorted(
+    #         hotspots, key=lambda x: x.delta_ch4, reverse=True
+    #     )
+    #     used_positions_by_type: dict[str, list[tuple[float, float, str, float]]] = {
+    #         "bio": [],
+    #         "gas": [],
+    #         "comb": [],
+    #     }
+    #     unique_hotspots: list[HotspotData] = []
+
+    #     for spot in sorted_hotspots:
+    #         should_add: bool = True
+    #         for used_lat, used_lon, used_time, used_delta_ch4 in used_positions_by_type[
+    #             spot.type
+    #         ]:
+    #             # 距離チェック
+    #             distance: float = MobileSpatialAnalyzer._calculate_distance(
+    #                 lat1=spot.avg_lat, lon1=spot.avg_lon, lat2=used_lat, lon2=used_lon
+    #             )
+
+    #             if distance < hotspot_area_meter:
+    #                 # 時間差の計算（秒単位）
+    #                 time_diff = pd.Timedelta(
+    #                     pd.to_datetime(spot.source) - pd.to_datetime(used_time)
+    #                 ).total_seconds()
+    #                 time_diff_abs = abs(time_diff)
+
+    #                 # 時間差に基づく判定
+    #                 if check_time_all:
+    #                     # 時間に関係なく、距離が近ければ重複とみなす
+    #                     # ΔCH4が大きい方を残す（現在のスポットは必ず小さい）
+    #                     should_add = False
+    #                     break
+    #                 else:
+    #                     # 時間窓による判定を行う
+    #                     if time_diff_abs <= min_time_threshold_seconds:
+    #                         # Case 1: 最小時間閾値以内は重複とみなす
+    #                         should_add = False
+    #                         break
+    #                     elif time_diff_abs > max_time_threshold_hours * 3600:
+    #                         # Case 2: 最大時間閾値を超えた場合は重複チェックをスキップ
+    #                         continue
+    #                     # Case 3: その間の時間差の場合は、距離が近ければ重複とみなす
+    #                     should_add = False
+    #                     break
+
+    #         if should_add:
+    #             unique_hotspots.append(spot)
+    #             used_positions_by_type[spot.type].append(
+    #                 (spot.avg_lat, spot.avg_lon, spot.source, spot.delta_ch4)
+    #             )
+
+    #     return unique_hotspots
+    @staticmethod
     def remove_hotspots_duplicates(
         hotspots: list[HotspotData],
         check_time_all: bool,
@@ -1468,23 +1672,7 @@ class MobileSpatialAnalyzer:
         hotspot_area_meter: float,
     ) -> list[HotspotData]:
         """
-        重複するホットスポットを除外します。ΔCH4が大きい順に処理し、
-        重複範囲内で最も大きい値を持つホットスポットを残します。
-
-        時間による重複判定の仕様:
-        1. min_time_threshold_seconds以内の重複は常に除外
-        2. min_time_threshold_seconds < 時間差 <= max_time_threshold_hoursの場合は保持
-        3. max_time_threshold_hours以上離れた場合はcheck_time_allパラメータに従う
-
-        Args:
-            hotspots (list[HotspotData]): 元のホットスポットのリスト
-            check_time_all (bool): max_time_threshold_hours以上離れた場合も重複チェックを継続するかどうか
-            min_time_threshold_seconds (float): 重複とみなす最小時間の閾値（秒）
-            max_time_threshold_hours (float): 重複チェックを一時的に無視する最大時間の閾値（時間）
-            hotspot_area_meter (float): ホットスポットの影響範囲（m）。
-
-        Returns:
-            list[HotspotData]: 重複を除外したホットスポットのリスト
+        重複するホットスポットを除外します。
         """
         # ΔCH4の降順でソート
         sorted_hotspots: list[HotspotData] = sorted(
@@ -1498,42 +1686,18 @@ class MobileSpatialAnalyzer:
         unique_hotspots: list[HotspotData] = []
 
         for spot in sorted_hotspots:
-            should_add: bool = True
-            for used_lat, used_lon, used_time, used_delta_ch4 in used_positions_by_type[
-                spot.type
-            ]:
-                # 距離チェック
-                distance: float = MobileSpatialAnalyzer._calculate_distance(
-                    lat1=spot.avg_lat, lon1=spot.avg_lon, lat2=used_lat, lon2=used_lon
-                )
+            is_duplicate = MobileSpatialAnalyzer._is_duplicate_spot(
+                current_lat=spot.avg_lat,
+                current_lon=spot.avg_lon,
+                current_time=spot.source,
+                used_positions=used_positions_by_type[spot.type],
+                check_time_all=check_time_all,
+                min_time_threshold_seconds=min_time_threshold_seconds,
+                max_time_threshold_hours=max_time_threshold_hours,
+                area_meter=hotspot_area_meter,
+            )
 
-                if distance < hotspot_area_meter:
-                    # 時間差の計算（秒単位）
-                    time_diff = pd.Timedelta(
-                        pd.to_datetime(spot.source) - pd.to_datetime(used_time)
-                    ).total_seconds()
-                    time_diff_abs = abs(time_diff)
-
-                    # 時間差に基づく判定
-                    if check_time_all:
-                        # 時間に関係なく、距離が近ければ重複とみなす
-                        # ΔCH4が大きい方を残す（現在のスポットは必ず小さい）
-                        should_add = False
-                        break
-                    else:
-                        # 時間窓による判定を行う
-                        if time_diff_abs <= min_time_threshold_seconds:
-                            # Case 1: 最小時間閾値以内は重複とみなす
-                            should_add = False
-                            break
-                        elif time_diff_abs > max_time_threshold_hours * 3600:
-                            # Case 2: 最大時間閾値を超えた場合は重複チェックをスキップ
-                            continue
-                        # Case 3: その間の時間差の場合は、距離が近ければ重複とみなす
-                        should_add = False
-                        break
-
-            if should_add:
+            if not is_duplicate:
                 unique_hotspots.append(spot)
                 used_positions_by_type[spot.type].append(
                     (spot.avg_lat, spot.avg_lon, spot.source, spot.delta_ch4)
@@ -1731,7 +1895,7 @@ class MobileSpatialAnalyzer:
         scatter_xlim: tuple[float, float] | None = None,
         scatter_ylim: tuple[float, float] | None = None,
         hist_bin_width: float = 0.5,
-        print_summary: bool = False,
+        print_summary: bool = True,
         save_fig: bool = False,
         show_fig: bool = True,
         show_scatter: bool = True,  # 散布図の表示を制御するオプションを追加
