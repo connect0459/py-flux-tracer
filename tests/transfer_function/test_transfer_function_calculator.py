@@ -109,7 +109,7 @@ def test_create_plot_co_spectra(calculator, tmp_path):
     # プロットの保存と表示テスト
     output_dir = str(tmp_path)
     calculator.create_plot_co_spectra(
-        "co1", "co2", output_dir=output_dir, show_plot=False
+        "co1", "co2", output_dir=output_dir, show_fig=False
     )
 
     # ファイルが作成されたことを確認
@@ -122,7 +122,7 @@ def test_create_plot_ratio(calculator, tmp_path):
     output_dir = str(tmp_path)
 
     calculator.create_plot_ratio(
-        df_processed, "co1", "co2", output_dir=output_dir, show_plot=False
+        df_processed, "co1", "co2", output_dir=output_dir, show_fig=False
     )
 
     # ファイルが作成されたことを確認
@@ -135,7 +135,7 @@ def test_create_plot_transfer_function(calculator, tmp_path):
     output_dir = str(tmp_path)
 
     calculator.create_plot_transfer_function(
-        a, df_processed, "co1", "co2", output_dir=output_dir, show_plot=False
+        a, df_processed, "co1", "co2", output_dir=output_dir, show_fig=False
     )
 
     # ファイルが作成されたことを確認

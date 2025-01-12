@@ -79,7 +79,7 @@ class TransferFunctionCalculator:
         output_basename: str = "co",
         add_legend: bool = True,
         add_xy_labels: bool = True,
-        show_plot: bool = True,
+        show_fig: bool = True,
         subplot_label: str | None = "(a)",
         window_size: int = 5,  # 移動平均の窓サイズ
         markersize: float = 14,
@@ -97,7 +97,7 @@ class TransferFunctionCalculator:
             label2 (str, optional): 2つ目のデータのラベル名。デフォルトはNone。
             output_dir (str | None, optional): プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename (str, optional): 保存するファイル名のベース。デフォルトは"co"。
-            show_plot (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
+            show_fig (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
             subplot_label (str | None, optional): 左上に表示するサブプロットラベル。デフォルトは"(a)"。
             window_size (int, optional): 移動平均の窓サイズ。デフォルトは5。
         """
@@ -144,10 +144,10 @@ class TransferFunctionCalculator:
             # プロットをPNG形式で保存
             filename: str = f"{output_basename}.png"
             fig.savefig(os.path.join(output_dir, filename), dpi=300)
-        if show_plot:
+        if show_fig:
             plt.show()
-
-        plt.close()
+        else:
+            plt.close(fig=fig)
 
     def create_plot_ratio(
         self,
@@ -157,7 +157,7 @@ class TransferFunctionCalculator:
         figsize: tuple[int, int] = (10, 6),
         output_dir: str | None = None,
         output_basename: str = "ratio",
-        show_plot: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """
         ターゲットと参照の比率をプロットする。
@@ -169,7 +169,7 @@ class TransferFunctionCalculator:
             figsize (tuple[int, int], optional): プロットのサイズ。デフォルトは(10, 6)。
             output_dir (str | None, optional): プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename (str, optional): 保存するファイル名のベース。デフォルトは"ratio"。
-            show_plot (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
+            show_fig (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -187,10 +187,10 @@ class TransferFunctionCalculator:
             # プロットをPNG形式で保存
             filename: str = f"{output_basename}-{reference_name}_{target_name}.png"
             fig.savefig(os.path.join(output_dir, filename), dpi=300)
-        if show_plot:
+        if show_fig:
             plt.show()
-
-        plt.close()
+        else:
+            plt.close(fig=fig)
 
     def create_plot_transfer_function(
         self,
@@ -201,7 +201,7 @@ class TransferFunctionCalculator:
         figsize: tuple[int, int] = (10, 6),
         output_dir: str | None = None,
         output_basename: str = "tf",
-        show_plot: bool = True,
+        show_fig: bool = True,
         add_xlabel: bool = True,
         label_x: str = "f (Hz)",
         label_y: str = "コスペクトル比",
@@ -218,7 +218,7 @@ class TransferFunctionCalculator:
             figsize (tuple[int, int], optional): プロットのサイズ。デフォルトは(10, 6)。
             output_dir (str | None, optional): プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename (str, optional): 保存するファイル名のベース。デフォルトは"tf"。
-            show_plot (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
+            show_fig (bool, optional): プロットを表示するかどうか。デフォルトはTrue。
         """
         df_cutoff: pd.DataFrame = self._cutoff_df(df_processed)
 
@@ -251,10 +251,10 @@ class TransferFunctionCalculator:
             # プロットをPNG形式で保存
             filename: str = f"{output_basename}-{reference_name}_{target_name}.png"
             fig.savefig(os.path.join(output_dir, filename), dpi=300)
-        if show_plot:
+        if show_fig:
             plt.show()
-
-        plt.close()
+        else:
+            plt.close(fig=fig)
 
     def process_data(self, reference_key: str, target_key: str) -> pd.DataFrame:
         """

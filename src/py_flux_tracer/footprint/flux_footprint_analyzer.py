@@ -27,7 +27,7 @@ class FluxFootprintAnalyzer:
     - y軸は南北方向（正が北）
     - 風向は気象学的風向（北から時計回りに測定）を使用
 
-    この実装は、Kormann and Meixner (2001)の論文に基づいています。
+    この実装は、Kormann and Meixner (2001) および Takano et al. (2021)に基づいています。
     """
 
     EARTH_RADIUS_METER: int = 6371000  # 地球の半径（メートル）
@@ -61,7 +61,7 @@ class FluxFootprintAnalyzer:
             "Wind direction",
             "sigmaV",
         ]  # 必要なカラムのキー名
-        self._weekday_key: str = "ffa_is_weekday"
+        self._weekday_key: str = "ffa_is_weekday"  # クラスで生成するカラムのキー名
         self._z_m: float = z_m  # 測定高度
         # 状態を管理するフラグ
         self._got_satellite_image: bool = False

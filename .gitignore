@@ -15,12 +15,11 @@ wheels/
 # 環境変数ファイルを無視
 *.env
 
-# # privateディレクトリを無視
-# workspace/**/private/*
-# # .gitkeepは管理対象に含める
-# !workspace/**/.gitkeep
-
-# workspaceディレクトリを無視
-workspace/*
+# privateディレクトリを無視
+workspace/**/private/*
 # .gitkeepは管理対象に含める
 !workspace/**/.gitkeep
+
+# workspaceのipynbは結果を追跡しないように除外し、exampleファイルのみを残す
+workspace/**/*.ipynb
+!workspace/**/*.ipynb.example

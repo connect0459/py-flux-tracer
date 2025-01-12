@@ -10,8 +10,8 @@ from tqdm import tqdm
 from scipy import linalg, stats
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..ultra.eddydata_preprocessor import EddyDataPreprocessor
-from ..ultra.spectrum_calculator import SpectrumCalculator
+from ..campbell.eddydata_preprocessor import EddyDataPreprocessor
+from ..campbell.spectrum_calculator import SpectrumCalculator
 
 
 # 移動平均の計算関数
@@ -998,7 +998,7 @@ class MonthlyFiguresGenerator:
         show_std: bool = True,
         alpha_std: float = 0.2,
         add_legend: bool = True,  # 凡例表示のオプションを追加
-        show_stats: bool = True,
+        print_stats: bool = True,
         subplot_label_ch4: str | None = None,
         subplot_label_c2h6: str | None = None,
         subplot_fontsize: int = 24,
@@ -1018,7 +1018,7 @@ class MonthlyFiguresGenerator:
             show_std (bool): 標準偏差を表示するかどうか
             alpha_std (float): 標準偏差の透明度
             add_legend (bool): 凡例を追加するかどうか
-            show_stats (bool): 統計情報を表示するかどうか
+            print_stats (bool): 統計情報を表示するかどうか
             subplot_label_ch4 (str | None): CH4プロットのラベル
             subplot_label_c2h6 (str | None): C2H6プロットのラベル
             subplot_fontsize (int): サブプロットのフォントサイズ
@@ -1144,7 +1144,7 @@ class MonthlyFiguresGenerator:
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-        if show_stats:
+        if print_stats:
             # 統計情報の表示
             for name, key in [("CH4", ch4_conc_key), ("C2H6", c2h6_conc_key)]:
                 stats = hourly_stats[key]
@@ -1467,7 +1467,7 @@ class MonthlyFiguresGenerator:
         datetime_key: str = "Date",
         output_filename: str = "source_contributions.png",
         window_size: int = 6,  # 移動平均の窓サイズ
-        show_stats: bool = True,  # 統計情報を表示するかどうか,
+        print_stats: bool = True,  # 統計情報を表示するかどうか,
         show_legend: bool = False,
         smooth: bool = False,
         y_max: float = 100,  # y軸の上限値を追加
@@ -1486,7 +1486,7 @@ class MonthlyFiguresGenerator:
             datetime_key (str): 日時カラムの名前
             output_filename (str): 出力ファイル名
             window_size (int): 移動平均の窓サイズ
-            show_stats (bool): 統計情報を表示するかどうか
+            print_stats (bool): 統計情報を表示するかどうか
             smooth (bool): 移動平均を適用するかどうか
             y_max (float): y軸の上限値（デフォルト: 100）
         """
@@ -1586,7 +1586,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示
-        if show_stats:
+        if print_stats:
             stats = {
                 "都市ガス起源": hourly_means["ch4_gas"],
                 "生物起源": hourly_means["ch4_bio"],
@@ -1619,7 +1619,7 @@ class MonthlyFiguresGenerator:
         output_filename: str = "source_contributions_by_date.png",
         show_label: bool = True,
         show_legend: bool = False,
-        show_stats: bool = False,  # 統計情報を表示するかどうか,
+        print_stats: bool = False,  # 統計情報を表示するかどうか,
         subplot_fontsize: int = 20,
         subplot_label_weekday: str | None = None,
         subplot_label_weekend: str | None = None,
@@ -1761,7 +1761,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示
-        if show_stats:
+        if print_stats:
             for data, label in [
                 (data_weekday, "Weekdays"),
                 (data_holiday, "Weekends & Holidays"),
@@ -2126,7 +2126,7 @@ class MonthlyFiguresGenerator:
         output_filename: str = "wind_rose.png",
         num_directions: int = 8,  # 方位の数（8方位）
         subplot_label: str = "(a)",
-        show_stats: bool = True,  # 統計情報を表示するかどうか
+        print_stats: bool = True,  # 統計情報を表示するかどうか
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の風配図を作成
 
@@ -2142,7 +2142,7 @@ class MonthlyFiguresGenerator:
             output_filename (str): 出力ファイル名
             num_directions (int): 方位の数（デフォルト8）
             subplot_label (str): サブプロットのラベル
-            show_stats (bool): 統計情報を表示するかどうか
+            print_stats (bool): 統計情報を表示するかどうか
         """
         # 出力ディレクトリの作成
         os.makedirs(output_dir, exist_ok=True)
@@ -2227,7 +2227,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示
-        if show_stats:
+        if print_stats:
             for source in ["gas", "bio"]:
                 flux_data = direction_data[f"{source}_flux"]
                 mean_val = flux_data.mean()

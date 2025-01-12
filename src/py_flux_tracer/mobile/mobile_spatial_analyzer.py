@@ -3,6 +3,9 @@ import math
 import folium
 import numpy as np
 import pandas as pd
+import plotly.graph_objs as go
+import plotly.offline as pyo
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from typing import Literal
@@ -11,6 +14,7 @@ from datetime import timedelta
 from dataclasses import dataclass
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.hotspot_data import HotspotData
+from ..commons.mira_utils import MiraUtils
 
 """
 堺市役所の位置情報
@@ -336,7 +340,9 @@ class MobileSpatialAnalyzer:
         # 各データソースに対して解析を実行
         for _, df in self._data.items():
             # パラメータの計算
-            df = self._calculate_hotspots_parameters(df, self._window_size)
+            df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
+                df, self._window_size
+            )
 
             # ホットスポットの検出
             hotspots: list[HotspotData] = self._detect_hotspots(
@@ -363,15 +369,15 @@ class MobileSpatialAnalyzer:
 
     def calculate_measurement_stats(
         self,
-        show_individual_stats: bool = True,
-        show_total_stats: bool = True,
+        print_individual_stats: bool = True,
+        print_total_stats: bool = True,
     ) -> tuple[float, timedelta]:
         """
         各ファイルの測定時間と走行距離を計算し、合計を返します。
 
         Args:
-            show_individual_stats (bool): 個別ファイルの統計を表示するかどうか。デフォルトはTrue。
-            show_total_stats (bool): 合計統計を表示するかどうか。デフォルトはTrue。
+            print_individual_stats (bool): 個別ファイルの統計を表示するかどうか。デフォルトはTrue。
+            print_total_stats (bool): 合計統計を表示するかどうか。デフォルトはTrue。
 
         Returns:
             tuple[float, timedelta]: 総距離(km)と総時間のタプル
@@ -404,7 +410,7 @@ class MobileSpatialAnalyzer:
             total_time += time_spent
 
             # 統計情報を保存
-            if show_individual_stats:
+            if print_individual_stats:
                 average_speed = distance_km / (time_spent.total_seconds() / 3600)
                 individual_stats.append(
                     {
@@ -416,7 +422,7 @@ class MobileSpatialAnalyzer:
                 )
 
         # 計算完了後に統計情報を表示
-        if show_individual_stats:
+        if print_individual_stats:
             self.logger.info("=== Individual Stats ===")
             for stat in individual_stats:
                 print(f"File         : {stat['source']}")
@@ -425,7 +431,7 @@ class MobileSpatialAnalyzer:
                 print(f"  Avg. Speed : {stat['speed']:.1f} km/h\n")
 
         # 合計を表示
-        if show_total_stats:
+        if print_total_stats:
             average_speed_total: float = total_distance / (
                 total_time.total_seconds() / 3600
             )
@@ -470,6 +476,8 @@ class MobileSpatialAnalyzer:
             if math.isnan(spot.avg_lat) or math.isnan(spot.avg_lon):
                 continue
 
+            # default type
+            color = "black"
             # タイプに応じて色を設定
             if spot.type == "comb":
                 color = "green"
@@ -477,8 +485,6 @@ class MobileSpatialAnalyzer:
                 color = "red"
             elif spot.type == "bio":
                 color = "blue"
-            else:  # invalid type
-                color = "black"
 
             # CSSのgrid layoutを使用してHTMLタグを含むテキストをフォーマット
             popup_html = f"""
@@ -732,14 +738,139 @@ class MobileSpatialAnalyzer:
 
         if show_fig:
             plt.show()
+        else:
+            plt.close(fig=fig)
 
         plt.close(fig)
+
+    def plot_mapbox(
+        self,
+        df: pd.DataFrame,
+        mapbox_access_token: str,
+        value_column: str,
+        output_dir: str | Path,
+        output_filename: str = "mapbox_plot.html",
+        lat_column: str = "latitude",
+        lon_column: str = "longitude",
+        colorscale: str = "Jet",
+        center_lat: float | None = None,
+        center_lon: float | None = None,
+        zoom: float = 12.2,
+        width: int = 700,
+        height: int = 700,
+        tick_font_size: int = 12,
+        label_font_size: int = 14,
+        marker_size: int = 4,
+        value_range: tuple[float, float] | None = None,
+        save_fig: bool = False,
+        show_fig: bool = True,
+    ) -> None:
+        """
+        Plotlyを使用してMapbox上にデータをプロットします。
+
+        Args:
+            df (pd.DataFrame): プロットするデータを含むDataFrame
+            mapbox_access_token (str): Mapboxのアクセストークン
+            value_column (str): カラーマッピングに使用する列名
+            output_dir (str | Path): 出力ディレクトリのパス
+            output_filename (str): 出力ファイル名。デフォルトは"mapbox_plot.html"
+            lat_column (str): 緯度の列名。デフォルトは"latitude"
+            lon_column (str): 経度の列名。デフォルトは"longitude"
+            colorscale (str): 使用するカラースケール。デフォルトは"Jet"
+            center_lat (float | None): 中心緯度。デフォルトはNoneで、self._center_latを使用
+            center_lon (float | None): 中心経度。デフォルトはNoneで、self._center_lonを使用
+            zoom (float): マップの初期ズームレベル。デフォルトは12.2
+            width (int): プロットの幅（ピクセル）。デフォルトは700
+            height (int): プロットの高さ（ピクセル）。デフォルトは700
+            tick_font_size (int): カラーバーの目盛りフォントサイズ。デフォルトは12
+            label_font_size (int): カラーバーのラベルフォントサイズ。デフォルトは14
+            marker_size (int): マーカーのサイズ。デフォルトは4
+            value_range (tuple[float, float] | None): カラーマッピングの範囲。デフォルトはNoneで、データの最小値と最大値を使用
+            save_fig (bool): 図を保存するかどうか。デフォルトはFalse
+            show_fig (bool): 図を表示するかどうか。デフォルトはTrue
+        """
+        # 保存時の出力ディレクトリチェック
+        if save_fig and output_dir is None:
+            raise ValueError(
+                "save_fig=Trueの場合、output_dirを指定する必要があります。"
+            )
+
+        # 中心座標の設定
+        center_lat = center_lat if center_lat is not None else self._center_lat
+        center_lon = center_lon if center_lon is not None else self._center_lon
+
+        # カラーマッピングの範囲を設定
+        if value_range is None:
+            cmin = df[value_column].min()
+            cmax = df[value_column].max()
+        else:
+            cmin, cmax = value_range
+
+        # Scattermapboxのデータを作成
+        scatter_data = go.Scattermapbox(
+            lat=df[lat_column],
+            lon=df[lon_column],
+            text=df[value_column].astype(str),
+            hoverinfo="text",
+            mode="markers",
+            marker=dict(
+                color=df[value_column],
+                size=marker_size,
+                reversescale=False,
+                autocolorscale=False,
+                colorscale=colorscale,
+                cmin=cmin,
+                cmax=cmax,
+                colorbar=dict(
+                    tickformat="3.2f",
+                    outlinecolor="black",
+                    outlinewidth=1.5,
+                    ticks="outside",
+                    ticklen=7,
+                    tickwidth=1.5,
+                    tickcolor="black",
+                    tickfont=dict(family="Arial", color="black", size=tick_font_size),
+                    title=dict(text=value_column, side="top"),
+                    titlefont=dict(
+                        family="Arial",
+                        color="black",
+                        size=label_font_size,
+                    ),
+                ),
+            ),
+        )
+
+        # レイアウトの設定
+        layout = go.Layout(
+            width=width,
+            height=height,
+            showlegend=False,
+            mapbox=dict(
+                accesstoken=mapbox_access_token,
+                center=dict(lat=center_lat, lon=center_lon),
+                zoom=zoom,
+            ),
+        )
+
+        # 図の作成
+        fig = go.Figure(data=[scatter_data], layout=layout)
+
+        # 図の保存
+        if save_fig:
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, output_filename)
+            pyo.plot(fig, filename=output_path, auto_open=False)
+            self.logger.info(f"Mapboxプロットを保存しました: {output_path}")
+
+        # 図の表示
+        if show_fig:
+            pyo.iplot(fig)
 
     def plot_scatter_c2h6_ch4(
         self,
         hotspots: list[HotspotData],
         output_dir: str | Path,
-        output_filename: str = "scatter_c2h6_ch4",
+        output_filename: str = "scatter_c2h6_ch4.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (4, 4),
         fontsize: float = 12,
@@ -771,7 +902,7 @@ class MobileSpatialAnalyzer:
             save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
         """
-        output_path: Path = Path(output_dir) / f"{output_filename}.png"
+        output_path: str = os.path.join(output_dir, output_filename)
 
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -834,96 +965,103 @@ class MobileSpatialAnalyzer:
             self.logger.info(f"散布図を保存しました: {output_path}")
         if show_fig:
             plt.show()
-        plt.close(fig)
+        else:
+            plt.close(fig=fig)
 
-    def _calculate_hotspots_parameters(
-        self, df: pd.DataFrame, window_size: int
-    ) -> pd.DataFrame:
-        """パラメータ計算
+    def plot_timeseries(
+        self,
+        source_name: str | None = None,
+        figsize: tuple[float, float] = (8, 4),
+        dpi: int = 200,
+        save_fig: bool = False,
+        output_dir: str | Path | None = None,
+        output_filename: str = "timeseries.png",
+        show_fig: bool = True,
+        ch4_key: str = "ch4_ppm",
+        c2h6_key: str = "c2h6_ppb",
+        h2o_key: str = "h2o_ppm",
+        ylim_ch4: tuple[float, float] | None = None,
+        ylim_c2h6: tuple[float, float] | None = None,
+        ylim_h2o: tuple[float, float] | None = None,
+    ) -> None:
+        """
+        時系列データをプロットします。
 
         Args:
-            df (pd.DataFrame): 入力データフレーム
-            window_size (int): 移動窓のサイズ
-
-        Returns:
-            pd.DataFrame: 計算されたパラメータを含むデータフレーム
+            source_name (str | None): プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
+            figsize (tuple[float, float]): 図のサイズを指定します。デフォルトは(8, 4)です。
+            dpi (int): 図の解像度を指定します。デフォルトは200です。
+            save_fig (bool): 図を保存するかどうかを指定します。デフォルトはFalseです。
+            output_dir (str | Path | None): 保存先のディレクトリを指定します。save_fig=Trueの場合は必須です。
+            output_filename (str): 保存するファイル名を指定します。デフォルトは"time_series.png"です。
+            show_fig (bool): 図を表示するかどうかを指定します。デフォルトはTrueです。
+            ch4_key (str): CH4データのキーを指定します。デフォルトは"ch4_ppm"です。
+            c2h6_key (str): C2H6データのキーを指定します。デフォルトは"c2h6_ppb"です。
+            h2o_key (str): H2Oデータのキーを指定します。デフォルトは"h2o_ppm"です。
+            ylim_ch4 (tuple[float, float] | None): CH4プロットのy軸範囲を指定します。デフォルトはNoneです。
+            ylim_c2h6 (tuple[float, float] | None): C2H6プロットのy軸範囲を指定します。デフォルトはNoneです。
+            ylim_h2o (tuple[float, float] | None): H2Oプロットのy軸範囲を指定します。デフォルトはNoneです。
         """
-        # 各値の閾値
-        ch4_threshold: float = 0.05
-        c2h6_threshold: float = 0.0
+        # データソースの選択
+        if not self._data:
+            raise ValueError("データが読み込まれていません。")
 
-        # 移動平均の計算
-        df["ch4_ppm_mv"] = (
-            df["ch4_ppm"].rolling(window=window_size, center=True, min_periods=1).mean()
-        )
-        df["c2h6_ppb_mv"] = (
-            df["c2h6_ppb"]
-            .rolling(window=window_size, center=True, min_periods=1)
-            .mean()
-        )
+        if source_name is None:
+            source_name = list(self._data.keys())[0]
+        elif source_name not in self._data:
+            raise ValueError(
+                f"指定されたデータソース '{source_name}' が見つかりません。"
+            )
 
-        # 移動相関の計算
-        df["ch4_c2h6_correlation"] = (
-            df["ch4_ppm"]
-            .rolling(window=window_size, min_periods=1)
-            .corr(df["c2h6_ppb"])
-        )
+        df = self._data[source_name]
 
-        # 移動平均からの偏差
-        df["ch4_ppm_delta"] = df["ch4_ppm"] - df["ch4_ppm_mv"]
-        df["c2h6_ppb_delta"] = df["c2h6_ppb"] - df["c2h6_ppb_mv"]
+        # プロットの作成
+        fig = plt.figure(figsize=figsize, dpi=dpi)
 
-        # C2H6/CH4の比率計算
-        df["c2h6_ch4_ratio"] = df["c2h6_ppb"] / df["ch4_ppm"]
+        # CH4プロット
+        ax1 = fig.add_subplot(3, 1, 1)
+        ax1.plot(df.index, df[ch4_key], c="red")
+        if ylim_ch4:
+            ax1.set_ylim(ylim_ch4)
+        ax1.set_ylabel("$\\mathregular{CH_{4}}$ (ppm)")
+        ax1.grid(True, alpha=0.3)
 
-        # デルタ値に基づく比の計算
-        df["c2h6_ch4_ratio_delta"] = np.where(
-            (df["ch4_ppm_delta"].abs() >= ch4_threshold)
-            & (df["c2h6_ppb_delta"] >= c2h6_threshold),
-            df["c2h6_ppb_delta"] / df["ch4_ppm_delta"],
-            np.nan,
-        )
+        # C2H6プロット
+        ax2 = fig.add_subplot(3, 1, 2)
+        ax2.plot(df.index, df[c2h6_key], c="red")
+        if ylim_c2h6:
+            ax2.set_ylim(ylim_c2h6)
+        ax2.set_ylabel("$\\mathregular{C_{2}H_{6}}$ (ppb)")
+        ax2.grid(True, alpha=0.3)
 
-        return df
+        # H2Oプロット
+        ax3 = fig.add_subplot(3, 1, 3)
+        ax3.plot(df.index, df[h2o_key], c="red")
+        if ylim_h2o:
+            ax3.set_ylim(ylim_h2o)
+        ax3.set_ylabel("$\\mathregular{H_{2}O}$ (ppm)")
+        ax3.grid(True, alpha=0.3)
 
-    def _correct_h2o_interference_pico(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        水蒸気干渉の補正を行います。
-        CH4濃度に対する水蒸気の干渉を補正する2次関数を適用します。
+        # x軸のフォーマット調整
+        for ax in [ax1, ax2, ax3]:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
-        参考文献:
-            Commane et al. (2023): Intercomparison of commercial analyzers for atmospheric ethane and methane observations
-                https://amt.copernicus.org/articles/16/1431/2023/,
-                https://amt.copernicus.org/articles/16/1431/2023/amt-16-1431-2023.pdf
+        plt.subplots_adjust(wspace=0.38, hspace=0.38)
 
-        Args:
-            df (pd.DataFrame): 入力データフレーム
+        # 図の保存
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。"
+                )
+            output_path = os.path.join(output_dir, output_filename)
+            plt.savefig(output_path, bbox_inches="tight")
+            self.logger.info(f"時系列プロットを保存しました: {output_path}")
 
-        Returns:
-            pd.DataFrame: 水蒸気干渉が補正されたデータフレーム
-        """
-        # 補正式の係数（実験的に求められた値）
-        a: float = 2.0631  # 切片
-        b: float = 1.0111e-06  # 1次の係数
-        c: float = -1.8683e-10  # 2次の係数
-
-        # 元のデータを保護するためコピーを作成
-        df: pd.DataFrame = df.copy()
-        # 水蒸気濃度の配列を取得
-        h2o: np.ndarray = np.array(df["h2o_ppm"])
-
-        # 補正項の計算
-        correction_curve = a + b * h2o + c * h2o * h2o
-        max_correction = np.max(correction_curve)
-        correction_term = -(correction_curve - max_correction)
-
-        # CH4濃度の補正
-        df["ch4_ppm"] = df["ch4_ppm"] + correction_term
-        # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
-        df.loc[df["h2o_ppm"] < 2000, "ch4_ppm"] = np.nan
-        df = df.dropna(subset=["ch4_ppm"])
-
-        return df
+        if show_fig:
+            plt.show()
+        else:
+            plt.close(fig=fig)
 
     def _detect_hotspots(
         self,
@@ -1062,15 +1200,28 @@ class MobileSpatialAnalyzer:
 
         # 遅れ時間の補正
         columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"]
-        shift_periods: float = -config.lag
+        # サンプリング周波数に応じてシフト量を調整
+        shift_periods: float = -config.lag * config.fs  # fsを掛けて補正
 
         for col in columns_to_shift:
             df[col] = df[col].shift(shift_periods)
 
         df = df.dropna(subset=columns_to_shift)
 
+        # 水蒸気補正式の係数（実験的に求められた値）
+        coef_a: float = 2.0631  # 切片
+        coef_b: float = 1.0111e-06  # 1次の係数
+        coef_c: float = -1.8683e-10  # 2次の係数
         # 水蒸気干渉の補正を適用
-        df = self._correct_h2o_interference_pico(df)
+        df = MiraUtils.correct_h2o_interference(
+            df=df,
+            coef_a=coef_a,
+            coef_b=coef_b,
+            coef_c=coef_c,
+            ch4_key="ch4_ppm",
+            h2o_key="h2o_ppm",
+            h2o_threshold=2000,
+        )
 
         return df
 
@@ -1136,122 +1287,66 @@ class MobileSpatialAnalyzer:
         return R * c  # メートル単位での距離
 
     @staticmethod
-    def _calculate_window_size(window_minutes: float) -> int:
-        """
-        時間窓からデータポイント数を計算
+    def _calculate_hotspots_parameters(
+        df: pd.DataFrame,
+        window_size: int,
+        ch4_ppm_key: str = "ch4_ppm",
+        c2h6_ppb_key: str = "c2h6_ppb",
+        ch4_threshold: float = 0.05,
+        c2h6_threshold: float = 0.0,
+    ) -> pd.DataFrame:
+        """ホットスポットのパラメータを計算します。
+
+        このメソッドは、指定されたデータフレームに対して移動平均や相関を計算し、
+        各種のデルタ値や比率を追加します。これにより、ホットスポットの分析に必要な
+        パラメータを整形します。
 
         Args:
-            window_minutes (float): 時間窓の大きさ（分）
+            df (pd.DataFrame): 入力データフレーム
+            window_size (int): 移動窓のサイズ
+            ch4_ppm_key (str): CH4濃度を示すカラム名
+            c2h6_ppb_key (str): C2H6濃度を示すカラム名
+            ch4_threshold (float): CH4の閾値
+            c2h6_threshold (float): C2H6の閾値
 
         Returns:
-            int: データポイント数
+            pd.DataFrame: 計算されたパラメータを含むデータフレーム
         """
-        return int(60 * window_minutes)
-
-    @staticmethod
-    def _initialize_sections(
-        num_sections: int, section_size: float
-    ) -> dict[int, tuple[float, float]]:
-        """指定された区画数と区画サイズに基づいて、区画の範囲を初期化します。
-
-        Args:
-            num_sections (int): 初期化する区画の数。
-            section_size (float): 各区画の角度範囲のサイズ。
-
-        Returns:
-            dict[int, tuple[float, float]]: 区画番号（0-based-index）とその範囲の辞書。各区画は-180度から180度の範囲に分割されます。
-        """
-        sections: dict[int, tuple[float, float]] = {}
-        for i in range(num_sections):
-            # -180から180の範囲で区画を設定
-            start_angle = -180 + i * section_size
-            end_angle = -180 + (i + 1) * section_size
-            sections[i] = (start_angle, end_angle)
-        return sections
-
-    @staticmethod
-    def _normalize_inputs(
-        inputs: list[MSAInputConfig] | list[tuple[float, float, str | Path]],
-    ) -> list[MSAInputConfig]:
-        """入力設定を標準化
-
-        Args:
-            inputs (list[MSAInputConfig] | list[tuple[float, float, str | Path]]): 入力設定のリスト
-
-        Returns:
-            list[MSAInputConfig]: 標準化された入力設定のリスト
-        """
-        normalized: list[MSAInputConfig] = []
-        for inp in inputs:
-            if isinstance(inp, MSAInputConfig):
-                normalized.append(inp)  # すでに検証済みのため、そのまま追加
-            else:
-                fs, lag, path = inp
-                normalized.append(
-                    MSAInputConfig.validate_and_create(fs=fs, lag=lag, path=path)
-                )
-        return normalized
-
-    @staticmethod
-    def _calculate_angle(
-        lat: float, lon: float, center_lat: float, center_lon: float
-    ) -> float:
-        """
-        中心からの角度を計算
-
-        Args:
-            lat (float): 対象地点の緯度
-            lon (float): 対象地点の経度
-            center_lat (float): 中心の緯度
-            center_lon (float): 中心の経度
-
-        Returns:
-            float: 真北を0°として時計回りの角度（-180°から180°）
-        """
-        d_lat: float = lat - center_lat
-        d_lon: float = lon - center_lon
-        # arctanを使用して角度を計算（ラジアン）
-        angle_rad: float = math.atan2(d_lon, d_lat)
-        # ラジアンから度に変換（-180から180の範囲）
-        angle_deg: float = math.degrees(angle_rad)
-        return angle_deg
-
-    @classmethod
-    def _calculate_distance(
-        cls, lat1: float, lon1: float, lat2: float, lon2: float
-    ) -> float:
-        """
-        2点間の距離をメートル単位で計算（Haversine formula）
-
-        Args:
-            lat1 (float): 地点1の緯度
-            lon1 (float): 地点1の経度
-            lat2 (float): 地点2の緯度
-            lon2 (float): 地点2の経度
-
-        Returns:
-            float: 2地点間の距離（メートル）
-        """
-        R = cls.EARTH_RADIUS_METERS
-
-        # 緯度経度をラジアンに変換
-        lat1_rad: float = math.radians(lat1)
-        lon1_rad: float = math.radians(lon1)
-        lat2_rad: float = math.radians(lat2)
-        lon2_rad: float = math.radians(lon2)
-
-        # 緯度と経度の差分
-        dlat: float = lat2_rad - lat1_rad
-        dlon: float = lon2_rad - lon1_rad
-
-        # Haversine formula
-        a: float = (
-            math.sin(dlat / 2) ** 2
-            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        # 移動平均の計算
+        df["ch4_ppm_mv"] = (
+            df[ch4_ppm_key]
+            .rolling(window=window_size, center=True, min_periods=1)
+            .mean()
         )
-        c: float = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        df["c2h6_ppb_mv"] = (
+            df[c2h6_ppb_key]
+            .rolling(window=window_size, center=True, min_periods=1)
+            .mean()
+        )
 
-        return R * c  # メートル単位での距離
+        # 移動相関の計算
+        df["ch4_c2h6_correlation"] = (
+            df[ch4_ppm_key]
+            .rolling(window=window_size, min_periods=1)
+            .corr(df[c2h6_ppb_key])
+        )
+
+        # 移動平均からの偏差
+        df["ch4_ppm_delta"] = df[ch4_ppm_key] - df["ch4_ppm_mv"]
+        df["c2h6_ppb_delta"] = df[c2h6_ppb_key] - df["c2h6_ppb_mv"]
+
+        # C2H6/CH4の比率計算
+        df["c2h6_ch4_ratio"] = df[c2h6_ppb_key] / df[ch4_ppm_key]
+
+        # デルタ値に基づく比の計算
+        df["c2h6_ch4_ratio_delta"] = np.where(
+            (df["ch4_ppm_delta"].abs() >= ch4_threshold)
+            & (df["c2h6_ppb_delta"] >= c2h6_threshold),
+            df["c2h6_ppb_delta"] / df["ch4_ppm_delta"],
+            np.nan,
+        )
+
+        return df
 
     @staticmethod
     def _calculate_window_size(window_minutes: float) -> int:
@@ -1426,10 +1521,11 @@ class MobileSpatialAnalyzer:
         return new_logger
 
     @staticmethod
-    def analyze_emission_rates(
+    def calculate_emission_rates(
         hotspots: list[HotspotData],
         method: Literal["weller", "weitzel", "joo", "umezawa"] = "weller",
         print_summary: bool = True,
+        custom_formulas: dict[str, dict[str, float]] | None = None,
     ) -> tuple[list[EmissionData], dict[str, dict[str, float]]]:
         """
         検出されたホットスポットのCH4漏出量を計算・解析し、統計情報を生成します。
@@ -1437,24 +1533,28 @@ class MobileSpatialAnalyzer:
         Args:
             hotspots (list[HotspotData]): 分析対象のホットスポットのリスト
             method (Literal["weller", "weitzel", "joo", "umezawa"]): 使用する計算式。デフォルトは"weller"。
-                - "weller": ln(Em) = (ln(C) + 0.988)/0.817 (Weller et al., 2019)
-                - "weitzel": ln(Em) = (ln(C) + 0.521)/0.795 (Weitzel and Schmidt, 2023)
-                - "joo": ln(Em) = (ln(C) + 2.738)/1.329 (Joo et al., 2024)
-                - "umezawa": ln(Em) = (ln(C) + 2.716)/0.741 (Umezawa et al., in preparation)
             print_summary (bool): 統計情報を表示するかどうか。デフォルトはTrue。
+            custom_formulas (dict[str, dict[str, float]] | None): カスタム計算式の係数。
+                例: {"custom_method": {"a": 1.0, "b": 1.0}}
+                Noneの場合はデフォルトの計算式を使用。
 
         Returns:
             tuple[list[EmissionData], dict[str, dict[str, float]]]:
                 - 各ホットスポットの排出量データを含むリスト
                 - タイプ別の統計情報を含む辞書
         """
-        # 経験式の係数定義
-        emission_formulas = {
+        # デフォルトの経験式係数
+        default_formulas = {
             "weller": {"a": 0.988, "b": 0.817},
             "weitzel": {"a": 0.521, "b": 0.795},
             "joo": {"a": 2.738, "b": 1.329},
             "umezawa": {"a": 2.716, "b": 0.741},
         }
+
+        # カスタム計算式がある場合は追加
+        emission_formulas = default_formulas.copy()
+        if custom_formulas:
+            emission_formulas.update(custom_formulas)
 
         if method not in emission_formulas:
             raise ValueError(f"Unknown method: {method}")
@@ -1498,7 +1598,7 @@ class MobileSpatialAnalyzer:
         emission_categories = {
             "low": {"min": 0, "max": 6},  # < 6 L/min
             "medium": {"min": 6, "max": 40},  # 6-40 L/min
-            "high": {"min": 40, "max": float('inf')}  # > 40 L/min
+            "high": {"min": 40, "max": float("inf")},  # > 40 L/min
         }
         # stats計算部分を以下のように修正
         for spot_type in types:
@@ -1514,16 +1614,35 @@ class MobileSpatialAnalyzer:
                     "total_annual_emission": df_type["annual_emission"].sum(),
                     "mean_annual_emission": df_type["annual_emission"].mean(),
                 }
-                
+
                 # 排出量カテゴリー別の統計を追加
                 category_counts = {
-                    "low": len(df_type[df_type["emission_rate"] < emission_categories["low"]["max"]]),
-                    "medium": len(df_type[(df_type["emission_rate"] >= emission_categories["medium"]["min"]) & 
-                                        (df_type["emission_rate"] < emission_categories["medium"]["max"])]),
-                    "high": len(df_type[df_type["emission_rate"] >= emission_categories["high"]["min"]])
+                    "low": len(
+                        df_type[
+                            df_type["emission_rate"] < emission_categories["low"]["max"]
+                        ]
+                    ),
+                    "medium": len(
+                        df_type[
+                            (
+                                df_type["emission_rate"]
+                                >= emission_categories["medium"]["min"]
+                            )
+                            & (
+                                df_type["emission_rate"]
+                                < emission_categories["medium"]["max"]
+                            )
+                        ]
+                    ),
+                    "high": len(
+                        df_type[
+                            df_type["emission_rate"]
+                            >= emission_categories["high"]["min"]
+                        ]
+                    ),
                 }
                 type_stats["emission_categories"] = category_counts
-                
+
                 stats[spot_type] = type_stats
 
                 if print_summary:
@@ -1541,7 +1660,7 @@ class MobileSpatialAnalyzer:
                     print("  年間排出量 (L/year):")
                     print(f"    合計: {type_stats['total_annual_emission']:.2f}")
                     print(f"    平均: {type_stats['mean_annual_emission']:.2f}")
-                    
+
         return emission_data_list, stats
 
     @staticmethod
@@ -1695,8 +1814,8 @@ class MobileSpatialAnalyzer:
         # 図の表示
         if show_fig:
             plt.show()
-
-        plt.close(fig)
+        else:
+            plt.close(fig=fig)
 
         if print_summary:
             # デバッグ用の出力
