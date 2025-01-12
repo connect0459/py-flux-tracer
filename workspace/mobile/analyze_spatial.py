@@ -136,7 +136,7 @@ if __name__ == "__main__":
     msa.create_hotspots_map(hotspots, output_dir=output_dir)
 
     # ホットスポットを散布図で表示
-    msa.plot_scatter_c2h6_ch4(hotspots, output_dir=output_dir, show_fig=False)
+    msa.plot_scatter_c2c1(hotspots, output_dir=output_dir, show_fig=False)
 
     # ヒストグラムを作図
     msa.plot_ch4_delta_histogram(

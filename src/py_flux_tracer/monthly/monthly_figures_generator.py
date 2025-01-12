@@ -2347,10 +2347,10 @@ class MonthlyFiguresGenerator:
             df.set_index(datetime_key, inplace=True)
 
         # C2H6/CH4比の計算
-        df["c2h6_ch4_ratio"] = df[c2h6_flux_key] / df[ch4_flux_key]
+        df["c2c1_ratio"] = df[c2h6_flux_key] / df[ch4_flux_key]
 
         # 都市ガスの標準組成に基づく都市ガス比率の計算
-        df["gas_ratio"] = df["c2h6_ch4_ratio"] / gas_ratio_c1c2 * 100
+        df["gas_ratio"] = df["c2c1_ratio"] / gas_ratio_c1c2 * 100
 
         # gas_ratioに基づいて都市ガス起源と生物起源の寄与を比例配分
         df["ch4_gas"] = df[ch4_flux_key] * np.clip(df["gas_ratio"] / 100, 0, 1)

@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import matplotlib.font_manager as fm
 from dotenv import load_dotenv
 from py_flux_tracer import (
     FluxFootprintAnalyzer,
@@ -8,7 +9,6 @@ from py_flux_tracer import (
     MobileSpatialAnalyzer,
     MSAInputConfig,
 )
-import matplotlib.font_manager as fm
 
 
 # MSAInputConfigによる詳細指定
@@ -98,11 +98,8 @@ plot_count: int = 10000
 # plot_count: int = 50000
 
 # ファイルおよびディレクトリのパス
-project_root: str = "/home/connect0459/labo/py_flux_tracer"
-work_dir: str = f"{project_root}/workspace/footprint"
-# I/O 用ディレクトリのパス
-output_dir: str = f"{work_dir}/private/outputs"  # 出力先のディレクトリ
-dotenv_path = f"{work_dir}/.env"  # .envファイル
+output_dir: str = "/home/connect0459/labo/py_flux_tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
+dotenv_path = "/home/connect0459/labo/py_flux_tracer/workspace/.env"  # .envファイル
 
 start_end_dates_list: list[list[str]] = [
     ["2024-05-15", "2024-11-30"],
