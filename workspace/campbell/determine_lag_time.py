@@ -3,7 +3,7 @@ from py_flux_tracer import EddyDataPreprocessor
 
 if __name__ == "__main__":
     target_home: str = (
-        "/home/z23641k/labo/py_flux_tracer/workspace/campbell/private/data"
+        "/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/data/test-2025.01.10"
     )
     input_dir: str = f"{target_home}/eddy_csv"
     output_dir: str = f"{target_home}/output"

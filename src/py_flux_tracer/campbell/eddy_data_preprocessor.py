@@ -349,11 +349,11 @@ class EddyDataPreprocessor:
         self,
         input_dir: str,
         resampled_dir: str,
-        calc_py_dir: str,
+        ratio_dir: str,
         input_file_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
-        key_ch4_concentration: str = "Ultra_CH4_ppm_C",
-        key_c2h6_concentration: str = "Ultra_C2H6_ppb",
+        key_ch4_conc: str = "Ultra_CH4_ppm_C",
+        key_c2h6_conc: str = "Ultra_C2H6_ppb",
         output_ratio: bool = True,
         output_resampled: bool = True,
         ratio_csv_prefix: str = "SAC.Ultra",
@@ -390,11 +390,11 @@ class EddyDataPreprocessor:
         Args:
             input_dir (str): 入力CSVファイルが格納されているディレクトリのパス。
             resampled_dir (str): リサンプリングされたCSVファイルを出力するディレクトリのパス。
-            calc_py_dir (str): 計算結果を保存するディレクトリのパス。
+            ratio_dir (str): 計算結果を保存するディレクトリのパス。
             input_file_pattern (str): ファイル名からソートキーを抽出する正規表現パターン。デフォルトでは、最初の数字グループでソートします。
             input_files_suffix (str): 入力ファイルの拡張子（.datや.csvなど）。デフォルトは".dat"。
-            key_ch4_concentration (str): CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
-            key_c2h6_concentration (str): C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
+            key_ch4_conc (str): CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
+            key_c2h6_conc (str): C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
             output_ratio (bool, optional): 線形回帰を行うかどうか。デフォルトはTrue。
             output_resampled (bool, optional): リサンプリングされたCSVファイルを出力するかどうか。デフォルトはTrue。
             ratio_csv_prefix (str): 出力ファイルの接頭辞。デフォルトは'SAC.Ultra'で、出力時は'SAC.Ultra.2024.09.21.ratio.csv'のような形式となる。
@@ -411,10 +411,19 @@ class EddyDataPreprocessor:
         Raises:
             OSError: ディレクトリの作成に失敗した場合。
             FileNotFoundError: 入力ファイルが見つからない場合。
-            ValueError: データの処理中にエラーが発生した場合。
+            ValueError: 出力ディレクトリが指定されていない、またはデータの処理中にエラーが発生した場合。
         """
-        os.makedirs(resampled_dir, exist_ok=True)
-        os.makedirs(calc_py_dir, exist_ok=True)
+        # 出力オプションとディレクトリの検証
+        if output_resampled and resampled_dir is None:
+            raise ValueError("output_resampled が True の場合、resampled_dir を指定する必要があります")
+        if output_ratio and ratio_dir is None:
+            raise ValueError("output_ratio が True の場合、ratio_dir を指定する必要があります")
+
+        # ディレクトリの作成（必要な場合のみ）
+        if output_resampled:
+            os.makedirs(resampled_dir, exist_ok=True)
+        if output_ratio:
+            os.makedirs(ratio_dir, exist_ok=True)
 
         ratio_data: list[dict[str, str | float]] = []
         latest_date: datetime = datetime.min
@@ -459,8 +468,8 @@ class EddyDataPreprocessor:
 
             # 相関係数とC2H6/CH4比を計算
             if output_ratio:
-                ch4_data: pd.Series = df[key_ch4_concentration]
-                c2h6_data: pd.Series = df[key_c2h6_concentration]
+                ch4_data: pd.Series = df[key_ch4_conc]
+                c2h6_data: pd.Series = df[key_c2h6_conc]
 
                 ratio_row: dict[str, str | float] = {
                     "Date": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
@@ -502,8 +511,282 @@ class EddyDataPreprocessor:
             ratio_filename: str = (
                 f"{ratio_csv_prefix}.{latest_date.strftime('%Y.%m.%d')}.ratio.csv"
             )
-            ratio_path: str = os.path.join(calc_py_dir, ratio_filename)
+            ratio_path: str = os.path.join(ratio_dir, ratio_filename)
             ratio_df.to_csv(ratio_path, index=False)
+    
+    def resample_and_analyze_lag_times(
+        self,
+        input_dir: str,
+        input_file_pattern: str = r"Eddy_(\d+)",
+        input_files_suffix: str = ".dat",
+        key_ch4_conc: str = "Ultra_CH4_ppm_C",
+        key_c2h6_conc: str = "Ultra_C2H6_ppb",
+        output_ratio: bool = True,
+        ratio_dir: str | None = None,
+        output_resampled: bool = True,
+        resampled_dir: str | None = None,
+        output_lag_times: bool = True,  # lag times解析の有効化フラグ
+        lag_times_dir: str | None = None,  # lag timesの結果出力ディレクトリ
+        lag_times_key1: str = "wind_w",  # 基準変数
+        lag_times_key2_list: list[str] = ["Tv"],  # 比較変数のリスト
+        lag_times_median_range: float = 20,  # 中央値を中心とした範囲
+        lag_times_plot_range: tuple[float, float] = (
+            -50,
+            200,
+        ),  # ヒストグラムの表示範囲
+        lag_times_figsize: tuple[float, float] = (10, 8),  # プロットサイズ
+        ratio_csv_prefix: str = "SAC.Ultra",
+        index_column: str = "TIMESTAMP",
+        index_format: str = "%Y-%m-%d %H:%M:%S.%f",
+        interpolate: bool = True,
+        numeric_columns: list[str] = [
+            "Ux",
+            "Uy",
+            "Uz",
+            "Tv",
+            "diag_sonic",
+            "CO2_new",
+            "H2O",
+            "diag_irga",
+            "cell_tmpr",
+            "cell_press",
+            "Ultra_CH4_ppm",
+            "Ultra_C2H6_ppb",
+            "Ultra_H2O_ppm",
+            "Ultra_CH4_ppm_C",
+            "Ultra_C2H6_ppb_C",
+        ],
+        metadata_rows: int = 4,
+        skiprows: list[int] = [0, 2, 3],
+    ) -> None:
+        """
+        指定されたディレクトリ内のCSVファイルを処理し、リサンプリングと欠損値補間を行います。
+
+        このメソッドは、指定されたディレクトリ内のCSVファイルを読み込み、リサンプリングを行い、
+        欠損値を補完します。処理結果として以下の出力が可能です：
+        1. リサンプリングされたCSVファイル (output_resampled=True)
+        2. 相関係数やC2H6/CH4比を計算したDataFrame (output_ratio=True)
+        3. lag times解析結果 (output_lag_times=True)
+
+        Args:
+            input_dir (str): 入力CSVファイルが格納されているディレクトリのパス。
+            resampled_dir (str | None): リサンプリングされたCSVファイルを出力するディレクトリのパス。
+            ratio_dir (str | None): C2H6/CH4比の計算結果を保存するディレクトリのパス。
+            input_file_pattern (str): ファイル名からソートキーを抽出する正規表現パターン。
+            input_files_suffix (str): 入力ファイルの拡張子（.datや.csvなど）。デフォルトは".dat"。
+            key_ch4_conc (str): CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
+            key_c2h6_conc (str): C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
+            output_ratio (bool): 線形回帰を行うかどうか。デフォルトはTrue。
+            output_resampled (bool): リサンプリングされたCSVファイルを出力するかどうか。デフォルトはTrue。
+            output_lag_times (bool): lag times解析を行うかどうか。デフォルトはFalse。
+            lag_times_dir (str | None): lag times解析結果の出力ディレクトリ。
+            lag_times_key1 (str): lag times解析の基準変数。デフォルトは"wind_w"。
+            lag_times_key2_list (list[str]): lag times解析の比較変数のリスト。デフォルトは["Tv"]。
+            lag_times_median_range (float): lag times解析の中央値を中心とした範囲。デフォルトは20。
+            lag_times_plot_range (tuple[float, float]): lag times解析のヒストグラム表示範囲。デフォルトは(-50, 200)。
+            lag_times_figsize (tuple[float, float]): lag times解析のプロットサイズ。デフォルトは(10, 8)。
+            ratio_csv_prefix (str): 出力ファイルの接頭辞。
+            index_column (str): 日時情報を含む列名。デフォルトは'TIMESTAMP'。
+            index_format (str): インデックスの日付形式。デフォルトは'%Y-%m-%d %H:%M:%S.%f'。
+            interpolate (bool): 欠損値補間を行うかどうか。デフォルトはTrue。
+            numeric_columns (list[str]): 数値データを含む列名のリスト。
+            metadata_rows (int): メタデータとして読み込む行数。デフォルトは4。
+            skiprows (list[int]): 読み飛ばす行のインデックスリスト。デフォルトは[0, 2, 3]。
+
+        Raises:
+            ValueError: 出力オプションが指定されているのにディレクトリが指定されていない場合
+            FileNotFoundError: 入力ファイルが見つからない場合
+            OSError: ディレクトリの作成に失敗した場合
+        """
+        # 出力オプションとディレクトリの検証
+        if output_resampled and resampled_dir is None:
+            raise ValueError(
+                "output_resampled が True の場合、resampled_dir を指定する必要があります"
+            )
+        if output_ratio and ratio_dir is None:
+            raise ValueError(
+                "output_ratio が True の場合、ratio_dir を指定する必要があります"
+            )
+        if output_lag_times and lag_times_dir is None:
+            raise ValueError(
+                "output_lag_times が True の場合、lag_times_dir を指定する必要があります"
+            )
+
+        # ディレクトリの作成（必要な場合のみ）
+        if output_resampled and resampled_dir is not None:
+            os.makedirs(resampled_dir, exist_ok=True)
+        if output_ratio and ratio_dir is not None:
+            os.makedirs(ratio_dir, exist_ok=True)
+        if output_lag_times and lag_times_dir is not None:
+            os.makedirs(lag_times_dir, exist_ok=True)
+
+        ratio_data: list[dict[str, str | float]] = []
+        all_lags_indices: list[list[int]] = []
+        latest_date: datetime = datetime.min
+
+        # csvファイル名のリスト
+        csv_files: list[str] = EddyDataPreprocessor._get_sorted_files(
+            input_dir, input_file_pattern, input_files_suffix
+        )
+
+        if not csv_files:
+            raise FileNotFoundError(
+                f"There is no '{input_files_suffix}' file to process; input_dir: '{input_dir}'"
+            )
+
+        for filename in tqdm(csv_files, desc="Processing files"):
+            input_filepath: str = os.path.join(input_dir, filename)
+            # リサンプリング＆欠損値補間
+            df, metadata = self.get_resampled_df(
+                filepath=input_filepath,
+                index_column=index_column,
+                index_format=index_format,
+                interpolate=interpolate,
+                numeric_columns=numeric_columns,
+                metadata_rows=metadata_rows,
+                skiprows=skiprows,
+            )
+
+            # 開始時間を取得
+            start_time: datetime = pd.to_datetime(df[index_column].iloc[0])
+            # 処理したファイルの中で最も最新の日付を更新
+            latest_date = max(latest_date, start_time)
+
+            # リサンプリング＆欠損値補間したCSVを出力
+            if output_resampled and resampled_dir is not None:
+                base_filename: str = re.sub(rf"\{input_files_suffix}$", "", filename)
+                output_csv_path: str = os.path.join(
+                    resampled_dir, f"{base_filename}-resampled.csv"
+                )
+                # メタデータを先に書き込む
+                with open(output_csv_path, "w") as f:
+                    for line in metadata:
+                        f.write(f"{line}\n")
+                # データフレームを追記モードで書き込む
+                df.to_csv(
+                    output_csv_path, index=False, mode="a", quoting=3, header=False
+                )
+
+            # 相関係数とC2H6/CH4比を計算
+            if output_ratio:
+                ch4_data: pd.Series = df[key_ch4_conc]
+                c2h6_data: pd.Series = df[key_c2h6_conc]
+
+                ratio_row: dict[str, str | float] = {
+                    "Date": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    "slope": f"{np.nan}",
+                    "intercept": f"{np.nan}",
+                    "r_value": f"{np.nan}",
+                    "p_value": f"{np.nan}",
+                    "stderr": f"{np.nan}",
+                }
+
+                # 近似直線の傾き、切片、相関係数を計算
+                try:
+                    slope, intercept, r_value, p_value, stderr = stats.linregress(
+                        ch4_data, c2h6_data
+                    )
+                    ratio_row = {
+                        "Date": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                        "slope": f"{slope:.6f}",
+                        "intercept": f"{intercept:.6f}",
+                        "r_value": f"{r_value:.6f}",
+                        "p_value": f"{p_value:.6f}",
+                        "stderr": f"{stderr:.6f}",
+                    }
+                except Exception:
+                    # 何もせず、デフォルトの ratio_row を使用する
+                    pass
+
+                ratio_data.append(ratio_row)
+
+            # Lag times解析用のデータを収集
+            if output_lag_times:
+                df = self.add_uvw_columns(df)
+                lags_list = EddyDataPreprocessor._calculate_lag_time(
+                    df,
+                    lag_times_key1,
+                    lag_times_key2_list,
+                )
+                all_lags_indices.append(lags_list)
+
+        # Ratio解析結果の保存
+        if output_ratio and ratio_dir is not None:
+            # DataFrameを作成し、Dateカラムで昇順ソート
+            ratio_df: pd.DataFrame = pd.DataFrame(ratio_data)
+            ratio_df["Date"] = pd.to_datetime(ratio_df["Date"])
+            ratio_df = ratio_df.sort_values("Date")
+
+            # CSVとして保存
+            ratio_filename: str = (
+                f"{ratio_csv_prefix}.{latest_date.strftime('%Y.%m.%d')}.ratio.csv"
+            )
+            ratio_path: str = os.path.join(ratio_dir, ratio_filename)
+            ratio_df.to_csv(ratio_path, index=False)
+            self.logger.info(f"Ratio解析結果を保存しました: {ratio_path}")
+
+        # Lag times解析結果の処理と保存
+        if output_lag_times and lag_times_dir is not None:
+            # lag timesの解析結果をDataFrameに変換
+            lags_indices_df = pd.DataFrame(
+                all_lags_indices, columns=lag_times_key2_list
+            )
+            lag_times_output_data = []
+
+            # 各変数に対する解析
+            for column in lags_indices_df.columns:
+                data = lags_indices_df[column]
+
+                # ヒストグラムの作成
+                plt.figure(figsize=lag_times_figsize)
+                plt.hist(data, bins=20, range=lag_times_plot_range)
+                plt.title(f"Delays of {column}")
+                plt.xlabel("Seconds")
+                plt.ylabel("Frequency")
+                plt.xlim(lag_times_plot_range)
+
+                # ヒストグラムの保存
+                filename = f"lags_histogram-{column}.png"
+                filepath = os.path.join(lag_times_dir, filename)
+                plt.savefig(filepath, dpi=300, bbox_inches="tight")
+                plt.close()
+
+                # 中央値を計算し、その周辺のデータのみを使用
+                median_value = np.median(data)
+                filtered_data = data[
+                    (data >= median_value - lag_times_median_range)
+                    & (data <= median_value + lag_times_median_range)
+                ]
+
+                # 平均値を計算
+                mean_value = np.mean(filtered_data)
+                mean_seconds = float(mean_value / self.fs)
+
+                # 結果を格納
+                lag_times_output_data.append(
+                    {
+                        "key1": lag_times_key1,
+                        "key2": column,
+                        "key2_lag": round(mean_seconds, 2),
+                        "lag_unit": "s",
+                        "median_range": lag_times_median_range,
+                    }
+                )
+
+            # 結果をCSVとして保存
+            if lag_times_output_data:
+                lag_times_df = pd.DataFrame(lag_times_output_data)
+                lag_times_csv_path = os.path.join(lag_times_dir, "lags_results.csv")
+                lag_times_df.to_csv(lag_times_csv_path, index=False, encoding="utf-8")
+                self.logger.info(
+                    f"Lag times解析結果を保存しました: {lag_times_csv_path}"
+                )
+
+                # 遅れ時間を表示
+                self.logger.info(f"カラム`{lag_times_key1}`に対する遅れ時間:")
+                max_key_length = max(len(column) for column in lag_times_df["key2"])
+                for _, row in lag_times_df.iterrows():
+                    print(f"{row['key2']:<{max_key_length}} : {row['key2_lag']:.2f} s")
 
     @staticmethod
     def _calculate_lag_time(

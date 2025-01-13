@@ -170,7 +170,7 @@ plt.rcParams.update(
 
 tag: str = "average-10_16"
 project_files_dir: str = (
-    "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private"
+    "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private"
 )
 
 if __name__ == "__main__":

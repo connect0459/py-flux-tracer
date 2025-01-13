@@ -10,7 +10,7 @@ from tqdm import tqdm
 from scipy import linalg, stats
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..campbell.eddydata_preprocessor import EddyDataPreprocessor
+from ..campbell.eddy_data_preprocessor import EddyDataPreprocessor
 from ..campbell.spectrum_calculator import SpectrumCalculator
 
 

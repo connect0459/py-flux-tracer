@@ -20,7 +20,7 @@ subplot_labels: list[list[str]] = [
 ]
 lags_list: list[int] = [9.2, 10.0, 10.0, 10.0, 11.7, 13.2, 15.5]
 output_dir = (
-    "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )
 
 # フラグ
@@ -29,7 +29,7 @@ plot_spectra: bool = True
 if __name__ == "__main__":
     # Ultra
     with MonthlyConverter(
-        "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/monthly",
         file_pattern="SA.Ultra.*.xlsx",
     ) as converter:
         df_ultra = converter.read_sheets(
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # Picarro
     with MonthlyConverter(
-        "/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/monthly",
         file_pattern="SA.Picaro.*.xlsx",
     ) as converter:
         df_picarro = converter.read_sheets(
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         if plot_spectra:
             # パワースペクトルのプロット
             mfg.plot_spectra(
-                input_dir=f"/home/connect0459/labo/py_flux_tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{month_str}",
+                input_dir=f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{month_str}",
                 output_dir=(os.path.join(output_dir, "spectra", "two")),
                 output_basename=f"spectrum-two-{month}",
                 fs=10,

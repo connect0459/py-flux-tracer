@@ -1,4 +1,4 @@
-# py_flux_tracer
+# py-flux-tracer
 
 このパッケージは、大気観測で得られたデータファイルを解析するPythonパッケージです。渦相関法を主とする大気観測データを対象としています。
 
@@ -12,18 +12,18 @@
 ### インストール方法
 
 ```bash
-pip install py_flux_tracer
+pip install git+https://github.com/connect0459/py-flux-tracer.git
 ```
 
 または
 
 ```bash
-uv add py_flux_tracer
+uv add git+https://github.com/connect0459/py-flux-tracer.git
 ```
 
 ## ライセンス
 
-本ソフトウェアの使用は、大阪公立大学生態気象学研究グループの構成員、または著作権者から明示的な許可を得た第三者に限定されます。詳細は [LICENSE](https://github.com/connect0459/py_flux_tracer/blob/main/LICENSE) を参照してください。
+本ソフトウェアは、 [LICENSE](https://github.com/connect0459/py_flux_tracer/blob/main/LICENSE) に基づいて使用してください。
 
 ## ドキュメント
 
