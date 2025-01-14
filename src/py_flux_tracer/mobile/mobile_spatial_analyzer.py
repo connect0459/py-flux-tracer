@@ -17,13 +17,6 @@ from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.hotspot_data import HotspotData
 from .correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
 
-"""
-堺市役所の位置情報
-
-center_lat=34.573904320329724,
-center_lon=135.4829511120712,
-"""
-
 
 @dataclass
 class EmissionData:
