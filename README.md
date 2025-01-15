@@ -27,15 +27,15 @@ uv add py-flux-tracer
 
 ## ドキュメント
 
-開発者に向けてドキュメントを作成しています。`storage/docs`配下に格納しています。
+開発者に向けてドキュメントを作成しています。`storage/manuals`配下に格納しています。
 
-- [リファレンス](./storage/docs/references.md)
+- [リファレンス](./storage/manuals/references.md)
 - パッケージの開発
-  - [1. プロジェクトの初期設定](./storage/docs/development/1-init-project.md)
-  - [2. Gitを用いた開発の概要](./storage/docs/development/2-overview-git.md)
-  - [3. 新機能の追加](./storage/docs/development/3-add-features.md)
-- [パッケージのデプロイ](./storage/docs/deployment.md)
-- [コマンド集](./storage/docs/cmd.md)
+  - [1. プロジェクトの初期設定](./storage/manuals/development/1-init-project.md)
+  - [2. Gitを用いた開発の概要](./storage/manuals/development/2-overview-git.md)
+  - [3. 新機能の追加](./storage/manuals/development/3-add-features.md)
+- [パッケージのデプロイ](./storage/manuals/deployment.md)
+- [コマンド集](./storage/manuals/cmd.md)
 
 クラスやメソッドのdocstringはNumPy/SciPy Styleで記述しています。 [pdoc](https://github.com/pdoc3/pdoc) や [Sphinx](https://github.com/sphinx-doc/sphinx) などのNumPy/SciPy Styleをサポートするドキュメント生成ツールでHTMLドキュメントを生成可能です。
 
