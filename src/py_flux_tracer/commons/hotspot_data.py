@@ -8,26 +8,26 @@ class HotspotData:
 
     Parameters:
     ------
-    source : str
-        データソース
-    angle : float
-        中心からの角度
-    avg_lat : float
-        平均緯度
-    avg_lon : float
-        平均経度
-    delta_ch4 : float
-        CH4の増加量
-    delta_c2h6 : float
-        C2H6の増加量
-    correlation : float
-        ΔC2H6/ΔCH4相関係数
-    ratio : float
-        ΔC2H6/ΔCH4の比率
-    section : int
-        所属する区画番号
-    type : Literal["bio", "gas", "comb"]
-        ホットスポットの種類
+        source : str
+            データソース
+        angle : float
+            中心からの角度
+        avg_lat : float
+            平均緯度
+        avg_lon : float
+            平均経度
+        delta_ch4 : float
+            CH4の増加量
+        delta_c2h6 : float
+            C2H6の増加量
+        correlation : float
+            ΔC2H6/ΔCH4相関係数
+        ratio : float
+            ΔC2H6/ΔCH4の比率
+        section : int
+            所属する区画番号
+        type : Literal["bio", "gas", "comb"]
+            ホットスポットの種類
     """
     source: str  
     angle: float  

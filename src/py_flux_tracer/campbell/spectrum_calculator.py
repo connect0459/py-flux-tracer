@@ -19,18 +19,18 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        df : pd.DataFrame
-            pandasのデータフレーム。解析対象のデータを含む。
-        apply_lag_keys : list[str]
-            コスペクトルの遅れ時間補正を適用するキーのリスト。
-        fs : float
-            サンプリング周波数（Hz）。データのサンプリングレートを指定。
-        lag_second : float
-            遅延時間（秒）。データの遅延を指定。
-        apply_window : bool, optional
-            窓関数を適用するフラグ。デフォルトはTrue。
-        plots : int
-            プロットする点の数。可視化のためのデータポイント数。
+            df : pd.DataFrame
+                pandasのデータフレーム。解析対象のデータを含む。
+            apply_lag_keys : list[str]
+                コスペクトルの遅れ時間補正を適用するキーのリスト。
+            fs : float
+                サンプリング周波数（Hz）。データのサンプリングレートを指定。
+            lag_second : float
+                遅延時間（秒）。データの遅延を指定。
+            apply_window : bool, optional
+                窓関数を適用するフラグ。デフォルトはTrue。
+            plots : int
+                プロットする点の数。可視化のためのデータポイント数。
         """
         self._df: pd.DataFrame = df
         self._fs: float = fs
@@ -55,29 +55,29 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        key1 : str
-            データの列名1。
-        key2 : str
-            データの列名2。
-        dimensionless : bool, optional
-            Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
-        frequency_weighted : bool, optional
-            周波数の重みづけを適用するかどうか。デフォルトはTrue。
-        interpolate_points : bool, optional
-            等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
-        scaling : str
-            "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
+            key1 : str
+                データの列名1。
+            key2 : str
+                データの列名2。
+            dimensionless : bool, optional
+                Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
+            frequency_weighted : bool, optional
+                周波数の重みづけを適用するかどうか。デフォルトはTrue。
+            interpolate_points : bool, optional
+                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
+            scaling : str
+                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
 
         Returns:
         ------
-        tuple
-            (freqs, co_spectrum, corr_coef)
-            - freqs : np.ndarray
-                周波数軸（対数スケールの場合は対数変換済み）。
-            - co_spectrum : np.ndarray
-                コスペクトル（対数スケールの場合は対数変換済み）。
-            - corr_coef : float
-                変数の相関係数。
+            tuple
+                (freqs, co_spectrum, corr_coef)
+                - freqs : np.ndarray
+                    周波数軸（対数スケールの場合は対数変換済み）。
+                - co_spectrum : np.ndarray
+                    コスペクトル（対数スケールの場合は対数変換済み）。
+                - corr_coef : float
+                    変数の相関係数。
         """
         freqs, co_spectrum, _, corr_coef = self.calculate_cross_spectrum(
             key1=key1,
@@ -104,31 +104,31 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        key1 : str
-            データの列名1。
-        key2 : str
-            データの列名2。
-        dimensionless : bool, optional
-            Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
-        frequency_weighted : bool, optional
-            周波数の重みづけを適用するかどうか。デフォルトはTrue。
-        interpolate_points : bool, optional
-            等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
-        scaling : str
-            "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
+            key1 : str
+                データの列名1。
+            key2 : str
+                データの列名2。
+            dimensionless : bool, optional
+                Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
+            frequency_weighted : bool, optional
+                周波数の重みづけを適用するかどうか。デフォルトはTrue。
+            interpolate_points : bool, optional
+                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
+            scaling : str
+                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
 
         Returns:
         ------
-        tuple
-            (freqs, co_spectrum, quadrature_spectrum, corr_coef)
-            - freqs : np.ndarray
-                周波数軸（対数スケールの場合は対数変換済み）。
-            - co_spectrum : np.ndarray
-                コスペクトル（対数スケールの場合は対数変換済み）。
-            - quadrature_spectrum : np.ndarray
-                クアドラチャスペクトル（対数スケールの場合は対数変換済み）。
-            - corr_coef : float
-                変数の相関係数。
+            tuple
+                (freqs, co_spectrum, quadrature_spectrum, corr_coef)
+                - freqs : np.ndarray
+                    周波数軸（対数スケールの場合は対数変換済み）。
+                - co_spectrum : np.ndarray
+                    コスペクトル（対数スケールの場合は対数変換済み）。
+                - quadrature_spectrum : np.ndarray
+                    クアドラチャスペクトル（対数スケールの場合は対数変換済み）。
+                - corr_coef : float
+                    変数の相関係数。
         """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
@@ -274,22 +274,22 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        key : str
-            データの列名
-        dimensionless : bool, optional
-            Trueの場合、分散で割って無次元化を行います。デフォルトはTrueです。
-        frequency_weighted : bool, optional
-            周波数の重みづけを適用するかどうか。デフォルトはTrueです。
-        interpolate_points : bool, optional
-            等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。
-        scaling : str, optional
-            "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
+            key : str
+                データの列名
+            dimensionless : bool, optional
+                Trueの場合、分散で割って無次元化を行います。デフォルトはTrueです。
+            frequency_weighted : bool, optional
+                周波数の重みづけを適用するかどうか。デフォルトはTrueです。
+            interpolate_points : bool, optional
+                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。
+            scaling : str, optional
+                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
 
         Returns:
         ------
-        tuple
-            - freqs (np.ndarray): 周波数軸（対数スケールの場合は対数変換済み）
-            - power_spectrum (np.ndarray): パワースペクトル（対数スケールの場合は対数変換済み）
+            tuple
+                - freqs (np.ndarray): 周波数軸（対数スケールの場合は対数変換済み）
+                - power_spectrum (np.ndarray): パワースペクトル（対数スケールの場合は対数変換済み）
         """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
@@ -351,27 +351,27 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        data1 : np.ndarray
-            基準データ
-        data2 : np.ndarray
-            遅れているデータ
-        fs : float
-            サンプリング周波数
-        lag_second : float
-            data1からdata2が遅れている時間（秒）。負の値は許可されない。
+            data1 : np.ndarray
+                基準データ
+            data2 : np.ndarray
+                遅れているデータ
+            fs : float
+                サンプリング周波数
+            lag_second : float
+                data1からdata2が遅れている時間（秒）。負の値は許可されない。
 
         Returns:
         ------
-        tuple
-            - data1 : np.ndarray
-                補正された基準データ
-            - data2 : np.ndarray
-                補正された遅れているデータ
+            tuple
+                - data1 : np.ndarray
+                    補正された基準データ
+                - data2 : np.ndarray
+                    補正された遅れているデータ
 
         Raises:
         ------
-        ValueError
-            lag_secondが負の値の場合
+            ValueError
+                lag_secondが負の値の場合
         """
         if lag_second < 0:
             raise ValueError("lag_second must be non-negative.")
@@ -391,24 +391,24 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        data : np.ndarray
-            入力データ
-        fs : float
-            サンプリング周波数
-        first : bool, optional
-            一次トレンドを除去するかどうか. デフォルトはTrue.
-        second : bool, optional
-            二次トレンドを除去するかどうか. デフォルトはFalse.
+            data : np.ndarray
+                入力データ
+            fs : float
+                サンプリング周波数
+            first : bool, optional
+                一次トレンドを除去するかどうか. デフォルトはTrue.
+            second : bool, optional
+                二次トレンドを除去するかどうか. デフォルトはFalse.
 
         Returns:
         ------
-        np.ndarray
-            トレンド除去後のデータ
+            np.ndarray
+                トレンド除去後のデータ
 
         Raises:
         ------
-        ValueError
-            first と second の両方がFalseの場合
+            ValueError
+                first と second の両方がFalseの場合
         """
         if not (first or second):
             raise ValueError("少なくとも一次または二次トレンドの除去を指定してください")
@@ -439,15 +439,15 @@ class SpectrumCalculator:
 
         Parameters:
         ------
-        type : str
-            窓関数の種類 ('hanning', 'hamming', 'blackman')
-        data_length : int
-            データ長
+            type : str
+                窓関数の種類 ('hanning', 'hamming', 'blackman')
+            data_length : int
+                データ長
 
         Returns:
         ------
-        np.ndarray
-            適用された窓関数
+            np.ndarray
+                適用された窓関数
 
         Notes:
         ------
@@ -474,17 +474,17 @@ class SpectrumCalculator:
         
         Parameters:
         ------
-        spectrum : np.ndarray
-            スペクトルデータ
-        frequencies : np.ndarray
-            対応する周波数データ
-        freq_threshold : float
-            高周波数の閾値
+            spectrum : np.ndarray
+                スペクトルデータ
+            frequencies : np.ndarray
+                対応する周波数データ
+            freq_threshold : float
+                高周波数の閾値
         
         Returns:
         ------
-        np.ndarray
-            スムーズ化されたスペクトルデータ
+            np.ndarray
+                スムーズ化されたスペクトルデータ
         """
         smoothed = spectrum.copy()  # オリジナルデータのコピーを作成
 

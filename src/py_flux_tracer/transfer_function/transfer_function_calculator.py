@@ -25,18 +25,14 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        file_path : str
-            分析対象のCSVファイルのパス。
-        freq_key : str
-            周波数のキー。
-        cutoff_freq_low : float
-            カットオフ周波数の最低値。
-        cutoff_freq_high : float
-            カットオフ周波数の最高値。
-
-        Returns:
-        ------
-        None
+            file_path : str
+                分析対象のCSVファイルのパス。
+            freq_key : str
+                周波数のキー。
+            cutoff_freq_low : float
+                カットオフ周波数の最低値。
+            cutoff_freq_high : float
+                カットオフ周波数の最高値。
         """
         self._freq_key: str = freq_key
         self._cutoff_freq_low: float = cutoff_freq_low
@@ -51,15 +47,15 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        reference_key : str
-            参照データのカラム名。
-        target_key : str
-            ターゲットデータのカラム名。
+            reference_key : str
+                参照データのカラム名。
+            target_key : str
+                ターゲットデータのカラム名。
 
         Returns:
         ------
-        tuple[float, float, pandas.DataFrame]
-            伝達関数の係数aとその標準誤差、および計算に用いたDataFrame。
+            tuple[float, float, pandas.DataFrame]
+                伝達関数の係数aとその標準誤差、および計算に用いたDataFrame。
         """
         df_processed: pd.DataFrame = self.process_data(
             reference_key=reference_key, target_key=target_key
@@ -103,30 +99,30 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        key1 : str
-            1つ目のコスペクトルデータのカラム名。
-        key2 : str
-            2つ目のコスペクトルデータのカラム名。
-        color1 : str, optional
-            1つ目のデータの色。デフォルトは'gray'。
-        color2 : str, optional
-            2つ目のデータの色。デフォルトは'red'。
-        figsize : tuple[int, int], optional
-            プロットのサイズ。デフォルトは(10, 8)。
-        label1 : str, optional
-            1つ目のデータのラベル名。デフォルトはNone。
-        label2 : str, optional
-            2つ目のデータのラベル名。デフォルトはNone。
-        output_dir : str | None, optional
-            プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-        output_basename : str, optional
-            保存するファイル名のベース。デフォルトは"co"。
-        show_fig : bool, optional
-            プロットを表示するかどうか。デフォルトはTrue。
-        subplot_label : str | None, optional
-            左上に表示するサブプロットラベル。デフォルトは"(a)"。
-        window_size : int, optional
-            移動平均の窓サイズ。デフォルトは5。
+            key1 : str
+                1つ目のコスペクトルデータのカラム名。
+            key2 : str
+                2つ目のコスペクトルデータのカラム名。
+            color1 : str, optional
+                1つ目のデータの色。デフォルトは'gray'。
+            color2 : str, optional
+                2つ目のデータの色。デフォルトは'red'。
+            figsize : tuple[int, int], optional
+                プロットのサイズ。デフォルトは(10, 8)。
+            label1 : str, optional
+                1つ目のデータのラベル名。デフォルトはNone。
+            label2 : str, optional
+                2つ目のデータのラベル名。デフォルトはNone。
+            output_dir : str | None, optional
+                プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
+            output_basename : str, optional
+                保存するファイル名のベース。デフォルトは"co"。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
+            subplot_label : str | None, optional
+                左上に表示するサブプロットラベル。デフォルトは"(a)"。
+            window_size : int, optional
+                移動平均の窓サイズ。デフォルトは5。
         """
         df: pd.DataFrame = self._df.copy()
         # データの取得と移動平均の適用
@@ -191,20 +187,20 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        df_processed : pd.DataFrame
-            処理されたデータフレーム。
-        reference_name : str
-            参照の名前。
-        target_name : str
-            ターゲットの名前。
-        figsize : tuple[int, int], optional
-            プロットのサイズ。デフォルトは(10, 6)。
-        output_dir : str | None, optional
-            プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-        output_basename : str, optional
-            保存するファイル名のベース。デフォルトは"ratio"。
-        show_fig : bool, optional
-            プロットを表示するかどうか。デフォルトはTrue。
+            df_processed : pd.DataFrame
+                処理されたデータフレーム。
+            reference_name : str
+                参照の名前。
+            target_name : str
+                ターゲットの名前。
+            figsize : tuple[int, int], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            output_dir : str | None, optional
+                プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
+            output_basename : str, optional
+                保存するファイル名のベース。デフォルトは"ratio"。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111)
@@ -247,26 +243,22 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        a : float
-            伝達関数の係数。
-        df_processed : pd.DataFrame
-            処理されたデータフレーム。
-        reference_name : str
-            参照の名前。
-        target_name : str
-            ターゲットの名前。
-        figsize : tuple[int, int], optional
-            プロットのサイズ。デフォルトは(10, 6)。
-        output_dir : str | None, optional
-            プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-        output_basename : str, optional
-            保存するファイル名のベース。デフォルトは"tf"。
-        show_fig : bool, optional
-            プロットを表示するかどうか。デフォルトはTrue。
-
-        Returns:
-        ------
-        None
+            a : float
+                伝達関数の係数。
+            df_processed : pd.DataFrame
+                処理されたデータフレーム。
+            reference_name : str
+                参照の名前。
+            target_name : str
+                ターゲットの名前。
+            figsize : tuple[int, int], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            output_dir : str | None, optional
+                プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
+            output_basename : str, optional
+                保存するファイル名のベース。デフォルトは"tf"。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
         df_cutoff: pd.DataFrame = self._cutoff_df(df_processed)
 
@@ -310,15 +302,15 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        reference_key : str
-            参照データのカラム名。
-        target_key : str
-            ターゲットデータのカラム名。
+            reference_key : str
+                参照データのカラム名。
+            target_key : str
+                ターゲットデータのカラム名。
 
         Returns:
         ------
-        pd.DataFrame
-            処理されたデータフレーム。
+            pd.DataFrame
+                処理されたデータフレーム。
         """
         df: pd.DataFrame = self._df.copy()
         freq_key: str = self._freq_key
@@ -357,13 +349,13 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        df : pd.DataFrame
-            加工対象のデータフレーム。
+            df : pd.DataFrame
+                加工対象のデータフレーム。
 
         Returns:
         ------
-        pd.DataFrame
-            カットオフ周波数に基づいて加工されたデータフレーム。
+            pd.DataFrame
+                カットオフ周波数に基づいて加工されたデータフレーム。
         """
         df_cutoff: pd.DataFrame = df.loc[
             (self._cutoff_freq_low <= df.index) & (df.index <= self._cutoff_freq_high)
@@ -377,15 +369,15 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        x : np.ndarray
-            周波数の配列。
-        a : float
-            伝達関数の係数。
+            x : np.ndarray
+                周波数の配列。
+            a : float
+                伝達関数の係数。
 
         Returns:
         ------
-        np.ndarray
-            伝達関数の値。
+            np.ndarray
+                伝達関数の値。
         """
         return np.exp(-np.log(np.sqrt(2)) * np.power(x / a, 2))
 
@@ -396,13 +388,13 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        file_path : str
-            csvファイルのパス。
+            file_path : str
+                csvファイルのパス。
 
         Returns:
         ------
-        pd.DataFrame
-            読み込まれたデータフレーム。
+            pd.DataFrame
+                読み込まれたデータフレーム。
         """
         tmp = pd.read_csv(file_path, header=None, nrows=1, skiprows=0)
         header = tmp.loc[tmp.index[0]]
@@ -424,23 +416,18 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-        font_family : list[str]
-            使用するフォントファミリーのリスト。
-        font_size : float
-            軸ラベルのフォントサイズ。
-        legend_size : float
-            凡例のフォントサイズ。
-        tick_size : float
-            軸目盛りのフォントサイズ。
-        title_size : float
-            タイトルのフォントサイズ。
-        plot_params : Optional[Dict[str, any]]
-            matplotlibのプロットパラメータの辞書。
-
-        Returns:
-        ------
-        None
-            プロットパラメータが設定されます。
+            font_family : list[str]
+                使用するフォントファミリーのリスト。
+            font_size : float
+                軸ラベルのフォントサイズ。
+            legend_size : float
+                凡例のフォントサイズ。
+            tick_size : float
+                軸目盛りのフォントサイズ。
+            title_size : float
+                タイトルのフォントサイズ。
+            plot_params : Optional[Dict[str, any]]
+                matplotlibのプロットパラメータの辞書。
         """
         # デフォルトのプロットパラメータ
         default_params = {

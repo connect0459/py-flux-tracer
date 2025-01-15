@@ -994,12 +994,17 @@ class EddyDataPreprocessor:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        引数:
-            logger (Logger | None): 使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level (int): ロガーのログレベル。デフォルトはINFO。
+        Parameters:
+        -----
+            logger : Logger | None
+                使用するロガー。Noneの場合は新しいロガーを作成します。
+            log_level : int
+                ロガーのログレベル。デフォルトはINFO。
 
-        戻り値:
-            Logger: 設定されたロガーオブジェクト。
+        Returns:
+        -----
+            Logger
+                設定されたロガーオブジェクト。
         """
         if logger is not None and isinstance(logger, Logger):
             return logger

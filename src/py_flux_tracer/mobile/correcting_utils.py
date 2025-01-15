@@ -15,20 +15,20 @@ class CorrectingUtils:
 
         Parameters:
         ------
-        df : pd.DataFrame
-            補正対象のデータフレーム。
-        correction_type : str
-            適用する補正式の種類。CORRECTION_TYPES_PATTERNから選択する。
+            df : pd.DataFrame
+                補正対象のデータフレーム。
+            correction_type : str
+                適用する補正式の種類。CORRECTION_TYPES_PATTERNから選択する。
 
         Returns:
         ------
-        pd.DataFrame
-            補正後のデータフレーム。
+            pd.DataFrame
+                補正後のデータフレーム。
 
         Raises:
         ------
-        ValueError
-            無効な補正式が指定された場合。
+            ValueError
+                無効な補正式が指定された場合。
         """
         if correction_type == "pico_1":
             coef_a: float = 2.0631  # 切片
@@ -66,32 +66,33 @@ class CorrectingUtils:
         水蒸気干渉を補正するためのメソッドです。
         CH4濃度に対する水蒸気の影響を2次関数を用いて補正します。
 
-        参考文献:
-            Commane et al. (2023): Intercomparison of commercial analyzers for atmospheric ethane and methane observations
+        References:
+        ------
+            - Commane et al. (2023): Intercomparison of commercial analyzers for atmospheric ethane and methane observations
                 https://amt.copernicus.org/articles/16/1431/2023/,
                 https://amt.copernicus.org/articles/16/1431/2023/amt-16-1431-2023.pdf
 
         Parameters:
         ------
-        df : pd.DataFrame
-            補正対象のデータフレーム
-        coef_a : float
-            補正曲線の切片
-        coef_b : float
-            補正曲線の1次係数
-        coef_c : float
-            補正曲線の2次係数
-        ch4_key : str
-            CH4濃度を示すカラム名
-        h2o_key : str
-            水蒸気濃度を示すカラム名
-        h2o_threshold : float | None
-            水蒸気濃度の下限値（この値未満のデータは除外）
+            df : pd.DataFrame
+                補正対象のデータフレーム
+            coef_a : float
+                補正曲線の切片
+            coef_b : float
+                補正曲線の1次係数
+            coef_c : float
+                補正曲線の2次係数
+            ch4_key : str
+                CH4濃度を示すカラム名
+            h2o_key : str
+                水蒸気濃度を示すカラム名
+            h2o_threshold : float | None
+                水蒸気濃度の下限値（この値未満のデータは除外）
 
         Returns:
         ------
-        pd.DataFrame
-            水蒸気干渉が補正されたデータフレーム
+            pd.DataFrame
+                水蒸気干渉が補正されたデータフレーム
         """
         # 元のデータを保護するためコピーを作成
         df = df.copy()
@@ -124,17 +125,17 @@ class CorrectingUtils:
 
         Parameters:
         ------
-        df : pd.DataFrame
-            バイアスを除去する対象のデータフレーム。
-        ch4_ppm_key : str
-            CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
-        c2h6_ppb_key : str
-            C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
+            df : pd.DataFrame
+                バイアスを除去する対象のデータフレーム。
+            ch4_ppm_key : str
+                CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
+            c2h6_ppb_key : str
+                C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
 
         Returns:
         ------
-        pd.DataFrame
-            バイアスが除去されたデータフレーム。
+            pd.DataFrame
+                バイアスが除去されたデータフレーム。
         """
         df_processed: pd.DataFrame = df.copy()
         c2h6_min = np.percentile(df_processed[c2h6_ppb_key], 5)

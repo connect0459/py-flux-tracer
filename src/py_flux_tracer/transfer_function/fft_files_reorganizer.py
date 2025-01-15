@@ -43,26 +43,22 @@ class FftFileReorganizer:
 
         Parameters:
         ------
-        input_dir : str
-            入力ファイルが格納されているディレクトリのパス
-        output_dir : str
-            出力ファイルを格納するディレクトリのパス
-        flag_csv_path : str
-            フラグ情報が記載されているCSVファイルのパス
-        filename_patterns : list[str] | None
-            ファイル名のパターン（正規表現）のリスト
-        output_dirs : dict[str, str] | None
-            出力ディレクトリの構造を定義する辞書
-        sort_by_rh : bool
-            RHに基づいてサブディレクトリにファイルを分類するかどうか
-        logger : Logger | None
-            使用するロガー
-        logging_debug : bool
-            ログレベルをDEBUGに設定するかどうか
-
-        Returns:
-        ------
-        None
+            input_dir : str
+                入力ファイルが格納されているディレクトリのパス
+            output_dir : str
+                出力ファイルを格納するディレクトリのパス
+            flag_csv_path : str
+                フラグ情報が記載されているCSVファイルのパス
+            filename_patterns : list[str] | None
+                ファイル名のパターン（正規表現）のリスト
+            output_dirs : dict[str, str] | None
+                出力ディレクトリの構造を定義する辞書
+            sort_by_rh : bool
+                RHに基づいてサブディレクトリにファイルを分類するかどうか
+            logger : Logger | None
+                使用するロガー
+            logging_debug : bool
+                ログレベルをDEBUGに設定するかどうか
         """
         self._fft_path: str = input_dir
         self._sorted_path: str = output_dir
@@ -113,8 +109,8 @@ class FftFileReorganizer:
 
         Parameters:
         ------
-        valid_files : list
-            コピーする有効なファイル名のリスト
+            valid_files : list
+                コピーする有効なファイル名のリスト
         """
         with tqdm(total=len(valid_files)) as pbar:
             for filename in valid_files:
@@ -156,8 +152,8 @@ class FftFileReorganizer:
 
         Returns:
         ------
-        valid_files : list
-            日時でソートされた有効なファイル名のリスト
+            valid_files : list
+                日時でソートされた有効なファイル名のリスト
         """
         fft_files = os.listdir(self._fft_path)
         valid_files = []
@@ -175,18 +171,18 @@ class FftFileReorganizer:
 
         Parameters:
         ------
-        filename : str
-            解析対象のファイル名
+            filename : str
+                解析対象のファイル名
 
         Returns:
         ------
-        datetime : datetime
-            抽出された日時情報
+            datetime : datetime
+                抽出された日時情報
 
         Raises:
         ------
-        ValueError
-            ファイル名から日時情報を抽出できない場合
+            ValueError
+                ファイル名から日時情報を抽出できない場合
         """
         for pattern in self._filename_patterns:
             match = re.match(pattern, filename)
@@ -254,15 +250,15 @@ class FftFileReorganizer:
 
         Parameters:
         ------
-        logger : Logger | None
-            使用するロガー。Noneの場合は新しいロガーを作成します。
-        log_level : int
-            ロガーのログレベル。デフォルトはINFO。
+            logger : Logger | None
+                使用するロガー。Noneの場合は新しいロガーを作成します。
+            log_level : int
+                ロガーのログレベル。デフォルトはINFO。
 
         Returns:
         ------
-        Logger
-            設定されたロガーオブジェクト。
+            Logger
+                設定されたロガーオブジェクト。
         """
         if logger is not None and isinstance(logger, Logger):
             return logger
