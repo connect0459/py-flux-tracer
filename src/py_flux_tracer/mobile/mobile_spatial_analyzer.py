@@ -26,7 +26,7 @@ class EmissionData:
     Fields:
     ------
         source : str
-            データソース
+            データソース（日時）
         type : str
             ホットスポットの種類（"bio", "gas", "comb"）
         section : str | int | float
@@ -49,7 +49,7 @@ class EmissionData:
             年間排出量 (L/year)
     """
 
-    source: str # データソース（日時）
+    source: str
     type: str
     section: str | int | float
     latitude: float
@@ -179,11 +179,6 @@ class MSAInputConfig:
             ファイルパス
         correction_type : str | None
             適用する補正式の種類を表す文字列
-
-    Returns:
-    ------
-        MSAInputConfig
-            入力ファイルの設定を保持するデータクラスのインスタンス
     """
 
     fs: float  # サンプリング周波数（Hz）
