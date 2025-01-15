@@ -19,7 +19,7 @@ versionを動的に設定する。
 それも失敗した場合にデフォルトバージョン（0.0.0）を設定
 """
 try:
-    from ._version import __version__
+    from ._version import __version__  # type:ignore
 except ImportError:
     try:
         from setuptools_scm import get_version
@@ -27,6 +27,7 @@ except ImportError:
         __version__ = get_version(root="..", relative_to=__file__)
     except Exception:
         __version__ = "0.0.0"
+
 
 # モジュールを __all__ にセット
 __all__ = [
