@@ -4,54 +4,111 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>py-flux-tracer Documentation</title>
+    <!-- GitHubのスタイルシート -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown.min.css"
+    />
     <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-        line-height: 1.6;
-        max-width: 800px;
+      .markdown-body {
+        box-sizing: border-box;
+        min-width: 200px;
+        max-width: 980px;
         margin: 0 auto;
-        padding: 2rem;
-        background-color: #f8f9fa;
-        color: #212529;
+        padding: 45px;
       }
-      h1 {
-        color: #2c3e50;
-        border-bottom: 2px solid #eaecef;
-        padding-bottom: 0.5rem;
-        margin-bottom: 2rem;
+      @media (max-width: 767px) {
+        .markdown-body {
+          padding: 15px;
+        }
       }
-      ul {
-        list-style: none;
-        padding: 0;
-      }
-      li {
-        margin: 1rem 0;
-      }
-      a {
+      /* カスタムスタイル */
+      .version-link {
         display: inline-block;
-        color: #007bff;
-        text-decoration: none;
         padding: 0.5rem 1rem;
-        border-radius: 4px;
+        margin: 0.2rem 0;
+        text-decoration: none;
+        border-radius: 6px;
+        color: #0969da;
+        background-color: transparent;
         transition: background-color 0.2s;
       }
-      a:hover {
-        background-color: #e9ecef;
-        color: #0056b3;
+      .version-link:hover {
+        background-color: #f6f8fa;
+        text-decoration: none;
       }
       .future-version {
-        color: #6c757d;
+        color: #6e7781;
         font-style: italic;
+        padding: 0.5rem 1rem;
+      }
+      .package-info {
+        background-color: #f6f8fa;
+        border-radius: 6px;
+        padding: 1rem;
+        margin: 1rem 0;
+      }
+      .badge {
+        display: inline-block;
+        margin-right: 0.5rem;
+        margin-bottom: 1rem;
       }
     </style>
   </head>
   <body>
-    <h1>py-flux-tracer Documentation</h1>
-    <ul>
-      <li><a href="./v0/py_flux_tracer.html">Version 0.x.x</a></li>
-      <!-- 将来的に追加 -->
-      <!-- <li><a href="./v1/py_flux_tracer.html">Version 1.x.x</a></li> -->
-    </ul>
+    <div class="markdown-body">
+      <h1>py-flux-tracer Documentation</h1>
+
+      <div class="package-info">
+        <div class="badges">
+          <a href="https://github.com/connect0459/py-flux-tracer" class="badge">
+            <img
+              src="https://img.shields.io/github/v/release/connect0459/py-flux-tracer"
+              alt="GitHub release"
+            />
+          </a>
+          <a href="https://pypi.org/project/py-flux-tracer/" class="badge">
+            <img
+              src="https://img.shields.io/pypi/v/py-flux-tracer"
+              alt="PyPI version"
+            />
+          </a>
+          <a
+            href="https://github.com/connect0459/py-flux-tracer/blob/main/LICENSE"
+            class="badge"
+          >
+            <img
+              src="https://img.shields.io/github/license/connect0459/py-flux-tracer"
+              alt="License"
+            />
+          </a>
+        </div>
+        <p>
+          大気観測で得られたデータファイルを解析するPythonパッケージです。渦相関法を主とする大気観測データを対象としています。
+        </p>
+
+        <h3>リンク</h3>
+        <ul>
+          <li>
+            <a href="https://github.com/connect0459/py-flux-tracer"
+              >GitHub Repository</a
+            >
+          </li>
+          <li>
+            <a href="https://pypi.org/project/py-flux-tracer/">PyPI Package</a>
+          </li>
+        </ul>
+      </div>
+
+      <h2>ドキュメントバージョン</h2>
+      <ul>
+        <li>
+          <a href="./v0/py_flux_tracer.html" class="version-link"
+            >Version 0.x.x</a
+          >
+        </li>
+        <li class="future-version">Version 1.x.x (Not published)</li>
+      </ul>
+    </div>
   </body>
 </html>
