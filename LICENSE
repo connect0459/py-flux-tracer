@@ -1,19 +1,21 @@
-py-flux-tracer ソフトウェアライセンス
+MIT License
 
-Copyright (c) 2024. connect0459
+Copyright (c) 2024 connect0459
 
-使用条件：
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-1. 使用許可：
-   本ソフトウェアの使用はどなたでも自由に行うことができます。
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-2. 制限事項：
-   本ソフトウェアの再配布、改変、および不正な利用は一切禁止されています。
-
-3. 保証の否認：
-   本ソフトウェアは「現状のまま」提供され、明示または黙示を問わず、いかなる種類の保証も行いません。
-
-4. 責任：
-   本ソフトウェアの使用によって生じるあらゆる結果や責任は、使用者が負うものとします。
-
-本ライセンスの条件に同意しない場合、本ソフトウェアの使用は許可されません。
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
