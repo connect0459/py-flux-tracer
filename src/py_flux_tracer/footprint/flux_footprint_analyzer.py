@@ -524,9 +524,9 @@ class FluxFootprintAnalyzer:
         xy_max: float = 5000,
     ) -> None:
         """
-        Google Maps上にフットプリントデータとホットスポットをプロットします。
+        Staticな衛星画像上にフットプリントデータとホットスポットをプロットします。
 
-        このメソッドは、指定されたフットプリントデータとホットスポットをGoogle Maps上に可視化します。
+        このメソッドは、指定されたフットプリントデータとホットスポットを可視化します。
         ホットスポットが指定されない場合は、フットプリントのみ作図します。
 
         引数:
@@ -575,12 +575,20 @@ class FluxFootprintAnalyzer:
         self.logger.info("プロットを作成中...")
 
         # 4. 座標変換のための定数計算（1回だけ）
-        meters_per_lat: float = self.EARTH_RADIUS_METER * (math.pi / 180)  # 緯度1度あたりのメートル
-        meters_per_lon: float = meters_per_lat * math.cos(math.radians(center_lat))  # 経度1度あたりのメートル
+        meters_per_lat: float = self.EARTH_RADIUS_METER * (
+            math.pi / 180
+        )  # 緯度1度あたりのメートル
+        meters_per_lon: float = meters_per_lat * math.cos(
+            math.radians(center_lat)
+        )  # 経度1度あたりのメートル
 
         # 5. フットプリントデータの座標変換（まとめて1回で実行）
-        x_deg = np.array(x_list) / meters_per_lon * lon_correction  # 補正係数も同時に適用
-        y_deg = np.array(y_list) / meters_per_lat * lat_correction  # 補正係数も同時に適用
+        x_deg = (
+            np.array(x_list) / meters_per_lon * lon_correction
+        )  # 補正係数も同時に適用
+        y_deg = (
+            np.array(y_list) / meters_per_lat * lat_correction
+        )  # 補正係数も同時に適用
 
         # 6. 中心点からの相対座標を実際の緯度経度に変換
         lons = center_lon + x_deg
@@ -759,15 +767,16 @@ class FluxFootprintAnalyzer:
         else:
             plt.close(fig=fig)
 
-    def plot_flux_footprint_with_scale_check(
+    def plot_flux_footprint_with_scale_checker(
         self,
         x_list: list[float],
         y_list: list[float],
         c_list: list[float],
         center_lat: float,
         center_lon: float,
-        vmin: float,
-        vmax: float,
+        check_points: list[tuple[float, float, str]] | None = None,
+        vmin: float = 0,
+        vmax: float = 100,
         add_cbar: bool = True,
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
@@ -776,61 +785,99 @@ class FluxFootprintAnalyzer:
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | None = None,
-        output_filename: str = "footprint_scale_check.png",
+        output_filename: str = "footprint-scale_checker.png",
         save_fig: bool = True,
         show_fig: bool = True,
         satellite_image: ImageFile | None = None,
         xy_max: float = 5000,
     ) -> None:
         """
-        フットプリントの縮尺確認用のプロット作成メソッド。
-        中心から500m、1000m、2000m、3000mの位置に仮想的なホットスポットを配置して縮尺を確認します。
+        Staticな衛星画像上にフットプリントデータとホットスポットをプロットします。
 
-        引数は plot_flux_footprint_with_hotspots と同様ですが、hotspotsとhotspot_colorsは内部で生成します。
+        このメソッドは、指定されたフットプリントデータとホットスポットを可視化します。
+        ホットスポットが指定されない場合は、フットプリントのみ作図します。
+
+        引数:
+            x_list (list[float]): フットプリントのx座標リスト（メートル単位）。
+            y_list (list[float]): フットプリントのy座標リスト（メートル単位）。
+            c_list (list[float]): フットプリントの強度を示す値のリスト。
+            center_lat (float): プロットの中心となる緯度。
+            center_lon (float): プロットの中心となる経度。
+            check_points (list[tuple[float, float, str]] | None): 確認用の地点リスト。
+                各要素は (緯度, 経度, ラベル) のタプル。
+                Noneの場合は中心から500m、1000m、2000m、3000mの位置に仮想的な点を配置。
+            cmap (str): 使用するカラーマップの名前。
+            vmin (float): カラーバーの最小値。
+            vmax (float): カラーバーの最大値。
+            function (callable, optional): フットプリントの集約関数（デフォルトはnp.mean）。
+            cbar_label (str, optional): カラーバーのラベル。
+            cbar_labelpad (int, optional): カラーバーラベルのパディング。
+            hotspots (list[HotspotData] | None): ホットスポットデータのリスト。デフォルトはNone。
+            hotspot_colors (dict[str, str] | None, optional): ホットスポットの色を指定する辞書。
+            lon_correction (float, optional): 経度方向の補正係数（デフォルトは1）。
+            lat_correction (float, optional): 緯度方向の補正係数（デフォルトは1）。
+            output_dir (str | None, optional): プロット画像の保存先パス。
+            output_filename (str): プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
+            save_fig (bool): 図の保存を許可するフラグ。デフォルトはTrue。
+            show_fig (bool): 図の表示を許可するフラグ。デフォルトはTrue。
+            satellite_image (ImageFile | None, optional): 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
+            xy_max (float, optional): 表示範囲の最大値（デフォルトは5000）。
         """
-        # 仮想的なホットスポットデータの作成
-        check_points = [
-            (500, "North", 90),   # 北 500m
-            (1000, "East", 0),    # 東 1000m
-            (2000, "South", 270), # 南 2000m
-            (3000, "West", 180),  # 西 3000m
-        ]
-        
-        dummy_hotspots = []
-        for distance, direction, angle in check_points:
-            # 角度をラジアンに変換
-            rad = math.radians(angle)
-            # 距離から緯度経度の変化量を計算
-            meters_per_lat = self.EARTH_RADIUS_METER * (math.pi / 180)
-            meters_per_lon = meters_per_lat * math.cos(math.radians(center_lat))
-            
-            dx = distance * math.cos(rad)
-            dy = distance * math.sin(rad)
-            
-            delta_lon = dx / meters_per_lon
-            delta_lat = dy / meters_per_lat
-            
-            # HotspotDataオブジェクトの作成
-            hotspot = HotspotData(
-                avg_lat=center_lat + delta_lat,
-                avg_lon=center_lon + delta_lon,
-                delta_ch4=0.0,
-                delta_c2h6=0.0,
-                ratio=0.0,
-                type=f"{direction}_{distance}m",
-                section=0,
-                source="scale_check",
-                angle=0,
-                correlation=0,
-            )
-            dummy_hotspots.append(hotspot)
+        if check_points is None:
+            # デフォルトの確認ポイントを生成（従来の方式）
+            default_points = [
+                (500, "North", 90),  # 北 500m
+                (1000, "East", 0),  # 東 1000m
+                (2000, "South", 270),  # 南 2000m
+                (3000, "West", 180),  # 西 3000m
+            ]
+
+            dummy_hotspots = []
+            for distance, direction, angle in default_points:
+                rad = math.radians(angle)
+                meters_per_lat = self.EARTH_RADIUS_METER * (math.pi / 180)
+                meters_per_lon = meters_per_lat * math.cos(math.radians(center_lat))
+
+                dx = distance * math.cos(rad)
+                dy = distance * math.sin(rad)
+
+                delta_lon = dx / meters_per_lon
+                delta_lat = dy / meters_per_lat
+
+                hotspot = HotspotData(
+                    avg_lat=center_lat + delta_lat,
+                    avg_lon=center_lon + delta_lon,
+                    delta_ch4=0.0,
+                    delta_c2h6=0.0,
+                    ratio=0.0,
+                    type=f"{direction}_{distance}m",
+                    section=0,
+                    source="scale_check",
+                    angle=0,
+                    correlation=0,
+                )
+                dummy_hotspots.append(hotspot)
+        else:
+            # 指定された緯度経度を使用
+            dummy_hotspots = []
+            for lat, lon, label in check_points:
+                hotspot = HotspotData(
+                    avg_lat=lat,
+                    avg_lon=lon,
+                    delta_ch4=0.0,
+                    delta_c2h6=0.0,
+                    ratio=0.0,
+                    type=label,
+                    section=0,
+                    source="scale_check",
+                    angle=0,
+                    correlation=0,
+                )
+                dummy_hotspots.append(hotspot)
 
         # カスタムカラーマップの作成
         hotspot_colors = {
-            "North_500m": "red",
-            "East_1000m": "blue",
-            "South_2000m": "green",
-            "West_3000m": "purple"
+            spot.type: plt.cm.tab10(i % 10) for i, spot in enumerate(dummy_hotspots)
         }
 
         # 既存のメソッドを呼び出してプロット
@@ -857,7 +904,7 @@ class FluxFootprintAnalyzer:
             save_fig=save_fig,
             show_fig=show_fig,
             satellite_image=satellite_image,
-            xy_max=xy_max
+            xy_max=xy_max,
         )
 
     def _combine_all_csv(self, csv_dir_path: str, suffix: str = ".csv") -> pd.DataFrame:

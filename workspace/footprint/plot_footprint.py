@@ -97,6 +97,12 @@ num_sections: int = 4  # セクション数
 plot_count: int = 10000
 # plot_count: int = 50000
 
+# スケールチェック用の仮地点の要素（緯度、経度、ラベル）
+check_points_for_scale_checker: list[tuple[float, float, str]] = [
+    (34.55958388887034, 135.4461794468429, "石津水再生センター"),
+    (34.601272994096846, 135.46248381802235, "三宝水再生センター"),
+]
+
 # ファイルおよびディレクトリのパス
 output_dir: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
 dotenv_path = "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
@@ -112,7 +118,7 @@ plot_ratio: bool = False
 plot_ratio_legend: bool = False
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
-plot_scale_checking: bool = False
+plot_scale_checker: bool = True
 
 if __name__ == "__main__":
     # 環境変数の読み込み
@@ -328,18 +334,19 @@ if __name__ == "__main__":
             )
             del x_list, y_list, c_list
 
-        if plot_scale_checking:
+        if plot_scale_checker:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
                 flux_key="Fch4_ultra",
                 plot_count=plot_count,
             )
-            ffa.plot_flux_footprint_with_scale_check(
+            ffa.plot_flux_footprint_with_scale_checker(
                 x_list=x_list,  # メートル単位のx座標
                 y_list=y_list,  # メートル単位のy座標
                 c_list=c_list,
                 center_lat=center_lan,
                 center_lon=center_lon,
+                check_points=check_points_for_scale_checker,
                 satellite_image=image,
                 cmap="jet",
                 vmin=0,
@@ -348,6 +355,6 @@ if __name__ == "__main__":
                 cbar_label=r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=20,
                 output_dir=output_dir,
-                output_filename=f"footprint_ch4_scale_check{date_tag}.png",
+                output_filename="footprint_ch4-scale_checker.png",
             )
             del x_list, y_list, c_list
