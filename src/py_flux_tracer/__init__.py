@@ -13,7 +13,11 @@ from .monthly.monthly_figures_generator import MonthlyFiguresGenerator
 from .transfer_function.fft_files_reorganizer import FftFileReorganizer
 from .transfer_function.transfer_function_calculator import TransferFunctionCalculator
 
-# versionを動的に設定（./_version.pyがない場合はデフォルトバージョンを設定）
+"""
+versionを動的に設定する。
+`./_version.py`がない場合はsetuptools_scmを用いてGitからバージョン取得を試行
+それも失敗した場合にデフォルトバージョン（0.0.0）を設定
+"""
 try:
     from ._version import __version__
 except ImportError:
