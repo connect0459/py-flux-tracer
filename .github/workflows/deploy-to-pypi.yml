@@ -2,10 +2,12 @@ name: Deploy to PyPI
 
 on:
   release:
-    types: [created]
+    types: [published] # ドラフトから公開時のみトリガー
 
 jobs:
+  # リリース時のみ実行
   deploy:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
