@@ -19,6 +19,7 @@ dependencies = [
   "plotly>=5.24.1",   # MobileMeasurements
   "scipy",
   "seaborn>=0.13.2",
+  "setuptools_scm",   # バージョン管理用に追加
   "tqdm",
 ]
 readme = "README.md"
@@ -55,6 +56,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"
+raw-options = { local_scheme = "no-local-version" }
+write-to = "src/py_flux_tracer/_version_generated.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/py_flux_tracer"]

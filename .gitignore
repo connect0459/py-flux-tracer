@@ -12,6 +12,9 @@ wheels/
 .pytest_cache
 .ruff_cache
 
+# Version file
+src/py_flux_tracer/_version.py
+
 # 環境変数ファイルを無視
 *.env
 
@@ -23,3 +26,4 @@ workspace/**/private/*
 # workspaceのipynbは結果を追跡しないように除外し、exampleファイルのみを残す
 workspace/**/*.ipynb
 !workspace/**/*.ipynb.example
+
