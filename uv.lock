@@ -1037,6 +1037,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pdoc"
+version = "15.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "markupsafe" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bf/16/1b542af6f18a27de059f722c487a596681127897b6d31f78e46d6e5bf2fe/pdoc-15.0.1.tar.gz", hash = "sha256:3b08382c9d312243ee6c2a1813d0ff517a6ab84d596fa2c6c6b5255b17c3d666", size = 154174 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2f/4d/60d856a1b12fbf6ac1539efccfa138e57c6b88675c9867d84bbb46455cc1/pdoc-15.0.1-py3-none-any.whl", hash = "sha256:fd437ab8eb55f9b942226af7865a3801e2fb731665199b74fd9a44737dbe20f9", size = 144186 },
+]
+
+[[package]]
 name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1184,7 +1198,7 @@ wheels = [
 
 [[package]]
 name = "py-flux-tracer"
-version = "0.1.dev8+gfb4a258.d20250113"
+version = "0.1.dev17+g97c19ce.d20250115"
 source = { editable = "." }
 dependencies = [
     { name = "folium" },
@@ -1207,6 +1221,7 @@ dev = [
     { name = "build" },
     { name = "hatchling" },
     { name = "ipykernel" },
+    { name = "pdoc" },
     { name = "pytest" },
     { name = "python-dotenv" },
     { name = "ruff" },
@@ -1235,6 +1250,7 @@ dev = [
     { name = "build", specifier = ">=1.2.2.post1" },
     { name = "hatchling", specifier = ">=1.25.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "pdoc", specifier = ">=15.0.1" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "ruff", specifier = ">=0.6.8" },

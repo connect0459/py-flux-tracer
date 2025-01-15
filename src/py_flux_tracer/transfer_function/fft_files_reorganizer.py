@@ -41,15 +41,28 @@ class FftFileReorganizer:
         """
         FftFileReorganizerクラスを初期化します。
 
-        Args:
-            input_dir (str): 入力ファイルが格納されているディレクトリのパス
-            output_dir (str): 出力ファイルを格納するディレクトリのパス
-            flag_csv_path (str): フラグ情報が記載されているCSVファイルのパス
-            filename_patterns (list[str] | None): ファイル名のパターン（正規表現）のリスト
-            output_dirs (dict[str, str] | None): 出力ディレクトリの構造を定義する辞書
-            sort_by_rh (bool): RHに基づいてサブディレクトリにファイルを分類するかどうか
-            logger (Logger | None): 使用するロガー
-            logging_debug (bool): ログレベルをDEBUGに設定するかどうか
+        Parameters:
+        ------
+        input_dir : str
+            入力ファイルが格納されているディレクトリのパス
+        output_dir : str
+            出力ファイルを格納するディレクトリのパス
+        flag_csv_path : str
+            フラグ情報が記載されているCSVファイルのパス
+        filename_patterns : list[str] | None
+            ファイル名のパターン（正規表現）のリスト
+        output_dirs : dict[str, str] | None
+            出力ディレクトリの構造を定義する辞書
+        sort_by_rh : bool
+            RHに基づいてサブディレクトリにファイルを分類するかどうか
+        logger : Logger | None
+            使用するロガー
+        logging_debug : bool
+            ログレベルをDEBUGに設定するかどうか
+
+        Returns:
+        ------
+        None
         """
         self._fft_path: str = input_dir
         self._sorted_path: str = output_dir
@@ -98,8 +111,10 @@ class FftFileReorganizer:
         有効なファイルを適切な出力ディレクトリにコピーします。
         フラグファイルの時間と完全に一致するファイルのみを処理します。
 
-        Args:
-            valid_files (list): コピーする有効なファイル名のリスト
+        Parameters:
+        ------
+        valid_files : list
+            コピーする有効なファイル名のリスト
         """
         with tqdm(total=len(valid_files)) as pbar:
             for filename in valid_files:
@@ -135,8 +150,14 @@ class FftFileReorganizer:
         """
         入力ディレクトリから有効なファイルのリストを取得します。
 
+        Parameters:
+        ------
+        なし
+
         Returns:
-            list: 日時でソートされた有効なファイル名のリスト
+        ------
+        valid_files : list
+            日時でソートされた有効なファイル名のリスト
         """
         fft_files = os.listdir(self._fft_path)
         valid_files = []
@@ -152,14 +173,20 @@ class FftFileReorganizer:
         """
         ファイル名から日時情報を抽出します。
 
-        Args:
-            filename (str): 解析対象のファイル名
+        Parameters:
+        ------
+        filename : str
+            解析対象のファイル名
 
         Returns:
-            datetime: 抽出された日時情報
+        ------
+        datetime : datetime
+            抽出された日時情報
 
         Raises:
-            ValueError: ファイル名から日時情報を抽出できない場合
+        ------
+        ValueError
+            ファイル名から日時情報を抽出できない場合
         """
         for pattern in self._filename_patterns:
             match = re.match(pattern, filename)
@@ -204,7 +231,7 @@ class FftFileReorganizer:
     @staticmethod
     def get_rh_directory(rh: float):
         """
-        # すべての値を10刻みで切り上げる（例: 80.1 → RH90, 86.0 → RH90, 91.2 → RH100）
+        すべての値を10刻みで切り上げる（例: 80.1 → RH90, 86.0 → RH90, 91.2 → RH100）
         """
         if rh < 0 or rh > 100:  # 相対湿度として不正な値を除外
             return "bad_data"
@@ -218,19 +245,24 @@ class FftFileReorganizer:
         """
         ロガーを設定します。
 
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
+        ロギングの設定を行い、ログメッセージのフォーマットを指定します。
         ログメッセージには、日付、ログレベル、メッセージが含まれます。
 
         渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        引数:
-            logger (Logger | None): 使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level (int): ロガーのログレベル。デフォルトはINFO。
+        Parameters:
+        ------
+        logger : Logger | None
+            使用するロガー。Noneの場合は新しいロガーを作成します。
+        log_level : int
+            ロガーのログレベル。デフォルトはINFO。
 
-        戻り値:
-            Logger: 設定されたロガーオブジェクト。
+        Returns:
+        ------
+        Logger
+            設定されたロガーオブジェクト。
         """
         if logger is not None and isinstance(logger, Logger):
             return logger
