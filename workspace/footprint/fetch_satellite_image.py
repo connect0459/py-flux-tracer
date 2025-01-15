@@ -16,7 +16,7 @@ dotenv_path = "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envãƒ•ã
 # site_name:str="SAC"
 site_name: str = "YYG"
 zoom: float = 13
-local_image_dir: str = "/home/connect0459/labo/py-flux-tracer/storage/assets/images"
+local_image_dir: str = "/home/connect0459/labo/py-flux-tracer/storage/assets"
 
 
 if __name__ == "__main__":

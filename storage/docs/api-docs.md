@@ -2,28 +2,40 @@
 
 python環境またはuvを用いたコマンドを紹介しています。ここでは [pdoc](https://github.com/pdoc3/pdoc) でドキュメント出力を行います。
 
-## 生成
+## pdocのインストール
 
 ```bash
-pdoc -o storage/api-docs py_flux_tracer
+pip install pdoc
 ```
 
 または
 
 ```bash
-uv run pdoc -o storage/api-docs py_flux_tracer
+uv pip install pdoc
+```
+
+## 生成
+
+```bash
+pdoc -o storage/api-docs/v0 py_flux_tracer
+```
+
+または
+
+```bash
+uv run pdoc -o storage/api-docs/v0 py_flux_tracer
 ```
 
 ## ブラウザで表示
 
 ```bash
-pdoc py_flux_tracer -h localhost -p 8080
+pdoc -h localhost -p 8080 -t storage/api-docs/v0 py_flux_tracer
 ```
 
 または
 
 ```bash
-uv run pdoc py_flux_tracer -h localhost -p 8080
+uv run pdoc -h localhost -p 8080 -t storage/api-docs/v0 py_flux_tracer
 ```
 
-<http://localhost:8080> にアクセスするとドキュメントが表示される。
+<http://localhost:8080> にアクセスするとドキュメントが表示されます。
