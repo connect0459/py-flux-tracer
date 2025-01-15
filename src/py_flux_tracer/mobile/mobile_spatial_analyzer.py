@@ -23,7 +23,7 @@ class EmissionData:
     """
     ホットスポットの排出量データを格納するクラス。
 
-    Parameters:
+    Fields:
     ------
         source : str
             データソース
@@ -49,7 +49,7 @@ class EmissionData:
             年間排出量 (L/year)
     """
 
-    source: str
+    source: str # データソース（日時）
     type: str
     section: str | int | float
     latitude: float
@@ -169,7 +169,7 @@ class EmissionData:
 class MSAInputConfig:
     """入力ファイルの設定を保持するデータクラス
 
-    Parameters:
+    Fields:
     ------
         fs : float
             サンプリング周波数（Hz）
