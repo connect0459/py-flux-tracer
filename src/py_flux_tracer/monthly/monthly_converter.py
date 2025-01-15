@@ -149,6 +149,7 @@ class MonthlyConverter:
         """
         指定されたシートを読み込み、DataFrameとして返却します。
         デフォルトでは2行目（単位の行）はスキップされます。
+        重複するカラム名がある場合は、より先に指定されたシートに存在するカラムの値を保持します。
 
         Parameters:
         ------
@@ -197,7 +198,7 @@ class MonthlyConverter:
         # 各ファイルからデータを読み込む
         for file_name, excel_file in sorted_files:
             file_date = self._extract_date(file_name)
-            
+
             for sheet_name in sheet_names:
                 if sheet_name in excel_file.sheet_names:
                     df = pd.read_excel(
@@ -235,9 +236,7 @@ class MonthlyConverter:
         for sheet_name in sheet_names[1:]:
             if sheet_name in combined_sheets:
                 base_df = self.merge_dataframes(
-                    base_df,
-                    combined_sheets[sheet_name],
-                    date_column=datetime_key
+                    base_df, combined_sheets[sheet_name], date_column=datetime_key
                 )
 
         # 日付でフィルタリング
@@ -256,7 +255,9 @@ class MonthlyConverter:
             required_columns = [datetime_key, "year", "month"]
             available_columns = base_df.columns.tolist()  # 利用可能なカラムを取得
             if not all(col in available_columns for col in columns):
-                raise ValueError(f"指定されたカラムが見つかりません: {columns}. 利用可能なカラム: {available_columns}")
+                raise ValueError(
+                    f"指定されたカラムが見つかりません: {columns}. 利用可能なカラム: {available_columns}"
+                )
             selected_columns = list(set(columns + required_columns))
             base_df = base_df[selected_columns]
 
@@ -388,15 +389,13 @@ class MonthlyConverter:
             monthly_data = monthly_data[monthly_data[datetime_column].dt.day <= end_day]
 
         return monthly_data
-    
+
     @staticmethod
     def merge_dataframes(
-        df1: pd.DataFrame,
-        df2: pd.DataFrame,
-        date_column: str = "Date"
+        df1: pd.DataFrame, df2: pd.DataFrame, date_column: str = "Date"
     ) -> pd.DataFrame:
         """
-        2つのDataFrameを結合します。重複するカラム（Date, year, month）は除外されます。
+        2つのDataFrameを結合します。重複するカラムは元の名前とサフィックス付きの両方を保持します。
 
         Parameters:
         ------
@@ -415,18 +414,36 @@ class MonthlyConverter:
         # インデックスをリセット
         df1 = df1.reset_index(drop=True)
         df2 = df2.reset_index(drop=True)
-        
+
         # 日付カラムを統一
         df2[date_column] = df1[date_column]
-        
-        # 重複するカラムを除外（Date, year, monthを除く）
-        duplicate_cols = [date_column, "year", "month"]
-        unique_cols = [col for col in df2.columns if col not in duplicate_cols]
-        
-        # 結合
-        return pd.merge(
-            df1,
-            df2[unique_cols],
-            left_index=True,
-            right_index=True
-        )
+
+        # 重複しないカラムと重複するカラムを分離
+        duplicate_cols = [date_column, "year", "month"]  # 常に除外するカラム
+        overlapping_cols = [
+            col
+            for col in df2.columns
+            if col in df1.columns and col not in duplicate_cols
+        ]
+        unique_cols = [
+            col
+            for col in df2.columns
+            if col not in df1.columns and col not in duplicate_cols
+        ]
+
+        # 結果のDataFrameを作成
+        result = df1.copy()
+
+        # 重複しないカラムを追加
+        for col in unique_cols:
+            result[col] = df2[col]
+
+        # 重複するカラムを処理
+        for col in overlapping_cols:
+            # 元のカラムはdf1の値を保持（既に result に含まれている）
+            # _x サフィックスでdf1の値を追加
+            result[f"{col}_x"] = df1[col]
+            # _y サフィックスでdf2の値を追加
+            result[f"{col}_y"] = df2[col]
+
+        return result
