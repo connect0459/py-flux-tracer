@@ -574,34 +574,21 @@ class FluxFootprintAnalyzer:
 
         self.logger.info("プロットを作成中...")
 
-        # 4. 座標変換のための定数
-        meters_per_lat: float = self.EARTH_RADIUS_METER * (
-            math.pi / 180
-        )  # 緯度1度あたりのメートル
-        meters_per_lon: float = meters_per_lat * math.cos(
-            math.radians(center_lat)
-        )  # 経度1度あたりのメートル
+        # 4. 座標変換のための定数計算（1回だけ）
+        meters_per_lat: float = self.EARTH_RADIUS_METER * (math.pi / 180)  # 緯度1度あたりのメートル
+        meters_per_lon: float = meters_per_lat * math.cos(math.radians(center_lat))  # 経度1度あたりのメートル
 
-        # 5. フットプリントデータの座標変換
-        # メートル単位からの緯度経度への変換
-        x_deg = np.array(x_list) / meters_per_lon
-        y_deg = np.array(y_list) / meters_per_lat
+        # 5. フットプリントデータの座標変換（まとめて1回で実行）
+        x_deg = np.array(x_list) / meters_per_lon * lon_correction  # 補正係数も同時に適用
+        y_deg = np.array(y_list) / meters_per_lat * lat_correction  # 補正係数も同時に適用
 
-        # 6. フットプリントデータの座標変換
-        # 補正係数を適用した座標変換
-        meters_per_lat: float = self.EARTH_RADIUS_METER * (math.pi / 180)
-        meters_per_lon: float = meters_per_lat * math.cos(math.radians(center_lat))
-
-        x_deg = np.array(x_list) / meters_per_lon * lon_correction
-        y_deg = np.array(y_list) / meters_per_lat * lat_correction
-
+        # 6. 中心点からの相対座標を実際の緯度経度に変換
         lons = center_lon + x_deg
         lats = center_lat + y_deg
 
-        # 7. 表示範囲の計算
+        # 7. 表示範囲の計算（変更なし）
         x_range: float = xy_max / meters_per_lon
         y_range: float = xy_max / meters_per_lat
-
         map_boundaries: tuple[float, float, float, float] = (
             center_lon - x_range,  # left_lon
             center_lon + x_range,  # right_lon
