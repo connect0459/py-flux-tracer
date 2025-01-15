@@ -84,8 +84,8 @@ inputs: list[MSAInputConfig] = [
 
 # フォントファイルを登録（必要な場合のみで可）
 font_paths: list[str] = [
-    "/home/connect0459/labo/py_flux_tracer/storage/assets/fonts/arial.ttf",  # 英語のデフォルト
-    "/home/connect0459/labo/py_flux_tracer/storage/assets/fonts/msgothic.ttc",  # 日本語のデフォルト
+    "/home/connect0459/labo/py-flux-tracer/storage/assets/fonts/arial.ttf",  # 英語のデフォルト
+    "/home/connect0459/labo/py-flux-tracer/storage/assets/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
 for path in font_paths:
     fm.fontManager.addfont(path)
@@ -142,15 +142,8 @@ if __name__ == "__main__":
 
     # 航空写真の取得
     local_image_path: str = (
-        "/home/connect0459/labo/py_flux_tracer/storage/assets/images/SAC-zoom_13.png"
+        "/home/connect0459/labo/py-flux-tracer/storage/assets/images/SAC-zoom_13.png"
     )
-    # image = ffa.get_satellite_image_from_api(
-    #     api_key=gms_api_key,
-    #     center_lat=center_lan,
-    #     center_lon=center_lon,
-    #     output_path=local_image_path,
-    #     zoom=13,
-    # )  # API
     image = ffa.get_satellite_image_from_local(
         local_image_path=local_image_path
     )  # ローカル
