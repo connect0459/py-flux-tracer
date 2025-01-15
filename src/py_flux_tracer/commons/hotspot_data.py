@@ -6,7 +6,7 @@ from typing import Literal
 class HotspotData:
     """ホットスポットの情報を保持するデータクラス
 
-    Fields:
+    Parameters:
     ------
         source : str
             データソース

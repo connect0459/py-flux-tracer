@@ -23,7 +23,7 @@ class EmissionData:
     """
     ホットスポットの排出量データを格納するクラス。
 
-    Fields:
+    Parameters:
     ------
         source : str
             データソース（日時）
@@ -169,7 +169,7 @@ class EmissionData:
 class MSAInputConfig:
     """入力ファイルの設定を保持するデータクラス
 
-    Fields:
+    Parameters:
     ------
         fs : float
             サンプリング周波数（Hz）
