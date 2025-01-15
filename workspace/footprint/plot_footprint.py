@@ -155,7 +155,7 @@ if __name__ == "__main__":
         local_image_path=local_image_path
     )  # ローカル
 
-    for start_end_date in start_end_dates_list:
+    for i, start_end_date in enumerate(start_end_dates_list):
         start_date = start_end_date[0]
         end_date = start_end_date[1]
         date_tag: str = f"-{start_date}_{end_date}"
@@ -334,7 +334,7 @@ if __name__ == "__main__":
             )
             del x_list, y_list, c_list
 
-        if plot_scale_checker:
+        if plot_scale_checker and i == 0:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
                 flux_key="Fch4_ultra",
