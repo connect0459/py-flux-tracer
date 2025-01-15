@@ -1,2 +1,2 @@
 # docstringから生成するドキュメントを除外
-storage/api-docs/* linguist-vendored
+docs/* linguist-vendored
