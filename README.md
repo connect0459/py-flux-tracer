@@ -12,13 +12,13 @@
 ### インストール方法
 
 ```bash
-pip install git+https://github.com/connect0459/py-flux-tracer.git
+pip install py-flux-tracer
 ```
 
 または
 
 ```bash
-uv add git+https://github.com/connect0459/py-flux-tracer.git
+uv add py-flux-tracer
 ```
 
 ## ライセンス
@@ -36,6 +36,8 @@ uv add git+https://github.com/connect0459/py-flux-tracer.git
   - [3. 新機能の追加](./storage/docs/development/3-add-features.md)
 - [パッケージのデプロイ](./storage/docs/deployment.md)
 - [コマンド集](./storage/docs/cmd.md)
+
+クラスやメソッドのdocstringはNumPy/SciPy Styleで記述しています。 [pdoc](https://github.com/pdoc3/pdoc) や [Sphinx](https://github.com/sphinx-doc/sphinx) などのNumPy/SciPy Styleをサポートするドキュメント生成ツールでHTMLドキュメントを生成可能です。
 
 ## コントリビュータ
 
