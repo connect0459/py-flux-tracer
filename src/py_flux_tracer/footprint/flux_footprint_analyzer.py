@@ -772,6 +772,107 @@ class FluxFootprintAnalyzer:
         else:
             plt.close(fig=fig)
 
+    def plot_flux_footprint_with_scale_check(
+        self,
+        x_list: list[float],
+        y_list: list[float],
+        c_list: list[float],
+        center_lat: float,
+        center_lon: float,
+        vmin: float,
+        vmax: float,
+        add_cbar: bool = True,
+        cbar_label: str | None = None,
+        cbar_labelpad: int = 20,
+        cmap: str = "jet",
+        function: callable = np.mean,
+        lat_correction: float = 1,
+        lon_correction: float = 1,
+        output_dir: str | None = None,
+        output_filename: str = "footprint_scale_check.png",
+        save_fig: bool = True,
+        show_fig: bool = True,
+        satellite_image: ImageFile | None = None,
+        xy_max: float = 5000,
+    ) -> None:
+        """
+        フットプリントの縮尺確認用のプロット作成メソッド。
+        中心から500m、1000m、2000m、3000mの位置に仮想的なホットスポットを配置して縮尺を確認します。
+
+        引数は plot_flux_footprint_with_hotspots と同様ですが、hotspotsとhotspot_colorsは内部で生成します。
+        """
+        # 仮想的なホットスポットデータの作成
+        check_points = [
+            (500, "North", 90),   # 北 500m
+            (1000, "East", 0),    # 東 1000m
+            (2000, "South", 270), # 南 2000m
+            (3000, "West", 180),  # 西 3000m
+        ]
+        
+        dummy_hotspots = []
+        for distance, direction, angle in check_points:
+            # 角度をラジアンに変換
+            rad = math.radians(angle)
+            # 距離から緯度経度の変化量を計算
+            meters_per_lat = self.EARTH_RADIUS_METER * (math.pi / 180)
+            meters_per_lon = meters_per_lat * math.cos(math.radians(center_lat))
+            
+            dx = distance * math.cos(rad)
+            dy = distance * math.sin(rad)
+            
+            delta_lon = dx / meters_per_lon
+            delta_lat = dy / meters_per_lat
+            
+            # HotspotDataオブジェクトの作成
+            hotspot = HotspotData(
+                avg_lat=center_lat + delta_lat,
+                avg_lon=center_lon + delta_lon,
+                delta_ch4=0.0,
+                delta_c2h6=0.0,
+                ratio=0.0,
+                type=f"{direction}_{distance}m",
+                section=0,
+                source="scale_check",
+                angle=0,
+                correlation=0,
+            )
+            dummy_hotspots.append(hotspot)
+
+        # カスタムカラーマップの作成
+        hotspot_colors = {
+            "North_500m": "red",
+            "East_1000m": "blue",
+            "South_2000m": "green",
+            "West_3000m": "purple"
+        }
+
+        # 既存のメソッドを呼び出してプロット
+        self.plot_flux_footprint_with_hotspots(
+            x_list=x_list,
+            y_list=y_list,
+            c_list=c_list,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            vmin=vmin,
+            vmax=vmax,
+            add_cbar=add_cbar,
+            add_legend=True,
+            cbar_label=cbar_label,
+            cbar_labelpad=cbar_labelpad,
+            cmap=cmap,
+            function=function,
+            hotspots=dummy_hotspots,
+            hotspot_colors=hotspot_colors,
+            lat_correction=lat_correction,
+            lon_correction=lon_correction,
+            output_dir=output_dir,
+            output_filename=output_filename,
+            save_fig=save_fig,
+            show_fig=show_fig,
+            satellite_image=satellite_image,
+            xy_max=xy_max
+        )
+
     def _combine_all_csv(self, csv_dir_path: str, suffix: str = ".csv") -> pd.DataFrame:
         """
         指定されたディレクトリ内の全CSVファイルを読み込み、処理し、結合します。

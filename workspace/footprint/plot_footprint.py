@@ -109,9 +109,10 @@ start_end_dates_list: list[list[str]] = [
 plot_ch4: bool = False
 plot_c2h6: bool = False
 plot_ratio: bool = False
-plot_ratio_legend: bool = True
+plot_ratio_legend: bool = False
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
+plot_scale_checking: bool = False
 
 if __name__ == "__main__":
     # 環境変数の読み込み
@@ -324,5 +325,29 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ch4_bio{date_tag}.png",
+            )
+            del x_list, y_list, c_list
+
+        if plot_scale_checking:
+            x_list, y_list, c_list = ffa.calculate_flux_footprint(
+                df=df,
+                flux_key="Fch4_ultra",
+                plot_count=plot_count,
+            )
+            ffa.plot_flux_footprint_with_scale_check(
+                x_list=x_list,  # メートル単位のx座標
+                y_list=y_list,  # メートル単位のy座標
+                c_list=c_list,
+                center_lat=center_lan,
+                center_lon=center_lon,
+                satellite_image=image,
+                cmap="jet",
+                vmin=0,
+                vmax=100,
+                xy_max=5000,
+                cbar_label=r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
+                cbar_labelpad=20,
+                output_dir=output_dir,
+                output_filename=f"footprint_ch4_scale_check{date_tag}.png",
             )
             del x_list, y_list, c_list
