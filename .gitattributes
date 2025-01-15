@@ -1,2 +1,2 @@
-# docstringから生成するドキュメントを除外
-docs/* linguist-vendored
+# docstringから生成するドキュメントを言語統計から除外
+docs/v*/* linguist-vendored
