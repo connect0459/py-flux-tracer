@@ -79,7 +79,7 @@ west_sections_list: list[int] = [
 output_dir: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs"
 )
-print_stats: bool = False
+print_summary: bool = False
 
 if __name__ == "__main__":
     msa = MobileSpatialAnalyzer(
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     gas_spots = [h for h in hotspots if h.type == "gas"]
     comb_spots = [h for h in hotspots if h.type == "comb"]
 
-    if print_stats:
+    if print_summary:
         print("\nResults:")
         print(f"  Bio:{len(bio_spots)},Gas:{len(gas_spots)},Comb:{len(comb_spots)}")
 

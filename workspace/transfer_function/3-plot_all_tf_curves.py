@@ -10,7 +10,7 @@ def plot_tf_curve(
     df: pd.DataFrame,
     date_key: str,
     coef_a_key: str,
-    gas_label: str,
+    label_gas: str,
     base_color: str,
     output_dir: str | None = None,
     output_basename: str = "all_tf_curves",
@@ -28,7 +28,7 @@ def plot_tf_curve(
         df (pd.DataFrame): 伝達関数の係数が格納されたDataFrame
         date_key (str): 日付が格納されているカラムの名前
         coef_a_key (str): 係数が格納されているカラムの名前
-        gas_label (str): プロットに表示するガスのラベル（例: "CH$_4$"）
+        label_gas (str): プロットに表示するガスのラベル（例: "CH$_4$"）
         base_color (str): 平均値の線の色
         output_dir (str | None): 出力ディレクトリ。Noneの場合は保存しない
         output_basename (str): 出力ファイル名のベース
@@ -91,7 +91,7 @@ def plot_tf_curve(
     )
 
     # グラフの設定
-    label_y_formatted: str = f"{label_y}\n" f"({gas_label} / Tv)"
+    label_y_formatted: str = f"{label_y}\n" f"({label_gas} / Tv)"
     plt.xscale("log")
     if add_xlabel:
         plt.xlabel(label_x)
@@ -167,12 +167,12 @@ if __name__ == "__main__":
         ]
 
         # 各ガスについてプロット
-        for coef_a_key, gas_label, base_color, gas_name in gas_configs:
+        for coef_a_key, label_gas, base_color, gas_name in gas_configs:
             plot_tf_curve(
                 df=df,
                 date_key="Date",
                 coef_a_key=coef_a_key,
-                gas_label=gas_label,
+                label_gas=label_gas,
                 base_color=base_color,
                 gas_name=gas_name,
                 output_dir=output_dir,

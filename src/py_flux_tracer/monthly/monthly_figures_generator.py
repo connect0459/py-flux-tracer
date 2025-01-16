@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from tqdm import tqdm
+from pathlib import Path
 from scipy import linalg, stats
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
@@ -85,7 +86,7 @@ class MonthlyFiguresGenerator:
         df,
         output_dir: str,
         output_filename: str = "timeseries.png",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         c1_flux_key: str = "Fch4_ultra",
         c2_flux_key: str = "Fc2h6_ultra",
     ):
@@ -100,7 +101,7 @@ class MonthlyFiguresGenerator:
                 出力ファイルを保存するディレクトリのパス
             output_filename : str
                 出力ファイルの名前
-            datetime_key : str
+            key_datetime : str
                 日付を含む列の名前。デフォルトは"Date"。
             c1_flux_key : str
                 CH4フラックスを含む列の名前。デフォルトは"Fch4_ultra"。
@@ -114,7 +115,7 @@ class MonthlyFiguresGenerator:
         _, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
 
         # CH4フラックスのプロット
-        ax1.scatter(df[datetime_key], df[c1_flux_key], color="red", alpha=0.5, s=20)
+        ax1.scatter(df[key_datetime], df[c1_flux_key], color="red", alpha=0.5, s=20)
         ax1.set_ylabel(r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
         ax1.set_ylim(-100, 600)
         ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top", fontsize=20)
@@ -122,7 +123,7 @@ class MonthlyFiguresGenerator:
 
         # C2H6フラックスのプロット
         ax2.scatter(
-            df[datetime_key],
+            df[key_datetime],
             df[c2_flux_key],
             color="orange",
             alpha=0.5,
@@ -148,11 +149,11 @@ class MonthlyFiguresGenerator:
         df: pd.DataFrame,
         output_dir: str,
         output_filename: str = "conc_flux_timeseries.png",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         ch4_conc_key: str = "CH4_ultra",
-        ch4_flux_key: str = "Fch4_ultra",
+        key_ch4_flux: str = "Fch4_ultra",
         c2h6_conc_key: str = "C2H6_ultra",
-        c2h6_flux_key: str = "Fc2h6_ultra",
+        key_c2h6_flux: str = "Fc2h6_ultra",
         print_summary: bool = True,
     ) -> None:
         """
@@ -166,15 +167,15 @@ class MonthlyFiguresGenerator:
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
-            datetime_key : str
+            key_datetime : str
                 日付列の名前
             ch4_conc_key : str
                 CH4濃度列の名前
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックス列の名前
             c2h6_conc_key : str
                 C2H6濃度列の名前
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックス列の名前
             print_summary : bool
                 解析情報をprintするかどうか
@@ -187,9 +188,9 @@ class MonthlyFiguresGenerator:
             # 統計情報の計算と表示
             for name, key in [
                 ("CH4 concentration", ch4_conc_key),
-                ("CH4 flux", ch4_flux_key),
+                ("CH4 flux", key_ch4_flux),
                 ("C2H6 concentration", c2h6_conc_key),
-                ("C2H6 flux", c2h6_flux_key),
+                ("C2H6 flux", key_c2h6_flux),
             ]:
                 # NaNを除外してから統計量を計算
                 valid_data = df[key].dropna()
@@ -213,14 +214,14 @@ class MonthlyFiguresGenerator:
         _, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
 
         # CH4濃度のプロット
-        ax1.scatter(df[datetime_key], df[ch4_conc_key], color="red", alpha=0.5, s=20)
+        ax1.scatter(df[key_datetime], df[ch4_conc_key], color="red", alpha=0.5, s=20)
         ax1.set_ylabel("CH$_4$ Concentration\n(ppm)")
         ax1.set_ylim(1.8, 2.6)
         ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top", fontsize=20)
         ax1.grid(True, alpha=0.3)
 
         # CH4フラックスのプロット
-        ax2.scatter(df[datetime_key], df[ch4_flux_key], color="red", alpha=0.5, s=20)
+        ax2.scatter(df[key_datetime], df[key_ch4_flux], color="red", alpha=0.5, s=20)
         ax2.set_ylabel("CH$_4$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
         ax2.set_ylim(-100, 600)
         # ax2.set_yticks([-100, 0, 200, 400, 600])
@@ -229,7 +230,7 @@ class MonthlyFiguresGenerator:
 
         # C2H6濃度のプロット
         ax3.scatter(
-            df[datetime_key], df[c2h6_conc_key], color="orange", alpha=0.5, s=20
+            df[key_datetime], df[c2h6_conc_key], color="orange", alpha=0.5, s=20
         )
         ax3.set_ylabel("C$_2$H$_6$ Concentration\n(ppb)")
         ax3.text(0.02, 0.98, "(c)", transform=ax3.transAxes, va="top", fontsize=20)
@@ -237,7 +238,7 @@ class MonthlyFiguresGenerator:
 
         # C2H6フラックスのプロット
         ax4.scatter(
-            df[datetime_key], df[c2h6_flux_key], color="orange", alpha=0.5, s=20
+            df[key_datetime], df[key_c2h6_flux], color="orange", alpha=0.5, s=20
         )
         ax4.set_ylabel("C$_2$H$_6$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
         ax4.set_ylim(-20, 40)
@@ -262,12 +263,12 @@ class MonthlyFiguresGenerator:
 
                 # DataFrameのコピーを作成し、日時関連の列を追加
                 df_analysis = df.copy()
-                df_analysis["hour"] = pd.to_datetime(df_analysis[datetime_key]).dt.hour
+                df_analysis["hour"] = pd.to_datetime(df_analysis[key_datetime]).dt.hour
                 df_analysis["month"] = pd.to_datetime(
-                    df_analysis[datetime_key]
+                    df_analysis[key_datetime]
                 ).dt.month
                 df_analysis["weekday"] = pd.to_datetime(
-                    df_analysis[datetime_key]
+                    df_analysis[key_datetime]
                 ).dt.dayofweek
 
                 # 上位20%のしきい値を計算
@@ -302,7 +303,7 @@ class MonthlyFiguresGenerator:
                 available_blocks = set(time_blocks.index) & set(total_time_blocks.index)
                 for block in sorted(available_blocks):
                     print(
-                        f"{block:02d}:00-{block+3:02d}:00: {time_percentages[block]}% ({time_blocks[block]}件/{total_time_blocks[block]}件)"
+                        f"{block:02d}:00-{block + 3:02d}:00: {time_percentages[block]}% ({time_blocks[block]}件/{total_time_blocks[block]}件)"
                     )
 
                 # 曜日ごとの分析
@@ -323,18 +324,18 @@ class MonthlyFiguresGenerator:
             # 濃度とフラックスそれぞれの分析を実行
             print("\n=== 上位値の時間帯・曜日分析 ===")
             analyze_top_values(df, ch4_conc_key)
-            analyze_top_values(df, ch4_flux_key)
+            analyze_top_values(df, key_ch4_flux)
             analyze_top_values(df, c2h6_conc_key)
-            analyze_top_values(df, c2h6_flux_key)
+            analyze_top_values(df, key_c2h6_flux)
 
     def plot_ch4c2h6_timeseries(
         self,
         df: pd.DataFrame,
         output_dir: str,
-        ch4_flux_key: str,
-        c2h6_flux_key: str,
+        key_ch4_flux: str,
+        key_c2h6_flux: str,
         output_filename: str = "timeseries_year.png",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         window_size: int = 24 * 7,  # 1週間の移動平均のデフォルト値
         confidence_interval: float = 0.95,  # 95%信頼区間
         subplot_label_ch4: str | None = "(a)",
@@ -355,13 +356,13 @@ class MonthlyFiguresGenerator:
                 データフレーム
             output_dir : str
                 出力ディレクトリのパス
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックスのカラム名
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックスのカラム名
             output_filename : str
                 出力ファイル名
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
             window_size : int
                 移動平均の窓サイズ
@@ -391,8 +392,8 @@ class MonthlyFiguresGenerator:
         # データの準備
         df = df.copy()
         if not isinstance(df.index, pd.DatetimeIndex):
-            df[datetime_key] = pd.to_datetime(df[datetime_key])
-            df.set_index(datetime_key, inplace=True)
+            df[key_datetime] = pd.to_datetime(df[key_datetime])
+            df.set_index(key_datetime, inplace=True)
 
         # 日付範囲の処理
         if start_date is not None:
@@ -423,10 +424,10 @@ class MonthlyFiguresGenerator:
 
         # CH4とC2H6の移動平均と信頼区間を計算
         ch4_mean, ch4_lower, ch4_upper = calculate_rolling_stats(
-            df[ch4_flux_key], window_size, confidence_interval
+            df[key_ch4_flux], window_size, confidence_interval
         )
         c2h6_mean, c2h6_lower, c2h6_upper = calculate_rolling_stats(
-            df[c2h6_flux_key], window_size, confidence_interval
+            df[key_c2h6_flux], window_size, confidence_interval
         )
 
         # プロットの作成
@@ -482,7 +483,7 @@ class MonthlyFiguresGenerator:
             # カスタムフォーマッタの作成（数字を通常フォントで表示）
             def date_formatter(x, p):
                 date = mdates.num2date(x)
-                return f'{date.strftime("%m")}'
+                return f"{date.strftime('%m')}"
 
             ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
 
@@ -502,7 +503,7 @@ class MonthlyFiguresGenerator:
         g2401_flux_key: str,
         ultra_flux_key: str,
         output_filename: str = "ch4_flux_comparison.png",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         window_size: int = 24 * 7,  # 1週間の移動平均のデフォルト値
         confidence_interval: float = 0.95,  # 95%信頼区間
         subplot_label: str | None = None,
@@ -528,7 +529,7 @@ class MonthlyFiguresGenerator:
                 UltraのCH4フラックスのカラム名
             output_filename : str
                 出力ファイル名
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
             window_size : int
                 移動平均の窓サイズ
@@ -558,8 +559,8 @@ class MonthlyFiguresGenerator:
         # データの準備
         df = df.copy()
         if not isinstance(df.index, pd.DatetimeIndex):
-            df[datetime_key] = pd.to_datetime(df[datetime_key])
-            df.set_index(datetime_key, inplace=True)
+            df[key_datetime] = pd.to_datetime(df[key_datetime])
+            df.set_index(key_datetime, inplace=True)
 
         # 日付範囲の処理（既存のコードと同様）
         if start_date is not None:
@@ -636,7 +637,7 @@ class MonthlyFiguresGenerator:
         # カスタムフォーマッタの作成（数字を通常フォントで表示）
         def date_formatter(x, p):
             date = mdates.num2date(x)
-            return f'{date.strftime("%m")}'
+            return f"{date.strftime('%m')}"
 
         ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
         ax.xaxis.set_minor_locator(mdates.MonthLocator())
@@ -1122,13 +1123,13 @@ class MonthlyFiguresGenerator:
                     # 平日/休日の比率を計算
                     print("\n平日/休日の比率:")
                     print(
-                        f"  平均値比: {weekday_stats['mean']/holiday_stats['mean']:.2f}"
+                        f"  平均値比: {weekday_stats['mean'] / holiday_stats['mean']:.2f}"
                     )
                     print(
-                        f"  最大値比: {weekday_stats['max']/holiday_stats['max']:.2f}"
+                        f"  最大値比: {weekday_stats['max'] / holiday_stats['max']:.2f}"
                     )
                     print(
-                        f"  最小値比: {weekday_stats['min']/holiday_stats['min']:.2f}"
+                        f"  最小値比: {weekday_stats['min'] / holiday_stats['min']:.2f}"
                     )
                 else:
                     print("十分なデータがありません")
@@ -1139,12 +1140,12 @@ class MonthlyFiguresGenerator:
         output_dir: str,
         ch4_conc_key: str = "CH4_ultra_cal",
         c2h6_conc_key: str = "C2H6_ultra_cal",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         output_filename: str = "diurnal_concentrations.png",
         show_std: bool = True,
         alpha_std: float = 0.2,
         add_legend: bool = True,  # 凡例表示のオプションを追加
-        print_stats: bool = True,
+        print_summary: bool = True,
         subplot_label_ch4: str | None = None,
         subplot_label_c2h6: str | None = None,
         subplot_fontsize: int = 24,
@@ -1164,7 +1165,7 @@ class MonthlyFiguresGenerator:
                 CH4濃度のカラム名
             c2h6_conc_key : str
                 C2H6濃度のカラム名
-            datetime_key : str
+            key_datetime : str
                 日時カラム名
             output_filename : str
                 出力ファイル名
@@ -1174,7 +1175,7 @@ class MonthlyFiguresGenerator:
                 標準偏差の透明度
             add_legend : bool
                 凡例を追加するかどうか
-            print_stats : bool
+            print_summary : bool
                 統計情報を表示するかどうか
             subplot_label_ch4 : str | None
                 CH4プロットのラベル
@@ -1197,12 +1198,12 @@ class MonthlyFiguresGenerator:
         df = df.copy()
         if interval == "30min":
             # 30分間隔の場合、時間と30分を別々に取得
-            df["hour"] = pd.to_datetime(df[datetime_key]).dt.hour
-            df["minute"] = pd.to_datetime(df[datetime_key]).dt.minute
+            df["hour"] = pd.to_datetime(df[key_datetime]).dt.hour
+            df["minute"] = pd.to_datetime(df[key_datetime]).dt.minute
             df["time_bin"] = df["hour"] + df["minute"].map({0: 0, 30: 0.5})
         else:
             # 1時間間隔の場合
-            df["time_bin"] = pd.to_datetime(df[datetime_key]).dt.hour
+            df["time_bin"] = pd.to_datetime(df[key_datetime]).dt.hour
 
         # 時間ごとの平均値と標準偏差を計算
         hourly_stats = df.groupby("time_bin")[[ch4_conc_key, c2h6_conc_key]].agg(
@@ -1307,7 +1308,7 @@ class MonthlyFiguresGenerator:
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-        if print_stats:
+        if print_summary:
             # 統計情報の表示
             for name, key in [("CH4", ch4_conc_key), ("C2H6", c2h6_conc_key)]:
                 stats = hourly_stats[key]
@@ -1318,17 +1319,17 @@ class MonthlyFiguresGenerator:
                 print(f"最大値: {mean_vals.max():.3f} (Hour: {mean_vals.idxmax()})")
                 print(f"平均値: {mean_vals.mean():.3f}")
                 print(f"日内変動幅: {mean_vals.max() - mean_vals.min():.3f}")
-                print(f"最大/最小比: {mean_vals.max()/mean_vals.min():.3f}")
+                print(f"最大/最小比: {mean_vals.max() / mean_vals.min():.3f}")
 
     def plot_flux_diurnal_patterns_with_std(
         self,
         df: pd.DataFrame,
         output_dir: str,
-        ch4_flux_key: str = "Fch4",
-        c2h6_flux_key: str = "Fc2h6",
+        key_ch4_flux: str = "Fch4",
+        key_c2h6_flux: str = "Fc2h6",
         ch4_label: str = r"$\mathregular{CH_{4}}$フラックス",
         c2h6_label: str = r"$\mathregular{C_{2}H_{6}}$フラックス",
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         output_filename: str = "diurnal_patterns.png",
         window_size: int = 6,  # 移動平均の窓サイズ
         show_std: bool = True,  # 標準偏差の表示有無
@@ -1342,15 +1343,15 @@ class MonthlyFiguresGenerator:
                 データフレーム
             output_dir : str
                 出力ディレクトリのパス
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックスのカラム名
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックスのカラム名
             ch4_label : str
                 CH4フラックスのラベル
             c2h6_label : str
                 C2H6フラックスのラベル
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
             output_filename : str
                 出力ファイル名
@@ -1378,12 +1379,12 @@ class MonthlyFiguresGenerator:
         # 日時インデックスの処理
         df = df.copy()
         if not isinstance(df.index, pd.DatetimeIndex):
-            df[datetime_key] = pd.to_datetime(df[datetime_key])
-            df.set_index(datetime_key, inplace=True)
+            df[key_datetime] = pd.to_datetime(df[key_datetime])
+            df.set_index(key_datetime, inplace=True)
 
         # 時刻データの抽出とグループ化
         df["hour"] = df.index.hour
-        hourly_means = df.groupby("hour")[[ch4_flux_key, c2h6_flux_key]].agg(
+        hourly_means = df.groupby("hour")[[key_ch4_flux, key_c2h6_flux]].agg(
             ["mean", "std"]
         )
 
@@ -1400,24 +1401,24 @@ class MonthlyFiguresGenerator:
 
         # 移動平均の計算と描画
         ch4_mean = (
-            hourly_means[(ch4_flux_key, "mean")]
+            hourly_means[(key_ch4_flux, "mean")]
             .rolling(window=window_size, center=True, min_periods=1)
             .mean()
         )
         c2h6_mean = (
-            hourly_means[(c2h6_flux_key, "mean")]
+            hourly_means[(key_c2h6_flux, "mean")]
             .rolling(window=window_size, center=True, min_periods=1)
             .mean()
         )
 
         if show_std:
             ch4_std = (
-                hourly_means[(ch4_flux_key, "std")]
+                hourly_means[(key_ch4_flux, "std")]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
             c2h6_std = (
-                hourly_means[(c2h6_flux_key, "std")]
+                hourly_means[(key_c2h6_flux, "std")]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
@@ -1460,7 +1461,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示（オプション）
-        for key, name in [(ch4_flux_key, "CH4"), (c2h6_flux_key, "C2H6")]:
+        for key, name in [(key_ch4_flux, "CH4"), (key_c2h6_flux, "C2H6")]:
             mean_val = hourly_means[(key, "mean")].mean()
             min_val = hourly_means[(key, "mean")].min()
             max_val = hourly_means[(key, "mean")].max()
@@ -1471,7 +1472,7 @@ class MonthlyFiguresGenerator:
             self.logger.info(f"Mean: {mean_val:.2f}")
             self.logger.info(f"Min: {min_val:.2f} (Hour: {min_time})")
             self.logger.info(f"Max: {max_val:.2f} (Hour: {max_time})")
-            self.logger.info(f"Max/Min ratio: {max_val/min_val:.2f}\n")
+            self.logger.info(f"Max/Min ratio: {max_val / min_val:.2f}\n")
 
     def plot_scatter(
         self,
@@ -1648,14 +1649,14 @@ class MonthlyFiguresGenerator:
         self,
         df: pd.DataFrame,
         output_dir: str,
-        ch4_flux_key: str,
-        c2h6_flux_key: str,
-        gas_label: str = "gas",
-        bio_label: str = "bio",
-        datetime_key: str = "Date",
+        key_ch4_flux: str,
+        key_c2h6_flux: str,
+        label_gas: str = "gas",
+        label_bio: str = "bio",
+        key_datetime: str = "Date",
         output_filename: str = "source_contributions.png",
         window_size: int = 6,  # 移動平均の窓サイズ
-        print_stats: bool = True,  # 統計情報を表示するかどうか,
+        print_summary: bool = True,  # 統計情報を表示するかどうか,
         show_legend: bool = False,
         smooth: bool = False,
         y_max: float = 100,  # y軸の上限値を追加
@@ -1670,21 +1671,21 @@ class MonthlyFiguresGenerator:
                 データフレーム
             output_dir : str
                 出力ディレクトリのパス
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックスのカラム名
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックスのカラム名
-            gas_label : str
+            label_gas : str
                 都市ガス起源のラベル
-            bio_label : str
+            label_bio : str
                 生物起源のラベル
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
             output_filename : str
                 出力ファイル名
             window_size : int
                 移動平均の窓サイズ
-            print_stats : bool
+            print_summary : bool
                 統計情報を表示するかどうか
             smooth : bool
                 移動平均を適用するかどうか
@@ -1698,9 +1699,9 @@ class MonthlyFiguresGenerator:
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
             df=df,
-            ch4_flux_key=ch4_flux_key,
-            c2h6_flux_key=c2h6_flux_key,
-            datetime_key=datetime_key,
+            key_ch4_flux=key_ch4_flux,
+            key_c2h6_flux=key_c2h6_flux,
+            key_datetime=key_datetime,
         )
 
         # 時刻データの抽出とグループ化
@@ -1744,7 +1745,7 @@ class MonthlyFiguresGenerator:
             hourly_means_smoothed["ch4_bio"],
             color="blue",
             alpha=0.6,
-            label=bio_label,
+            label=label_bio,
         )
         ax.fill_between(
             time_points,
@@ -1752,7 +1753,7 @@ class MonthlyFiguresGenerator:
             hourly_means_smoothed["ch4_bio"] + hourly_means_smoothed["ch4_gas"],
             color="red",
             alpha=0.6,
-            label=gas_label,
+            label=label_gas,
         )
 
         # 合計値のライン
@@ -1787,7 +1788,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示
-        if print_stats:
+        if print_summary:
             stats = {
                 "都市ガス起源": hourly_means["ch4_gas"],
                 "生物起源": hourly_means["ch4_bio"],
@@ -1806,21 +1807,21 @@ class MonthlyFiguresGenerator:
                 print(f"  最小値: {min_val:.2f} (Hour: {min_time})")
                 print(f"  最大値: {max_val:.2f} (Hour: {max_time})")
                 if min_val != 0:
-                    print(f"  最大/最小比: {max_val/min_val:.2f}")
+                    print(f"  最大/最小比: {max_val / min_val:.2f}")
 
     def plot_source_contributions_diurnal_by_date(
         self,
         df: pd.DataFrame,
         output_dir: str,
-        ch4_flux_key: str,
-        c2h6_flux_key: str,
-        gas_label: str = "gas",
-        bio_label: str = "bio",
-        datetime_key: str = "Date",
+        key_ch4_flux: str,
+        key_c2h6_flux: str,
+        label_gas: str = "gas",
+        label_bio: str = "bio",
+        key_datetime: str = "Date",
         output_filename: str = "source_contributions_by_date.png",
         show_label: bool = True,
         show_legend: bool = False,
-        print_stats: bool = False,  # 統計情報を表示するかどうか,
+        print_summary: bool = False,  # 統計情報を表示するかどうか,
         subplot_fontsize: int = 20,
         subplot_label_weekday: str | None = None,
         subplot_label_weekend: str | None = None,
@@ -1834,15 +1835,15 @@ class MonthlyFiguresGenerator:
                 データフレーム
             output_dir : str
                 出力ディレクトリのパス
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックスのカラム名
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックスのカラム名
-            gas_label : str
+            label_gas : str
                 都市ガス起源のラベル
-            bio_label : str
+            label_bio : str
                 生物起源のラベル
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
             output_filename : str
                 出力ファイル名
@@ -1866,9 +1867,9 @@ class MonthlyFiguresGenerator:
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
             df=df,
-            ch4_flux_key=ch4_flux_key,
-            c2h6_flux_key=c2h6_flux_key,
-            datetime_key=datetime_key,
+            key_ch4_flux=key_ch4_flux,
+            key_c2h6_flux=key_c2h6_flux,
+            key_datetime=key_datetime,
         )
 
         # 日付タイプの分類
@@ -1907,7 +1908,7 @@ class MonthlyFiguresGenerator:
                 hourly_means["ch4_bio"],
                 color="blue",
                 alpha=0.6,
-                label=bio_label,
+                label=label_bio,
             )
             ax.fill_between(
                 time_points,
@@ -1915,7 +1916,7 @@ class MonthlyFiguresGenerator:
                 hourly_means["ch4_bio"] + hourly_means["ch4_gas"],
                 color="red",
                 alpha=0.6,
-                label=gas_label,
+                label=label_gas,
             )
 
             # 合計値のライン
@@ -1977,7 +1978,7 @@ class MonthlyFiguresGenerator:
         plt.close()
 
         # 統計情報の表示
-        if print_stats:
+        if print_summary:
             for data, label in [
                 (data_weekday, "Weekdays"),
                 (data_holiday, "Weekends & Holidays"),
@@ -1992,7 +1993,7 @@ class MonthlyFiguresGenerator:
                 print(f"  最小値: {total_flux.min():.2f} (Hour: {total_flux.idxmin()})")
                 print(f"  最大値: {total_flux.max():.2f} (Hour: {total_flux.idxmax()})")
                 if total_flux.min() != 0:
-                    print(f"  最大/最小比: {total_flux.max()/total_flux.min():.2f}")
+                    print(f"  最大/最小比: {total_flux.max() / total_flux.min():.2f}")
 
     def plot_spectra(
         self,
@@ -2351,69 +2352,90 @@ class MonthlyFiguresGenerator:
     def plot_wind_rose_sources(
         self,
         df: pd.DataFrame,
-        output_dir: str,
-        ch4_flux_key: str = "Fch4",
-        c2h6_flux_key: str = "Fc2h6",
-        wind_dir_key: str = "Wind direction",
-        gas_label: str = "都市ガス起源",
-        bio_label: str = "生物起源",
-        datetime_key: str = "Date",
+        output_dir: str | Path | None = None,
         output_filename: str = "wind_rose.png",
+        key_datetime: str = "Date",
+        key_ch4_flux: str = "Fch4",
+        key_c2h6_flux: str = "Fc2h6",
+        key_wind_dir: str = "Wind direction",
+        flux_unit: str = r"(nmol m$^{-2}$ s$^{-1}$)",
+        ymax: float | None = None,  # フラックスの上限値
+        label_gas: str = "都市ガス起源",
+        label_bio: str = "生物起源",
+        figsize: tuple[float, float] = (8, 8),
+        flux_alpha: float = 0.4,
         num_directions: int = 8,  # 方位の数（8方位）
-        subplot_label: str = "(a)",
-        print_stats: bool = True,  # 統計情報を表示するかどうか
+        center_on_angles: bool = True,  # 追加：45度刻みの線を境界にするかどうか
+        subplot_label: str | None = None,
+        add_legend: bool = True,
+        print_summary: bool = True,  # 統計情報を表示するかどうか
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
-        """CH4フラックスの都市ガス起源と生物起源の風配図を作成
+        """CH4フラックスの都市ガス起源と生物起源の風配図を作成する関数
 
         Parameters:
         ------
             df : pd.DataFrame
-                データフレーム
-            output_dir : str
-                出力ディレクトリのパス
-            ch4_flux_key : str
-                CH4フラックスのカラム名
-            c2h6_flux_key : str
-                C2H6フラックスのカラム名
-            wind_dir_key : str
-                風向のカラム名
-            gas_label : str
-                都市ガス起源のラベル
-            bio_label : str
-                生物起源のラベル
-            datetime_key : str
-                日時カラムの名前
+                風配図を作成するためのデータフレーム
+            output_dir : str | Path | None
+                生成された図を保存するディレクトリのパス
             output_filename : str
-                出力ファイル名
+                保存するファイル名（デフォルトは"wind_rose.png"）
+            key_ch4_flux : str
+                CH4フラックスを示すカラム名
+            key_c2h6_flux : str
+                C2H6フラックスを示すカラム名
+            key_wind_dir : str
+                風向を示すカラム名
+            label_gas : str
+                都市ガス起源のフラックスに対するラベル
+            label_bio : str
+                生物起源のフラックスに対するラベル
+            key_datetime : str
+                日時を示すカラム名
             num_directions : int
-                方位の数（デフォルト8）
+                風向の数（デフォルトは8）
+            center_on_angles: bool
+                Trueの場合、45度刻みの線を境界として扇形を描画します。
+                Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
             subplot_label : str
-                サブプロットのラベル
-            print_stats : bool
-                統計情報を表示するかどうか
+                サブプロットに表示するラベル
+            print_summary : bool
+                統計情報を表示するかどうかのフラグ
+            flux_unit : str
+                フラックスの単位
+            ymax : float | None
+                y軸の上限値（指定しない場合はデータの最大値に基づいて自動設定）
+            figsize : tuple[float, float]
+                図のサイズ
+            flux_alpha : float
+                フラックスの透明度
+            save_fig : bool
+                図を保存するかどうかのフラグ
+            show_fig : bool
+                図を表示するかどうかのフラグ
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
-
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
             df=df,
-            ch4_flux_key=ch4_flux_key,
-            c2h6_flux_key=c2h6_flux_key,
-            datetime_key=datetime_key,
+            key_ch4_flux=key_ch4_flux,
+            key_c2h6_flux=key_c2h6_flux,
+            key_datetime=key_datetime,
         )
 
         # 方位の定義
-        direction_ranges = self._define_direction_ranges(num_directions)
+        direction_ranges = self._define_direction_ranges(
+            num_directions, center_on_angles
+        )
 
         # 方位ごとのデータを集計
         direction_data = self._aggregate_direction_data(
-            df_with_sources, wind_dir_key, direction_ranges
+            df_with_sources, key_wind_dir, direction_ranges
         )
 
         # プロットの作成
-        fig = plt.figure(figsize=(8, 8))
+        fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection="polar")
 
         # 方位の角度（ラジアン）を計算
@@ -2421,27 +2443,36 @@ class MonthlyFiguresGenerator:
             [np.radians(angle) for angle in direction_data["center_angle"]]
         )
 
-        # 生物起源のプロット
+        # 生物起源と都市ガス起源を独立してプロット
         ax.bar(
             theta,
             direction_data["bio_flux"],
             width=np.radians(360 / num_directions),
             bottom=0.0,
             color="blue",
-            alpha=0.6,
-            label=bio_label,
+            alpha=flux_alpha,
+            label=label_bio,
         )
 
-        # 都市ガス起源のプロット（積み上げ）
         ax.bar(
             theta,
             direction_data["gas_flux"],
             width=np.radians(360 / num_directions),
-            bottom=direction_data["bio_flux"],
+            bottom=0.0,
             color="red",
-            alpha=0.6,
-            label=gas_label,
+            alpha=flux_alpha,
+            label=label_gas,
         )
+
+        # y軸の範囲を設定
+        if ymax is not None:
+            ax.set_ylim(0, ymax)
+        else:
+            # データの最大値に基づいて自動設定
+            max_value = max(
+                direction_data["bio_flux"].max(), direction_data["gas_flux"].max()
+            )
+            ax.set_ylim(0, max_value * 1.1)  # 最大値の1.1倍を上限に設定
 
         # 方位ラベルの設定
         ax.set_theta_zero_location("N")  # 北を上に設定
@@ -2453,29 +2484,62 @@ class MonthlyFiguresGenerator:
         ax.set_xticks(angles)
         ax.set_xticklabels(labels)
 
-        # サブプロットラベルの追加（デフォルトは左上）
-        if subplot_label:
-            ax.text(0.05, 1.05, subplot_label, transform=ax.transAxes, fontsize=16)
-
-        # 凡例の表示
-        ax.legend(loc="center left", bbox_to_anchor=(1.2, 0.5))
-
-        # 単位の追加
-        ax.text(
-            0.95,
-            0.05,
-            r"[nmol m$^{-2}$ s$^{-1}$]",
-            transform=ax.transAxes,
-            fontsize=14,
-            ha="right",
+        # プロット領域の調整（上部と下部にスペースを確保）
+        plt.subplots_adjust(
+            top=0.8,  # 上部に20%のスペースを確保
+            bottom=0.2,  # 下部に20%のスペースを確保（凡例用）
         )
 
+        # サブプロットラベルの追加（デフォルトは左上）
+        if subplot_label:
+            ax.text(
+                0.01,
+                0.99,
+                subplot_label,
+                transform=ax.transAxes,
+            )
+
+        # 単位の追加（図の下部中央に配置）
+        plt.figtext(
+            0.5,  # x位置（中央）
+            0.1,  # y位置（下部）
+            flux_unit,
+            ha="center",  # 水平方向の位置揃え
+            va="bottom",  # 垂直方向の位置揃え
+        )
+
+        # 凡例の追加（単位の下に配置）
+        if add_legend:
+            # 最初のプロットから凡例のハンドルとラベルを取得
+            handles, labels = ax.get_legend_handles_labels()
+            # 図の下部に凡例を配置
+            fig.legend(
+                handles,
+                labels,
+                loc="center",
+                bbox_to_anchor=(0.5, 0.05),  # x=0.5で中央、y=0.05で下部に配置
+                ncol=len(handles),  # ハンドルの数だけ列を作成（一行に表示）
+            )
+
         # グラフの保存
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
-        plt.close()
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なパスを指定する必要があります。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dir, exist_ok=True)
+            output_path: str = os.path.join(output_dir, output_filename)
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+
+        # グラフの表示
+        if show_fig:
+            plt.show()
+        else:
+            plt.close(fig=fig)
 
         # 統計情報の表示
-        if print_stats:
+        if print_summary:
             for source in ["gas", "bio"]:
                 flux_data = direction_data[f"{source}_flux"]
                 mean_val = flux_data.mean()
@@ -2483,33 +2547,58 @@ class MonthlyFiguresGenerator:
                 max_dir = direction_data.loc[flux_data.idxmax(), "name"]
 
                 self.logger.info(
-                    f'{gas_label if source == "gas" else bio_label}の統計:'
+                    f"{label_gas if source == 'gas' else label_bio}の統計:"
                 )
                 print(f"  平均フラックス: {mean_val:.2f}")
                 print(f"  最大フラックス: {max_val:.2f}")
                 print(f"  最大フラックスの方位: {max_dir}")
 
-    def _define_direction_ranges(self, num_directions: int = 8) -> pd.DataFrame:
+    def _define_direction_ranges(
+        self,
+        num_directions: int = 8,
+        center_on_angles: bool = False,
+    ) -> pd.DataFrame:
         """方位の範囲を定義
 
         Parameters:
         ------
-        num_directions : int
-            方位の数（デフォルトは8）
+            num_directions : int
+                方位の数（デフォルトは8）
+            center_on_angles : bool
+                Trueの場合、45度刻みの線を境界として扇形を描画します。
+                Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
 
         Returns:
         ------
         pd.DataFrame
             方位の定義を含むDataFrame
         """
-        # 8方位の場合の方位名と中心角度
         if num_directions == 8:
-            directions = pd.DataFrame(
-                {
-                    "name": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
-                    "center_angle": [0, 45, 90, 135, 180, 225, 270, 315],
-                }
-            )
+            if center_on_angles:
+                # 45度刻みの線を境界とする場合
+                directions = pd.DataFrame(
+                    {
+                        "name": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+                        "center_angle": [
+                            22.5,
+                            67.5,
+                            112.5,
+                            157.5,
+                            202.5,
+                            247.5,
+                            292.5,
+                            337.5,
+                        ],
+                    }
+                )
+            else:
+                # 従来通り45度を中心とする場合
+                directions = pd.DataFrame(
+                    {
+                        "name": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+                        "center_angle": [0, 45, 90, 135, 180, 225, 270, 315],
+                    }
+                )
         else:
             raise ValueError(f"現在{num_directions}方位はサポートされていません")
 
@@ -2535,7 +2624,7 @@ class MonthlyFiguresGenerator:
     def _aggregate_direction_data(
         self,
         df: pd.DataFrame,
-        wind_dir_key: str,
+        key_wind_dir: str,
         direction_ranges: pd.DataFrame,
     ) -> pd.DataFrame:
         """方位ごとのフラックスデータを集計
@@ -2544,7 +2633,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 ソース分離済みのデータフレーム
-            wind_dir_key : str
+            key_wind_dir : str
                 風向のカラム名
             direction_ranges : pd.DataFrame
                 方位の定義
@@ -2560,12 +2649,12 @@ class MonthlyFiguresGenerator:
 
         for idx, row in direction_ranges.iterrows():
             if row["start_angle"] < row["end_angle"]:
-                mask = (df[wind_dir_key] > row["start_angle"]) & (
-                    df[wind_dir_key] <= row["end_angle"]
+                mask = (df[key_wind_dir] > row["start_angle"]) & (
+                    df[key_wind_dir] <= row["end_angle"]
                 )
             else:  # 北方向など、-180度と180度をまたぐ場合
-                mask = (df[wind_dir_key] > row["start_angle"]) | (
-                    df[wind_dir_key] <= row["end_angle"]
+                mask = (df[key_wind_dir] > row["start_angle"]) | (
+                    df[key_wind_dir] <= row["end_angle"]
                 )
 
             result_data.loc[idx, "gas_flux"] = df.loc[mask, "ch4_gas"].mean()
@@ -2579,10 +2668,10 @@ class MonthlyFiguresGenerator:
     def _calculate_source_contributions(
         self,
         df: pd.DataFrame,
-        ch4_flux_key: str,
-        c2h6_flux_key: str,
+        key_ch4_flux: str,
+        key_c2h6_flux: str,
         gas_ratio_c1c2: float = 0.076,
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
     ) -> pd.DataFrame:
         """
         CH4フラックスの都市ガス起源と生物起源の寄与を計算する。
@@ -2592,13 +2681,13 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 入力データフレーム
-            ch4_flux_key : str
+            key_ch4_flux : str
                 CH4フラックスのカラム名
-            c2h6_flux_key : str
+            key_c2h6_flux : str
                 C2H6フラックスのカラム名
             gas_ratio_c1c2 : float
                 ガスのC2H6/CH4比（ppb/ppb）
-            datetime_key : str
+            key_datetime : str
                 日時カラムの名前
 
         Returns:
@@ -2606,24 +2695,30 @@ class MonthlyFiguresGenerator:
             pd.DataFrame
                 起源別のフラックス値を含むデータフレーム
         """
-        df = df.copy()
+        df_processed = df.copy()
 
         # 日時インデックスの処理
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df[datetime_key] = pd.to_datetime(df[datetime_key])
-            df.set_index(datetime_key, inplace=True)
+        if not isinstance(df_processed.index, pd.DatetimeIndex):
+            df_processed[key_datetime] = pd.to_datetime(df_processed[key_datetime])
+            df_processed.set_index(key_datetime, inplace=True)
 
         # C2H6/CH4比の計算
-        df["c2c1_ratio"] = df[c2h6_flux_key] / df[ch4_flux_key]
+        df_processed["c2c1_ratio"] = (
+            df_processed[key_c2h6_flux] / df_processed[key_ch4_flux]
+        )
 
         # 都市ガスの標準組成に基づく都市ガス比率の計算
-        df["gas_ratio"] = df["c2c1_ratio"] / gas_ratio_c1c2 * 100
+        df_processed["gas_ratio"] = df_processed["c2c1_ratio"] / gas_ratio_c1c2 * 100
 
         # gas_ratioに基づいて都市ガス起源と生物起源の寄与を比例配分
-        df["ch4_gas"] = df[ch4_flux_key] * np.clip(df["gas_ratio"] / 100, 0, 1)
-        df["ch4_bio"] = df[ch4_flux_key] * (1 - np.clip(df["gas_ratio"] / 100, 0, 1))
+        df_processed["ch4_gas"] = df_processed[key_ch4_flux] * np.clip(
+            df_processed["gas_ratio"] / 100, 0, 1
+        )
+        df_processed["ch4_bio"] = df_processed[key_ch4_flux] * (
+            1 - np.clip(df_processed["gas_ratio"] / 100, 0, 1)
+        )
 
-        return df
+        return df_processed
 
     def _prepare_diurnal_data(
         self,

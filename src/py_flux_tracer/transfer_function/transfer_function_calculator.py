@@ -236,7 +236,7 @@ class TransferFunctionCalculator:
         add_xlabel: bool = True,
         label_x: str = "f (Hz)",
         label_y: str = "コスペクトル比",
-        gas_label: str | None = None,
+        label_gas: str | None = None,
     ) -> None:
         """
         伝達関数とそのフィットをプロットする。
@@ -280,7 +280,7 @@ class TransferFunctionCalculator:
 
         ax.set_xscale("log")
         # グラフの設定
-        label_y_formatted: str = f"{label_y}\n" f"({gas_label} / 顕熱)"
+        label_y_formatted: str = f"{label_y}\n" f"({label_gas} / 顕熱)"
         plt.xscale("log")
         if add_xlabel:
             plt.xlabel(label_x)

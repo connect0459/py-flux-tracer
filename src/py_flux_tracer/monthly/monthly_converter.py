@@ -138,7 +138,7 @@ class MonthlyConverter:
         self,
         sheet_names: str | list[str],
         columns: list[str] | None = None,  # 新しいパラメータを追加
-        datetime_key: str = "Date",
+        key_datetime: str = "Date",
         header: int = 0,
         skiprows: int | list[int] = [1],
         start_date: str | None = None,
@@ -157,7 +157,7 @@ class MonthlyConverter:
                 読み込むシート名。文字列または文字列のリストを指定できます。
             columns : list[str] | None
                 残すカラム名のリスト。Noneの場合は全てのカラムを保持します。
-            datetime_key : str
+            key_datetime : str
                 日付と時刻の情報が含まれるカラム名。デフォルトは'Date'。
             header : int
                 データのヘッダー行を指定します。デフォルトは0。
@@ -236,23 +236,23 @@ class MonthlyConverter:
         for sheet_name in sheet_names[1:]:
             if sheet_name in combined_sheets:
                 base_df = self.merge_dataframes(
-                    base_df, combined_sheets[sheet_name], date_column=datetime_key
+                    base_df, combined_sheets[sheet_name], date_column=key_datetime
                 )
 
         # 日付でフィルタリング
         if start_date:
             start_dt = pd.to_datetime(start_date)
-            base_df = base_df[base_df[datetime_key] >= start_dt]
+            base_df = base_df[base_df[key_datetime] >= start_dt]
 
         if end_date:
             end_dt = pd.to_datetime(end_date)
             if include_end_date:
                 end_dt += pd.Timedelta(days=1)
-            base_df = base_df[base_df[datetime_key] < end_dt]
+            base_df = base_df[base_df[key_datetime] < end_dt]
 
         # カラムの選択
         if columns is not None:
-            required_columns = [datetime_key, "year", "month"]
+            required_columns = [key_datetime, "year", "month"]
             available_columns = base_df.columns.tolist()  # 利用可能なカラムを取得
             if not all(col in available_columns for col in columns):
                 raise ValueError(
