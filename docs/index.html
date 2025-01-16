@@ -36,7 +36,7 @@
         margin: 0 auto;
         padding: 45px;
       }
-      @media (max-width: 767px) {
+      @media (max-width: 760px) {
         .markdown-body {
           padding: 15px;
         }
@@ -71,6 +71,34 @@
         display: inline-block;
         margin-right: 0.5rem;
         margin-bottom: 1rem;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background-color: #0d1117;
+        }
+        .markdown-body {
+          background-color: #0d1117;
+          color: #c9d1d9;
+        }
+        .version-link {
+          color: #58a6ff;
+        }
+        .version-link:hover {
+          background-color: #21262d;
+        }
+        .future-version {
+          color: #8b949e;
+        }
+        .package-info {
+          background-color: #161b22;
+        }
+        /* リンクの色を調整 */
+        .markdown-body a {
+          color: #58a6ff;
+        }
+        .markdown-body a:hover {
+          color: #79c0ff;
+        }
       }
     </style>
   </head>
