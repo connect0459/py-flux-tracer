@@ -13,6 +13,9 @@ wheels/
 .pytest_cache
 .ruff_cache
 
+# :Zone.Identifier
+**/*:Zone.Identifier
+
 # Version file (auto-generated)
 src/py_flux_tracer/_version.py
 
