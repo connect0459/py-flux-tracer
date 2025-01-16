@@ -1,10 +1,14 @@
 from dataclasses import dataclass
 from typing import Literal
 
+# ホットスポットの種類を表す型エイリアス
+HotspotType = Literal["bio", "gas", "comb"]
+
 
 @dataclass
 class HotspotData:
-    """ホットスポットの情報を保持するデータクラス
+    """
+    ホットスポットの情報を保持するデータクラス
 
     Parameters:
     ------
@@ -26,19 +30,20 @@ class HotspotData:
             ΔC2H6/ΔCH4の比率
         section : int
             所属する区画番号
-        type : Literal["bio", "gas", "comb"]
+        type : HotspotType
             ホットスポットの種類
     """
-    source: str  
-    angle: float  
-    avg_lat: float  
-    avg_lon: float  
-    delta_ch4: float  
-    delta_c2h6: float  
-    correlation: float  
-    ratio: float  
-    section: int  
-    type: Literal["bio", "gas", "comb"]  
+
+    source: str
+    angle: float
+    avg_lat: float
+    avg_lon: float
+    delta_ch4: float
+    delta_c2h6: float
+    correlation: float
+    ratio: float
+    section: int
+    type: HotspotType
 
     def __post_init__(self):
         """

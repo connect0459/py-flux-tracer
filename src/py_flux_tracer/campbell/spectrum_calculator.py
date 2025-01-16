@@ -51,7 +51,6 @@ class SpectrumCalculator:
     ) -> tuple:
         """
         指定されたkey1とkey2のコスペクトルをDataFrameから計算するためのメソッド。
-        fft.cと同様のロジックで実装されている。
 
         Parameters:
         ------
@@ -100,7 +99,6 @@ class SpectrumCalculator:
     ) -> tuple:
         """
         指定されたkey1とkey2のコスペクトルとクアドラチャスペクトルをDataFrameから計算するためのメソッド。
-        fft.cと同様のロジックで実装されている。
 
         Parameters:
         ------
@@ -346,8 +344,7 @@ class SpectrumCalculator:
         lag_second: float,
     ) -> tuple:
         """
-        相互相関関数を用いて遅れ時間を補正する
-        コスペクトル計算に使用
+        相互相関関数を用いて遅れ時間を補正する。クロススペクトルの計算に使用。
 
         Parameters:
         ------

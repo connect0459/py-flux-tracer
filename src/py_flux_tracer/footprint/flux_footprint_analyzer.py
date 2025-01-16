@@ -11,7 +11,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 from datetime import datetime
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..commons.hotspot_data import HotspotData
+from ..commons.hotspot_data import HotspotData, HotspotType
 
 
 class FluxFootprintAnalyzer:
@@ -319,7 +319,7 @@ class FluxFootprintAnalyzer:
                 CSVディレクトリパスまたはDataFrame
             source_type : str
                 "csv" または "monthly"
-            **kwargs : 
+            **kwargs :
                 追加パラメータ
                 - sheet_names : list[str]
                     Monthlyの場合のシート名
@@ -750,7 +750,7 @@ class FluxFootprintAnalyzer:
         spot_handles = []
         # ホットスポットが指定されているときのみ作図
         if hotspots is not None:
-            default_colors: dict[str, str] = {
+            default_colors: dict[HotspotType, str] = {
                 "bio": "blue",
                 "gas": "red",
                 "comb": "green",

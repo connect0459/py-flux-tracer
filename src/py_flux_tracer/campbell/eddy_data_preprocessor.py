@@ -36,7 +36,7 @@ class EddyDataPreprocessor:
     def add_uvw_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         DataFrameに水平風速u、v、鉛直風速wの列を追加する関数。
-        各成分のキーは'wind_u'、'wind_v'、'wind_w'である。
+        各成分のキーは`wind_u`、`wind_v`、`wind_w`である。
         
         Parameters
         -----
@@ -287,14 +287,14 @@ class EddyDataPreprocessor:
         CSVファイルを読み込み、前処理を行う
 
         前処理の手順は以下の通りです：
-        1. 不要な行（インデックス0と1）を削除する
+        1. 不要な行を削除する。デフォルト（`skiprows=[0, 2, 3]`）の場合は、2行目をヘッダーとして残し、1、3、4行目が削除される。
         2. 数値データを float 型に変換する
         3. TIMESTAMP列をDateTimeインデックスに設定する
         4. エラー値をNaNに置き換える
         5. 指定されたサンプリングレートでリサンプリングする
         6. 欠損値(NaN)を前後の値から線形補間する
         7. DateTimeインデックスを削除する
-
+        
         Parameters:
         -----
             filepath : str
@@ -318,7 +318,7 @@ class EddyDataPreprocessor:
         Returns:
         -----
             tuple[pd.DataFrame, list[str]]
-                前処理済みのデータフレームとメタデータのリスト
+                前処理済みのデータフレームとメタデータのリスト。
         """
         # メタデータを読み込む
         metadata: list[str] = []
@@ -419,6 +419,7 @@ class EddyDataPreprocessor:
         このメソッドは、指定されたディレクトリ内のCSVファイルを読み込み、リサンプリングを行い、
         欠損値を補完します。処理結果として、リサンプリングされたCSVファイルを出力し、
         相関係数やC2H6/CH4比を計算してDataFrameに保存します。
+        リサンプリングと欠損値補完は`get_resampled_df`と同様のロジックを使用します。
 
         Parameters:
         -----
@@ -454,11 +455,6 @@ class EddyDataPreprocessor:
                 メタデータとして読み込む行数。デフォルトは4。
             skiprows : list[int]
                 読み飛ばす行のインデックスリスト。デフォルトは[0, 2, 3]。
-
-        Returns:
-        -----
-            None
-                このメソッドは戻り値を返しません。
 
         Raises:
         -----

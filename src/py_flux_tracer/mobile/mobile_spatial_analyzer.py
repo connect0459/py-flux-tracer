@@ -8,13 +8,13 @@ import plotly.offline as pyo
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from typing import Literal
+from typing import get_args, Literal
 from pathlib import Path
 from datetime import timedelta
 from dataclasses import dataclass
 from geopy.distance import geodesic
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..commons.hotspot_data import HotspotData
+from ..commons.hotspot_data import HotspotData, HotspotType
 from .correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
 
 
@@ -27,8 +27,8 @@ class EmissionData:
     ------
         source : str
             データソース（日時）
-        type : str
-            ホットスポットの種類（"bio", "gas", "comb"）
+        type : HotspotType
+            ホットスポットの種類（`HotspotType`を参照）
         section : str | int | float
             セクション情報
         latitude : float
@@ -50,7 +50,7 @@ class EmissionData:
     """
 
     source: str
-    type: str
+    type: HotspotType
     section: str | int | float
     latitude: float
     longitude: float
@@ -73,10 +73,9 @@ class EmissionData:
         if not isinstance(self.source, str) or not self.source.strip():
             raise ValueError("Source must be a non-empty string")
 
-        # typeのバリデーション
-        valid_types = {"bio", "gas", "comb"}
-        if self.type not in valid_types:
-            raise ValueError(f"Type must be one of {valid_types}")
+        # typeのバリデーションは型システムによって保証されるため削除
+        # HotspotTypeはLiteral["bio", "gas", "comb"]として定義されているため、
+        # 不正な値は型チェック時に検出されます
 
         # sectionのバリデーション（Noneは許可）
         if self.section is not None and not isinstance(self.section, (str, int, float)):
@@ -364,7 +363,7 @@ class MobileSpatialAnalyzer:
                 統計情報の表示が完了したことを示します。
         """
         # タイプごとにホットスポットを分類
-        hotspots_by_type = {
+        hotspots_by_type: dict[HotspotType, list[HotspotData]] = {
             "bio": [h for h in hotspots if h.type == "bio"],
             "gas": [h for h in hotspots if h.type == "gas"],
             "comb": [h for h in hotspots if h.type == "comb"],
@@ -718,7 +717,7 @@ class MobileSpatialAnalyzer:
         """
         データ前処理を行い、CH4とC2H6の相関解析に必要な形式に整えます。
         コンストラクタで読み込んだすべてのデータを前処理し、結合したDataFrameを返します。
-        
+
         Returns:
         ------
             pd.DataFrame
@@ -824,7 +823,8 @@ class MobileSpatialAnalyzer:
 
         # タイプごとのヒストグラムデータを計算
         hist_data = {}
-        for type_name in ["bio", "gas", "comb"]:
+        # HotspotTypeのリテラル値を使用してイテレーション
+        for type_name in get_args(HotspotType):  # typing.get_argsをインポート
             mask = all_types == type_name
             if np.any(mask):
                 counts, _ = np.histogram(all_ch4_deltas[mask], bins=bins)
@@ -854,10 +854,13 @@ class MobileSpatialAnalyzer:
                     )
 
         # 積み上げヒストグラムを作成
-        colors = {"bio": "blue", "gas": "red", "comb": "green"}
         bottom = np.zeros_like(hist_data.get("bio", np.zeros(len(bins) - 1)))
 
-        for type_name in ["bio", "gas", "comb"]:
+        # 色の定義をHotspotTypeを使用して型安全に定義
+        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
+
+        # HotspotTypeのリテラル値を使用してイテレーション
+        for type_name in get_args(HotspotType):
             if type_name in hist_data:
                 plt.bar(
                     bins[:-1],
@@ -1113,13 +1116,17 @@ class MobileSpatialAnalyzer:
         fig = plt.figure(figsize=figsize, dpi=dpi)
 
         # タイプごとのデータを収集
-        type_data = {"bio": [], "gas": [], "comb": []}
+        type_data: dict[HotspotType, list[tuple[float, float]]] = {
+            "bio": [],
+            "gas": [],
+            "comb": [],
+        }
         for spot in hotspots:
             type_data[spot.type].append((spot.delta_ch4, spot.delta_c2h6))
 
         # 色とラベルの定義
-        colors = {"bio": "blue", "gas": "red", "comb": "green"}
-        labels = {"bio": "bio", "gas": "gas", "comb": "comb"}
+        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
+        labels: dict[HotspotType, str] = {"bio": "bio", "gas": "gas", "comb": "comb"}
 
         # タイプごとにプロット（データが存在する場合のみ）
         for spot_type, data in type_data.items():
@@ -1328,7 +1335,7 @@ class MobileSpatialAnalyzer:
                     correlation = df["ch4_c2h6_correlation"].iloc[i]
 
                     # 比率に基づいてタイプを決定
-                    spot_type = "bio"
+                    spot_type: HotspotType = "bio"
                     if ratios.iloc[i] >= 100:
                         spot_type = "comb"
                     elif ratios.iloc[i] >= 5:
@@ -1868,7 +1875,9 @@ class MobileSpatialAnalyzer:
         sorted_hotspots: list[HotspotData] = sorted(
             hotspots, key=lambda x: x.delta_ch4, reverse=True
         )
-        used_positions_by_type: dict[str, list[tuple[float, float, str, float]]] = {
+        used_positions_by_type: dict[
+            HotspotType, list[tuple[float, float, str, float]]
+        ] = {
             "bio": [],
             "gas": [],
             "comb": [],
@@ -2012,14 +2021,14 @@ class MobileSpatialAnalyzer:
 
         # タイプ別の統計情報を計算
         stats = {}
-        types = ["bio", "gas", "comb"]
         # emission_formulas の定義の後に、排出量カテゴリーの閾値を定義
         emission_categories = {
             "low": {"min": 0, "max": 6},  # < 6 L/min
             "medium": {"min": 6, "max": 40},  # 6-40 L/min
             "high": {"min": 40, "max": float("inf")},  # > 40 L/min
         }
-        # stats計算部分を以下のように修正
+        # get_args(HotspotType)を使用して型安全なリストを作成
+        types = list(get_args(HotspotType))
         for spot_type in types:
             df_type = emission_df[emission_df["type"] == spot_type]
             if len(df_type) > 0:
@@ -2151,11 +2160,13 @@ class MobileSpatialAnalyzer:
             axes = [ax1]
 
         # カラーマップの定義
-        colors = {"bio": "blue", "gas": "red", "comb": "green"}
+        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
 
         # 存在するタイプを確認
+        # HotspotTypeの定義順を基準にソート
+        hotspot_types = list(get_args(HotspotType))
         existing_types = sorted(
-            df["type"].unique(), key=lambda x: ["bio", "gas", "comb"].index(x)
+            df["type"].unique(), key=lambda x: hotspot_types.index(x)
         )
 
         # 左側: ヒストグラム
@@ -2267,7 +2278,7 @@ class MobileSpatialAnalyzer:
                 bin_end = bins[i + 1]
 
                 # 各タイプのカウントを計算
-                counts_by_type = {}
+                counts_by_type: dict[HotspotType, int] = {"bio": 0, "gas": 0, "comb": 0}
                 total = 0
                 for spot_type in existing_types:
                     mask = (

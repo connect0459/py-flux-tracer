@@ -1,6 +1,6 @@
 from .campbell.eddy_data_preprocessor import EddyDataPreprocessor
 from .campbell.spectrum_calculator import SpectrumCalculator
-from .commons.hotspot_data import HotspotData
+from .commons.hotspot_data import HotspotData, HotspotType
 from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
 from .mobile.correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
 from .mobile.mobile_spatial_analyzer import (
@@ -41,6 +41,7 @@ __all__ = [
     "EddyDataPreprocessor",
     "SpectrumCalculator",
     "HotspotData",
+    "HotspotType",
     "FluxFootprintAnalyzer",
     "CorrectingUtils",
     "CORRECTION_TYPES_PATTERN",
