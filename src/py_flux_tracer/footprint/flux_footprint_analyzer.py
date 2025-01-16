@@ -254,7 +254,7 @@ class FluxFootprintAnalyzer:
 
         x_list: list[float] = []
         y_list: list[float] = []
-        c_list: list[float] = []
+        c_list: list[float] | None = []
 
         # tqdmを使用してプログレスバーを表示
         for i in tqdm(range(len(data_weekday)), desc="Calculating footprint"):
@@ -481,7 +481,7 @@ class FluxFootprintAnalyzer:
         self,
         x_list: list[float],
         y_list: list[float],
-        c_list: list[float],
+        c_list: list[float] | None,
         center_lat: float,
         center_lon: float,
         vmin: float,
@@ -491,7 +491,7 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        function: callable = np.mean,
+        reduce_c_function: callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | None = None,
@@ -512,7 +512,7 @@ class FluxFootprintAnalyzer:
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
                 フットプリントのy座標リスト（メートル単位）。
-            c_list : list[float]
+            c_list : list[float] | None
                 フットプリントの強度を示す値のリスト。
             center_lat : float
                 プロットの中心となる緯度。
@@ -524,7 +524,7 @@ class FluxFootprintAnalyzer:
                 カラーバーの最小値。
             vmax : float
                 カラーバーの最大値。
-            function : callable, optional
+            reduce_c_function : callable, optional
                 フットプリントの集約関数（デフォルトはnp.mean）。
             cbar_label : str | None, optional
                 カラーバーのラベル。
@@ -560,7 +560,7 @@ class FluxFootprintAnalyzer:
             cbar_label=cbar_label,
             cbar_labelpad=cbar_labelpad,
             cmap=cmap,
-            function=function,
+            reduce_c_function=reduce_c_function,
             hotspots=None,  # hotspotsをNoneに設定
             hotspot_colors=None,
             lat_correction=lat_correction,
@@ -577,7 +577,7 @@ class FluxFootprintAnalyzer:
         self,
         x_list: list[float],
         y_list: list[float],
-        c_list: list[float],
+        c_list: list[float] | None,
         center_lat: float,
         center_lon: float,
         vmin: float,
@@ -587,9 +587,10 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        function: callable = np.mean,
+        reduce_c_function: callable = np.mean,
         hotspots: list[HotspotData] | None = None,
-        hotspot_colors: dict[str, str] | None = None,
+        hotspot_colors: dict[HotspotType, str] | None = None,
+        hotspot_markers: dict[HotspotType, str] | None = None,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | None = None,
@@ -611,7 +612,7 @@ class FluxFootprintAnalyzer:
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
                 フットプリントのy座標リスト（メートル単位）。
-            c_list : list[float]
+            c_list : list[float] | None
                 フットプリントの強度を示す値のリスト。
             center_lat : float
                 プロットの中心となる緯度。
@@ -631,12 +632,15 @@ class FluxFootprintAnalyzer:
                 カラーバーラベルのパディング。
             cmap : str
                 使用するカラーマップの名前。
-            function : callable
+            reduce_c_function : callable
                 フットプリントの集約関数（デフォルトはnp.mean）。
             hotspots : list[HotspotData] | None, optional
                 ホットスポットデータのリスト。デフォルトはNone。
-            hotspot_colors : dict[str, str] | None, optional
+            hotspot_colors : dict[HotspotType, str] | None, optional
                 ホットスポットの色を指定する辞書。
+            hotspot_markers : dict[HotspotType, str] | None, optional
+                ホットスポットの形状を指定する辞書。
+                指定の例は {'bio': '^', 'gas': 'o', 'comb': 's'} （三角、丸、四角）など。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
             lon_correction : float, optional
@@ -714,20 +718,21 @@ class FluxFootprintAnalyzer:
 
         # 9. フットプリントの描画
         # フットプリントの描画とカラーバー用の2つのhexbinを作成
-        ax_data.hexbin(
-            lons,
-            lats,
-            C=c_list,
-            cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
-            alpha=0.3,  # 実際のプロット用
-            gridsize=100,
-            linewidths=0,
-            mincnt=100,
-            extent=[left_lon, right_lon, bottom_lat, top_lat],
-            reduce_C_function=function,
-        )
+        if c_list is not None:
+            ax_data.hexbin(
+                lons,
+                lats,
+                C=c_list,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                alpha=0.3,  # 実際のプロット用
+                gridsize=100,
+                linewidths=0,
+                mincnt=100,
+                extent=[left_lon, right_lon, bottom_lat, top_lat],
+                reduce_C_function=reduce_c_function,
+            )
 
         # カラーバー用の非表示hexbin（alpha=1.0）
         hidden_hexbin = ax_data.hexbin(
@@ -742,18 +747,24 @@ class FluxFootprintAnalyzer:
             linewidths=0,
             mincnt=100,
             extent=[left_lon, right_lon, bottom_lat, top_lat],
-            reduce_C_function=function,
+            reduce_C_function=reduce_c_function,
             visible=False,  # プロットには表示しない
         )
 
         # 10. ホットスポットの描画
         spot_handles = []
-        # ホットスポットが指定されているときのみ作図
         if hotspots is not None:
             default_colors: dict[HotspotType, str] = {
                 "bio": "blue",
                 "gas": "red",
                 "comb": "green",
+            }
+
+            # デフォルトのマーカー形状を定義
+            default_markers: dict[HotspotType, str] = {
+                "bio": "o",
+                "gas": "o",
+                "comb": "o",
             }
 
             # 座標変換のための定数
@@ -763,6 +774,9 @@ class FluxFootprintAnalyzer:
             for spot_type, color in (hotspot_colors or default_colors).items():
                 spots_lon = []
                 spots_lat = []
+
+                # 使用するマーカーを決定
+                marker = (hotspot_markers or default_markers).get(spot_type, "o")
 
                 for spot in hotspots:
                     if spot.type == spot_type:
@@ -805,7 +819,7 @@ class FluxFootprintAnalyzer:
                         spots_lon,
                         spots_lat,
                         c=color,
-                        marker="o",
+                        marker=marker,  # マーカー形状を指定
                         s=100,
                         alpha=0.7,
                         label=spot_type,  # "bio","gas","comb"
@@ -873,7 +887,7 @@ class FluxFootprintAnalyzer:
         self,
         x_list: list[float],
         y_list: list[float],
-        c_list: list[float],
+        c_list: list[float] | None,
         center_lat: float,
         center_lon: float,
         check_points: list[tuple[float, float, str]] | None = None,
@@ -883,7 +897,7 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        function: callable = np.mean,
+        reduce_c_function: callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | None = None,
@@ -905,7 +919,7 @@ class FluxFootprintAnalyzer:
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
                 フットプリントのy座標リスト（メートル単位）。
-            c_list : list[float]
+            c_list : list[float] | None
                 フットプリントの強度を示す値のリスト。
             center_lat : float
                 プロットの中心となる緯度。
@@ -920,7 +934,7 @@ class FluxFootprintAnalyzer:
                 カラーバーの最小値。
             vmax : float
                 カラーバーの最大値。
-            function : callable, optional
+            reduce_c_function : callable, optional
                 フットプリントの集約関数（デフォルトはnp.mean）。
             cbar_label : str, optional
                 カラーバーのラベル。
@@ -1018,7 +1032,7 @@ class FluxFootprintAnalyzer:
             cbar_label=cbar_label,
             cbar_labelpad=cbar_labelpad,
             cmap=cmap,
-            function=function,
+            reduce_c_function=reduce_c_function,
             hotspots=dummy_hotspots,
             hotspot_colors=hotspot_colors,
             lat_correction=lat_correction,

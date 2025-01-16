@@ -114,11 +114,11 @@ start_end_dates_list: list[list[str]] = [
 ]
 plot_ch4: bool = False
 plot_c2h6: bool = False
-plot_ratio: bool = False
+plot_ratio: bool = True
 plot_ratio_legend: bool = False
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
-plot_scale_checker: bool = True
+plot_scale_checker: bool = False
 
 if __name__ == "__main__":
     # 環境変数の読み込み
@@ -252,6 +252,27 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ratio{date_tag}.png",
+            )
+            # フットプリントを描画しない
+            ffa.plot_flux_footprint_with_hotspots(
+                x_list=x_list,  # メートル単位のx座標
+                y_list=y_list,  # メートル単位のy座標
+                c_list=None,
+                hotspots=hotspots,
+                hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
+                center_lat=center_lan,
+                center_lon=center_lon,
+                satellite_image=image,
+                cmap="jet",
+                vmin=0,
+                vmax=100,
+                xy_max=5000,
+                add_legend=True,
+                add_cbar=False,
+                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
+                cbar_labelpad=20,
+                output_dir=output_dir,
+                output_filename="footprint_mono.png",
             )
             del x_list, y_list, c_list
 
