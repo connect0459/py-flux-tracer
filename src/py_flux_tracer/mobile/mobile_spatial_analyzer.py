@@ -305,7 +305,7 @@ class MobileSpatialAnalyzer:
                 移動窓の大きさ（分）。デフォルトは5分。
             column_mapping : dict[str, str]
                 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。
-                - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をkeyに指定してください。
+                - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をcolに指定してください。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
@@ -905,8 +905,8 @@ class MobileSpatialAnalyzer:
     def plot_mapbox(
         self,
         df: pd.DataFrame,
+        col: str,
         mapbox_access_token: str,
-        value_column_key: str,
         sort_value_column: bool = True,
         output_dir: str | Path | None = None,
         output_filename: str = "mapbox_plot.html",
@@ -935,10 +935,10 @@ class MobileSpatialAnalyzer:
         ------
             df : pd.DataFrame
                 プロットするデータを含むDataFrame
+            col : str
+                カラーマッピングに使用する列名
             mapbox_access_token : str
                 Mapboxのアクセストークン
-            value_column_key : str
-                カラーマッピングに使用する列名
             sort_value_column : bool
                 value_columnをソートするか否か。デフォルトはTrue。
             output_dir : str | Path | None
@@ -980,9 +980,9 @@ class MobileSpatialAnalyzer:
             show_fig : bool
                 図を表示するかどうか。デフォルトはTrue
         """
-        df_mapping: pd.DataFrame = df.copy().dropna(subset=[value_column_key])
+        df_mapping: pd.DataFrame = df.copy().dropna(subset=[col])
         if sort_value_column:
-            df_mapping = df_mapping.sort_values(value_column_key)
+            df_mapping = df_mapping.sort_values(col)
         # 中心座標の設定
         center_lat = center_lat if center_lat is not None else self._center_lat
         center_lon = center_lon if center_lon is not None else self._center_lon
@@ -990,23 +990,23 @@ class MobileSpatialAnalyzer:
         # カラーマッピングの範囲を設定
         cmin, cmax = 0, 0
         if value_range is None:
-            cmin = df_mapping[value_column_key].min()
-            cmax = df_mapping[value_column_key].max()
+            cmin = df_mapping[col].min()
+            cmax = df_mapping[col].max()
         else:
             cmin, cmax = value_range
 
         # カラーバーのタイトルを設定
-        title_text = colorbar_title if colorbar_title is not None else value_column_key
+        title_text = colorbar_title if colorbar_title is not None else col
 
         # Scattermapboxのデータを作成
         scatter_data = go.Scattermapbox(
             lat=df_mapping[lat_column],
             lon=df_mapping[lon_column],
-            text=df_mapping[value_column_key].astype(str),
+            text=df_mapping[col].astype(str),
             hoverinfo="text",
             mode="markers",
             marker=dict(
-                color=df_mapping[value_column_key],
+                color=df_mapping[col],
                 size=marker_size,
                 reversescale=False,
                 autocolorscale=False,
@@ -1194,9 +1194,9 @@ class MobileSpatialAnalyzer:
         output_filename: str = "timeseries.png",
         save_fig: bool = False,
         show_fig: bool = True,
-        ch4_key: str = "ch4_ppm",
-        c2h6_key: str = "c2h6_ppb",
-        h2o_key: str = "h2o_ppm",
+        col_ch4: str = "ch4_ppm",
+        col_c2h6: str = "c2h6_ppb",
+        col_h2o: str = "h2o_ppm",
         ylim_ch4: tuple[float, float] | None = None,
         ylim_c2h6: tuple[float, float] | None = None,
         ylim_h2o: tuple[float, float] | None = None,
@@ -1220,11 +1220,11 @@ class MobileSpatialAnalyzer:
                 図を保存するかどうかを指定します。デフォルトはFalseです。
             show_fig : bool
                 図を表示するかどうかを指定します。デフォルトはTrueです。
-            ch4_key : str
+            col_ch4 : str
                 CH4データのキーを指定します。デフォルトは"ch4_ppm"です。
-            c2h6_key : str
+            col_c2h6 : str
                 C2H6データのキーを指定します。デフォルトは"c2h6_ppb"です。
-            h2o_key : str
+            col_h2o : str
                 H2Oデータのキーを指定します。デフォルトは"h2o_ppm"です。
             ylim_ch4 : tuple[float, float] | None
                 CH4プロットのy軸範囲を指定します。デフォルトはNoneです。
@@ -1252,7 +1252,7 @@ class MobileSpatialAnalyzer:
 
         # CH4プロット
         ax1 = fig.add_subplot(3, 1, 1)
-        ax1.plot(df.index, df[ch4_key], c="red")
+        ax1.plot(df.index, df[col_ch4], c="red")
         if ylim_ch4:
             ax1.set_ylim(ylim_ch4)
         ax1.set_ylabel("$\\mathregular{CH_{4}}$ (ppm)")
@@ -1260,7 +1260,7 @@ class MobileSpatialAnalyzer:
 
         # C2H6プロット
         ax2 = fig.add_subplot(3, 1, 2)
-        ax2.plot(df.index, df[c2h6_key], c="red")
+        ax2.plot(df.index, df[col_c2h6], c="red")
         if ylim_c2h6:
             ax2.set_ylim(ylim_c2h6)
         ax2.set_ylabel("$\\mathregular{C_{2}H_{6}}$ (ppb)")
@@ -1268,7 +1268,7 @@ class MobileSpatialAnalyzer:
 
         # H2Oプロット
         ax3 = fig.add_subplot(3, 1, 3)
-        ax3.plot(df.index, df[h2o_key], c="red")
+        ax3.plot(df.index, df[col_h2o], c="red")
         if ylim_h2o:
             ax3.set_ylim(ylim_h2o)
         ax3.set_ylabel("$\\mathregular{H_{2}O}$ (ppm)")
@@ -1541,8 +1541,8 @@ class MobileSpatialAnalyzer:
     def _calculate_hotspots_parameters(
         df: pd.DataFrame,
         window_size: int,
-        ch4_ppm_key: str = "ch4_ppm",
-        c2h6_ppb_key: str = "c2h6_ppb",
+        col_ch4_ppm: str = "ch4_ppm",
+        col_c2h6_ppb: str = "c2h6_ppb",
         ch4_threshold: float = 0.05,
         c2h6_threshold: float = 0.0,
     ) -> pd.DataFrame:
@@ -1558,9 +1558,9 @@ class MobileSpatialAnalyzer:
                 入力データフレーム
             window_size : int
                 移動窓のサイズ
-            ch4_ppm_key : str
+            col_ch4_ppm : str
                 CH4濃度を示すカラム名
-            c2h6_ppb_key : str
+            col_c2h6_ppb : str
                 C2H6濃度を示すカラム名
             ch4_threshold : float
                 CH4の閾値
@@ -1574,29 +1574,29 @@ class MobileSpatialAnalyzer:
         """
         # 移動平均の計算
         df["ch4_ppm_mv"] = (
-            df[ch4_ppm_key]
+            df[col_ch4_ppm]
             .rolling(window=window_size, center=True, min_periods=1)
             .mean()
         )
         df["c2h6_ppb_mv"] = (
-            df[c2h6_ppb_key]
+            df[col_c2h6_ppb]
             .rolling(window=window_size, center=True, min_periods=1)
             .mean()
         )
 
         # 移動相関の計算
         df["ch4_c2h6_correlation"] = (
-            df[ch4_ppm_key]
+            df[col_ch4_ppm]
             .rolling(window=window_size, min_periods=1)
-            .corr(df[c2h6_ppb_key])
+            .corr(df[col_c2h6_ppb])
         )
 
         # 移動平均からの偏差
-        df["ch4_ppm_delta"] = df[ch4_ppm_key] - df["ch4_ppm_mv"]
-        df["c2h6_ppb_delta"] = df[c2h6_ppb_key] - df["c2h6_ppb_mv"]
+        df["ch4_ppm_delta"] = df[col_ch4_ppm] - df["ch4_ppm_mv"]
+        df["c2h6_ppb_delta"] = df[col_c2h6_ppb] - df["c2h6_ppb_mv"]
 
         # C2H6/CH4の比率計算
-        df["c2c1_ratio"] = df[c2h6_ppb_key] / df[ch4_ppm_key]
+        df["c2c1_ratio"] = df[col_c2h6_ppb] / df[col_ch4_ppm]
 
         # デルタ値に基づく比の計算
         df["c2c1_ratio_delta"] = np.where(
@@ -1754,9 +1754,9 @@ class MobileSpatialAnalyzer:
         max_time_threshold_hours: float = 12.0,  # 12時間以上離れている場合は別のポイントとして扱う
         check_time_all: bool = True,  # 時間閾値を超えた場合の重複チェックを継続するかどうか
         hotspot_area_meter: float = 50.0,  # 重複とみなす距離の閾値（メートル）
-        ch4_ppm_key: str = "ch4_ppm",
-        ch4_ppm_mv_key: str = "ch4_ppm_mv",
-        ch4_ppm_delta_key: str = "ch4_ppm_delta",
+        col_ch4_ppm: str = "ch4_ppm",
+        col_ch4_ppm_mv: str = "ch4_ppm_mv",
+        col_ch4_ppm_delta: str = "ch4_ppm_delta",
     ):
         """
         メタン濃度の増加が閾値を超えた地点から、重複を除外してユニークなホットスポットを抽出する関数。
@@ -1787,13 +1787,13 @@ class MobileSpatialAnalyzer:
         df_data: pd.DataFrame = df.copy()
         # メタン濃度の増加が閾値を超えた点を抽出
         mask = (
-            df_data[ch4_ppm_key] - df_data[ch4_ppm_mv_key] > self._ch4_enhance_threshold
+            df_data[col_ch4_ppm] - df_data[col_ch4_ppm_mv] > self._ch4_enhance_threshold
         )
         hotspot_candidates = df_data[mask].copy()
 
         # ΔCH4の降順でソート
         sorted_hotspots = hotspot_candidates.sort_values(
-            by=ch4_ppm_delta_key, ascending=False
+            by=col_ch4_ppm_delta, ascending=False
         )
         used_positions = []
         unique_hotspots = pd.DataFrame()

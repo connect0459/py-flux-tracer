@@ -8,8 +8,8 @@ import matplotlib.font_manager as fm
 
 def plot_tf_curve(
     df: pd.DataFrame,
-    date_key: str,
-    coef_a_key: str,
+    col_datetime: str,
+    col_coef_a: str,
     label_gas: str,
     base_color: str,
     output_dir: str | None = None,
@@ -26,8 +26,8 @@ def plot_tf_curve(
 
     Args:
         df (pd.DataFrame): 伝達関数の係数が格納されたDataFrame
-        date_key (str): 日付が格納されているカラムの名前
-        coef_a_key (str): 係数が格納されているカラムの名前
+        col_datetime (str): 日付が格納されているカラムの名前
+        col_coef_a (str): 係数が格納されているカラムの名前
         label_gas (str): プロットに表示するガスのラベル（例: "CH$_4$"）
         base_color (str): 平均値の線の色
         output_dir (str | None): 出力ディレクトリ。Noneの場合は保存しない
@@ -36,7 +36,7 @@ def plot_tf_curve(
         add_xlabel (bool): x軸ラベルを追加するかどうか
         label_x (str): x軸のラベル
         label_y (str): y軸のラベル
-        gas_name (str | None): 出力ファイル名に使用するガス名。Noneの場合はcoef_a_keyを使用
+        gas_name (str | None): 出力ファイル名に使用するガス名。Noneの場合はcol_coef_aを使用
 
     Returns:
         None
@@ -63,8 +63,8 @@ def plot_tf_curve(
 
     # 全てのa値を用いて伝達関数をプロット
     for i, row in enumerate(df.iterrows()):
-        a = row[1][coef_a_key]
-        date = row[1][date_key]
+        a = row[1][col_coef_a]
+        date = row[1][col_datetime]
         x_fit = np.logspace(-3, 1, 1000)
         y_fit = TransferFunctionCalculator.transfer_function(x_fit, a)
         plt.plot(
@@ -78,7 +78,7 @@ def plot_tf_curve(
         )
 
     # 平均のa値を用いた伝達関数をプロット
-    a_mean = df[coef_a_key].mean()
+    a_mean = df[col_coef_a].mean()
     x_fit = np.logspace(-3, 1, 1000)
     y_fit = TransferFunctionCalculator.transfer_function(x_fit, a_mean)
     plt.plot(
@@ -103,7 +103,7 @@ def plot_tf_curve(
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
         # 出力ファイル名用のガス名を決定
-        output_gas_name = gas_name if gas_name is not None else coef_a_key
+        output_gas_name = gas_name if gas_name is not None else col_coef_a
         output_path: str = os.path.join(
             output_dir, f"{output_basename}-{output_gas_name}.png"
         )
@@ -167,11 +167,11 @@ if __name__ == "__main__":
         ]
 
         # 各ガスについてプロット
-        for coef_a_key, label_gas, base_color, gas_name in gas_configs:
+        for col_coef_a, label_gas, base_color, gas_name in gas_configs:
             plot_tf_curve(
                 df=df,
-                date_key="Date",
-                coef_a_key=coef_a_key,
+                col_datetime="Date",
+                col_coef_a=col_coef_a,
                 label_gas=label_gas,
                 base_color=base_color,
                 gas_name=gas_name,

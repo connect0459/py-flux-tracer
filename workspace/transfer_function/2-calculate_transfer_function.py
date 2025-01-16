@@ -15,9 +15,9 @@ show_tf_plot: bool = True
 # show_tf_plot: bool = False
 
 # UltraのFFTファイルで使用されるキー名(スペース込み)
-key_wt: str = "  f*cospec_wt/wt"
-key_wch4: str = " f*cospec_wc/wc closed"
-key_wc2h6: str = " f*cospec_wq/wq closed"
+col_wt: str = "  f*cospec_wt/wt"
+col_wch4: str = " f*cospec_wc/wc closed"
+col_wc2h6: str = " f*cospec_wq/wq closed"
 
 # メイン処理
 try:
@@ -27,8 +27,8 @@ try:
 
     # コスペクトルのプロット
     tfc.create_plot_co_spectra(
-        key1=key_wt,
-        key2=key_wch4,
+        col1=col_wt,
+        col2=col_wch4,
         label1=r"$fC_{wTv}$ / $\overline{w^\prime Tv^\prime}$",
         label2=r"$fC_{wCH_{4}}$ / $\overline{w^\prime CH_{4}^\prime}$",
         color2="red",
@@ -39,8 +39,8 @@ try:
     )
 
     tfc.create_plot_co_spectra(
-        key1=key_wt,
-        key2=key_wc2h6,
+        col1=col_wt,
+        col2=col_wc2h6,
         label1=r"$fC_{wTv}$ / $\overline{w^\prime Tv^\prime}$",
         label2=r"$fC_{wC_{2}H_{6}}$ / $\overline{w^\prime C_{2}H_{6}^\prime}$",
         color2="orange",
@@ -53,10 +53,10 @@ try:
     print("伝達関数を分析中...")
     # 伝達関数の計算
     a_wch4, _, df_wch4 = tfc.calculate_transfer_function(
-        reference_key=key_wt, target_key=key_wch4
+        col_reference=col_wt, col_target=col_wch4
     )
     a_wc2h6, _, df_wc2h6 = tfc.calculate_transfer_function(
-        reference_key=key_wt, target_key=key_wc2h6
+        col_reference=col_wt, col_target=col_wc2h6
     )
 
     # カーブフィット図の作成

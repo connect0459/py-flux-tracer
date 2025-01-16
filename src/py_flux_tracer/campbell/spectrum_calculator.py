@@ -9,7 +9,7 @@ class SpectrumCalculator:
         df: pd.DataFrame,
         fs: float,
         lag_second: float,
-        apply_lag_keys: list[str],
+        cols_apply_lag_time: list[str],
         apply_window: bool = True,
         plots: int = 30,
         window_type: str = "hamming",
@@ -21,7 +21,7 @@ class SpectrumCalculator:
         ------
             df : pd.DataFrame
                 pandasのデータフレーム。解析対象のデータを含む。
-            apply_lag_keys : list[str]
+            cols_apply_lag_time : list[str]
                 コスペクトルの遅れ時間補正を適用するキーのリスト。
             fs : float
                 サンプリング周波数（Hz）。データのサンプリングレートを指定。
@@ -34,7 +34,7 @@ class SpectrumCalculator:
         """
         self._df: pd.DataFrame = df
         self._fs: float = fs
-        self._apply_lag_keys: list[str] = apply_lag_keys
+        self._cols_apply_lag_time: list[str] = cols_apply_lag_time
         self._apply_window: bool = apply_window
         self._lag_second: float = lag_second
         self._plots: int = plots
@@ -42,21 +42,21 @@ class SpectrumCalculator:
 
     def calculate_co_spectrum(
         self,
-        key1: str,
-        key2: str,
+        col1: str,
+        col2: str,
         dimensionless: bool = True,
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
     ) -> tuple:
         """
-        指定されたkey1とkey2のコスペクトルをDataFrameから計算するためのメソッド。
+        指定されたcol1とcol2のコスペクトルをDataFrameから計算するためのメソッド。
 
         Parameters:
         ------
-            key1 : str
+            col1 : str
                 データの列名1。
-            key2 : str
+            col2 : str
                 データの列名2。
             dimensionless : bool, optional
                 Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
@@ -79,8 +79,8 @@ class SpectrumCalculator:
                     変数の相関係数。
         """
         freqs, co_spectrum, _, corr_coef = self.calculate_cross_spectrum(
-            key1=key1,
-            key2=key2,
+            col1=col1,
+            col2=col2,
             dimensionless=dimensionless,
             frequency_weighted=frequency_weighted,
             interpolate_points=interpolate_points,
@@ -90,21 +90,21 @@ class SpectrumCalculator:
 
     def calculate_cross_spectrum(
         self,
-        key1: str,
-        key2: str,
+        col1: str,
+        col2: str,
         dimensionless: bool = True,
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
     ) -> tuple:
         """
-        指定されたkey1とkey2のコスペクトルとクアドラチャスペクトルをDataFrameから計算するためのメソッド。
+        指定されたcol1とcol2のコスペクトルとクアドラチャスペクトルをDataFrameから計算するためのメソッド。
 
         Parameters:
         ------
-            key1 : str
+            col1 : str
                 データの列名1。
-            key2 : str
+            col2 : str
                 データの列名2。
             dimensionless : bool, optional
                 Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
@@ -137,12 +137,12 @@ class SpectrumCalculator:
 
         fs: float = self._fs
         df: pd.DataFrame = self._df.copy()
-        # key1とkey2に一致するデータを取得
-        data1: np.ndarray = np.array(df[key1].values)
-        data2: np.ndarray = np.array(df[key2].values)
+        # col1とcol2に一致するデータを取得
+        data1: np.ndarray = np.array(df[col1].values)
+        data2: np.ndarray = np.array(df[col2].values)
 
         # 遅れ時間の補正
-        if key2 in self._apply_lag_keys:
+        if col2 in self._cols_apply_lag_time:
             data1, data2 = SpectrumCalculator._correct_lag_time(
                 data1=data1, data2=data2, fs=fs, lag_second=self._lag_second
             )
@@ -260,19 +260,19 @@ class SpectrumCalculator:
 
     def calculate_power_spectrum(
         self,
-        key: str,
+        col: str,
         dimensionless: bool = True,
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
     ) -> tuple:
         """
-        指定されたkeyに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
+        指定されたcolに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
         scipy.signal.welchを使用してパワースペクトルを計算します。
 
         Parameters:
         ------
-            key : str
+            col : str
                 データの列名
             dimensionless : bool, optional
                 Trueの場合、分散で割って無次元化を行います。デフォルトはTrueです。
@@ -297,7 +297,7 @@ class SpectrumCalculator:
             )
 
         # データの取得とトレンド除去
-        data: np.ndarray = np.array(self._df[key].values)
+        data: np.ndarray = np.array(self._df[col].values)
         data = SpectrumCalculator._detrend(data, self._fs)
 
         # welchメソッドでパワースペクトル計算

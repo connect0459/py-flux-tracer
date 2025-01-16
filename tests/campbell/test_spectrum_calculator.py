@@ -34,11 +34,11 @@ def test_initialization(sample_data):
     """
     df, fs = sample_data
     calculator = SpectrumCalculator(
-        df=df, apply_lag_keys=["signal2"], lag_second=0.1, fs=fs
+        df=df, cols_apply_lag_time=["signal2"], lag_second=0.1, fs=fs
     )
 
     assert calculator.fs == fs
-    assert calculator.apply_lag_keys == ["signal2"]
+    assert calculator.cols_apply_lag_time == ["signal2"]
     assert calculator.lag_second == 0.1
     assert calculator.dimensionless
     assert calculator.plots == 30
@@ -49,10 +49,10 @@ def test_power_spectrum(sample_data):
     # パワースペクトル計算が正しく機能することを確認
     """
     df, fs = sample_data
-    calculator = SpectrumCalculator(df=df, apply_lag_keys=[], lag_second=0.0, fs=fs)
+    calculator = SpectrumCalculator(df=df, cols_apply_lag_time=[], lag_second=0.0, fs=fs)
 
     freqs, power = calculator.calculate_power_spectrum(
-        key="signal1", frequency_weighted=True, interpolate_points=False
+        col="signal1", frequency_weighted=True, interpolate_points=False
     )
 
     # 基本的な検証
@@ -69,11 +69,11 @@ def test_cospectrum(sample_data):
     # コスペクトル計算が正しく機能することを確認
     """
     df, fs = sample_data
-    calculator = SpectrumCalculator(df=df, apply_lag_keys=[], lag_second=0.0, fs=fs)
+    calculator = SpectrumCalculator(df=df, cols_apply_lag_time=[], lag_second=0.0, fs=fs)
 
     freqs, cospec, corr = calculator.calculate_co_spectrum(
-        key1="signal1",
-        key2="signal2",
+        col1="signal1",
+        col2="signal2",
         frequency_weighted=True,
         interpolate_points=False,
     )

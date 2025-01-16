@@ -180,7 +180,7 @@ if __name__ == "__main__":
         if plot_ch4:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fch4_ultra",
+                col_flux="Fch4_ultra",
                 plot_count=plot_count,
             )
             ffa.plot_flux_footprint(
@@ -205,7 +205,7 @@ if __name__ == "__main__":
         if plot_c2h6:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fc2h6_ultra",
+                col_flux="Fc2h6_ultra",
                 plot_count=plot_count,
             )
             ffa.plot_flux_footprint(
@@ -231,7 +231,7 @@ if __name__ == "__main__":
         if plot_ratio:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fratio",
+                col_flux="Fratio",
                 plot_count=plot_count,
             )
             # フットプリントとホットスポットの可視化
@@ -279,7 +279,7 @@ if __name__ == "__main__":
         if plot_ratio_legend:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fratio",
+                col_flux="Fratio",
                 plot_count=plot_count,
             )
             # フットプリントとホットスポットの可視化
@@ -308,7 +308,7 @@ if __name__ == "__main__":
             df["Fch4_gas"] = (df["Fratio"] / 100) * df["Fch4_ultra"]
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fch4_gas",
+                col_flux="Fch4_gas",
                 plot_count=plot_count,
             )
             ffa.plot_flux_footprint(
@@ -334,7 +334,7 @@ if __name__ == "__main__":
             df["Fch4_bio"] = (1 - (df["Fratio"] / 100)) * df["Fch4_ultra"]
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fch4_bio",
+                col_flux="Fch4_bio",
                 plot_count=plot_count,
             )
             ffa.plot_flux_footprint(
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         if plot_scale_checker and i == 0:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
-                flux_key="Fch4_ultra",
+                col_flux="Fch4_ultra",
                 plot_count=plot_count,
             )
             ffa.plot_flux_footprint_with_scale_checker(

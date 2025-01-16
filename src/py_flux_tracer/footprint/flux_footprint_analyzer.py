@@ -67,8 +67,8 @@ class FluxFootprintAnalyzer:
             "z/L",
             "Wind direction",
             "sigmaV",
-        ]  # 必要なカラムのキー名
-        self._weekday_key: str = "ffa_is_weekday"  # クラスで生成するカラムのキー名
+        ]  # 必要なカラムの名前
+        self._col_weekday: str = "ffa_is_weekday"  # クラスで生成するカラムのキー名
         self._z_m: float = z_m  # 測定高度
         # 状態を管理するフラグ
         self._got_satellite_image: bool = False
@@ -168,7 +168,7 @@ class FluxFootprintAnalyzer:
     def calculate_flux_footprint(
         self,
         df: pd.DataFrame,
-        flux_key: str,
+        col_flux: str,
         plot_count: int = 10000,
         start_time: str = "10:00",
         end_time: str = "16:00",
@@ -180,7 +180,7 @@ class FluxFootprintAnalyzer:
         ------
             df : pd.DataFrame
                 分析対象のデータフレーム。フラックスデータを含む。
-            flux_key : str
+            col_flux : str
                 フラックスデータの列名。計算に使用される。
             plot_count : int, optional
                 生成するプロットの数。デフォルトは10000。
@@ -216,16 +216,16 @@ class FluxFootprintAnalyzer:
             FluxFootprintAnalyzer.is_weekday(date) for date in datelist
         ]
 
-        # weekday_keyに基づいてデータフレームに平日情報を追加
-        df.loc[:, self._weekday_key] = numbers  # .locを使用して値を設定
+        # col_weekdayに基づいてデータフレームに平日情報を追加
+        df.loc[:, self._col_weekday] = numbers  # .locを使用して値を設定
 
         # 値が1のもの(平日)をコピーする
-        data_weekday: pd.DataFrame = df[df[self._weekday_key] == 1].copy()
+        data_weekday: pd.DataFrame = df[df[self._col_weekday] == 1].copy()
         # 特定の時間帯を抽出
         data_weekday = data_weekday.between_time(
             start_time, end_time
         )  # 引数を使用して時間帯を抽出
-        data_weekday = data_weekday.dropna(subset=[flux_key])
+        data_weekday = data_weekday.dropna(subset=[col_flux])
 
         directions: list[float] = [
             wind_direction if wind_direction >= 0 else wind_direction + 360
@@ -236,7 +236,7 @@ class FluxFootprintAnalyzer:
         data_weekday.loc[:, "radian"] = data_weekday["Wind direction_360"] / 180 * np.pi
 
         # 風向が欠測なら除去
-        data_weekday = data_weekday.dropna(subset=["Wind direction", flux_key])
+        data_weekday = data_weekday.dropna(subset=["Wind direction", col_flux])
 
         # 数値型への変換を確実に行う
         numeric_columns: list[str] = ["u*", "WS vector", "sigmaV", "z/L"]
@@ -290,7 +290,7 @@ class FluxFootprintAnalyzer:
                         U,
                         m,
                         sigmaV,
-                        data_weekday[flux_key].iloc[i],
+                        data_weekday[col_flux].iloc[i],
                         plot_count=plot_count,
                     )
                     x1_, y1_ = FluxFootprintAnalyzer._rotate_coordinates(
@@ -366,7 +366,7 @@ class FluxFootprintAnalyzer:
                 )
 
             # 平日/休日の判定用カラムを追加
-            df[self._weekday_key] = df.index.map(FluxFootprintAnalyzer.is_weekday)
+            df[self._col_weekday] = df.index.map(FluxFootprintAnalyzer.is_weekday)
 
             # Dateを除外したカラムで欠損値の処理
             df = df.dropna(subset=check_columns)
@@ -1081,7 +1081,7 @@ class FluxFootprintAnalyzer:
         df_combined = df_combined.loc[~df_combined.index.duplicated(), :]
 
         # 平日と休日の判定に使用するカラムを作成
-        df_combined[self._weekday_key] = df_combined.index.map(
+        df_combined[self._col_weekday] = df_combined.index.map(
             FluxFootprintAnalyzer.is_weekday
         )  # 共通の関数を使用
 

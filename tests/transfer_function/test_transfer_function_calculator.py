@@ -30,7 +30,7 @@ def calculator(sample_data_file):
     """TransferFunctionCalculatorのインスタンスを提供するフィクスチャ"""
     return TransferFunctionCalculator(
         file_path=sample_data_file,
-        freq_key="freq",
+        col_freq="freq",
         cutoff_freq_low=0.01,
         cutoff_freq_high=1.0,
     )
@@ -39,7 +39,7 @@ def calculator(sample_data_file):
 def test_initialization(calculator):
     """初期化のテスト"""
     assert isinstance(calculator._df, pd.DataFrame)
-    assert calculator._freq_key == "freq"
+    assert calculator._col_freq == "freq"
     assert calculator._cutoff_freq_low == 0.01
     assert calculator._cutoff_freq_high == 1.0
 
@@ -145,7 +145,7 @@ def test_create_plot_transfer_function(calculator, tmp_path):
 def test_invalid_file_path():
     """無効なファイルパスのテスト"""
     with pytest.raises(FileNotFoundError):
-        TransferFunctionCalculator(file_path="nonexistent.csv", freq_key="freq")
+        TransferFunctionCalculator(file_path="nonexistent.csv", col_freq="freq")
 
 
 def test_invalid_data_processing(calculator):

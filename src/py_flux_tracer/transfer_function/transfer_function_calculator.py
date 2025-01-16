@@ -16,7 +16,7 @@ class TransferFunctionCalculator:
     def __init__(
         self,
         file_path: str,
-        freq_key: str,
+        col_freq: str,
         cutoff_freq_low: float = 0.01,
         cutoff_freq_high: float = 1,
     ):
@@ -27,29 +27,29 @@ class TransferFunctionCalculator:
         ------
             file_path : str
                 分析対象のCSVファイルのパス。
-            freq_key : str
+            col_freq : str
                 周波数のキー。
             cutoff_freq_low : float
                 カットオフ周波数の最低値。
             cutoff_freq_high : float
                 カットオフ周波数の最高値。
         """
-        self._freq_key: str = freq_key
+        self._col_freq: str = col_freq
         self._cutoff_freq_low: float = cutoff_freq_low
         self._cutoff_freq_high: float = cutoff_freq_high
         self._df: pd.DataFrame = TransferFunctionCalculator._load_data(file_path)
 
     def calculate_transfer_function(
-        self, reference_key: str, target_key: str
+        self, col_reference: str, col_target: str
     ) -> tuple[float, float, pd.DataFrame]:
         """
         伝達関数の係数を計算する。
 
         Parameters:
         ------
-            reference_key : str
+            col_reference : str
                 参照データのカラム名。
-            target_key : str
+            col_target : str
                 ターゲットデータのカラム名。
 
         Returns:
@@ -58,7 +58,7 @@ class TransferFunctionCalculator:
                 伝達関数の係数aとその標準誤差、および計算に用いたDataFrame。
         """
         df_processed: pd.DataFrame = self.process_data(
-            reference_key=reference_key, target_key=target_key
+            col_reference=col_reference, col_target=col_target
         )
         df_cutoff: pd.DataFrame = self._cutoff_df(df_processed)
 
@@ -78,8 +78,8 @@ class TransferFunctionCalculator:
 
     def create_plot_co_spectra(
         self,
-        key1: str,
-        key2: str,
+        col1: str,
+        col2: str,
         color1: str = "gray",
         color2: str = "red",
         figsize: tuple[int, int] = (10, 8),
@@ -99,9 +99,9 @@ class TransferFunctionCalculator:
 
         Parameters:
         ------
-            key1 : str
+            col1 : str
                 1つ目のコスペクトルデータのカラム名。
-            key2 : str
+            col2 : str
                 2つ目のコスペクトルデータのカラム名。
             color1 : str, optional
                 1つ目のデータの色。デフォルトは'gray'。
@@ -126,8 +126,8 @@ class TransferFunctionCalculator:
         """
         df: pd.DataFrame = self._df.copy()
         # データの取得と移動平均の適用
-        data1 = df[df[key1] > 0].groupby(self._freq_key)[key1].median()
-        data2 = df[df[key2] > 0].groupby(self._freq_key)[key2].median()
+        data1 = df[df[col1] > 0].groupby(self._col_freq)[col1].median()
+        data2 = df[df[col2] > 0].groupby(self._col_freq)[col2].median()
 
         data1 = data1.rolling(window=window_size, center=True, min_periods=1).mean()
         data2 = data2.rolling(window=window_size, center=True, min_periods=1).mean()
@@ -296,15 +296,15 @@ class TransferFunctionCalculator:
         else:
             plt.close(fig=fig)
 
-    def process_data(self, reference_key: str, target_key: str) -> pd.DataFrame:
+    def process_data(self, col_reference: str, col_target: str) -> pd.DataFrame:
         """
         指定されたキーに基づいてデータを処理する。
 
         Parameters:
         ------
-            reference_key : str
+            col_reference : str
                 参照データのカラム名。
-            target_key : str
+            col_target : str
                 ターゲットデータのカラム名。
 
         Returns:
@@ -313,20 +313,20 @@ class TransferFunctionCalculator:
                 処理されたデータフレーム。
         """
         df: pd.DataFrame = self._df.copy()
-        freq_key: str = self._freq_key
+        col_freq: str = self._col_freq
 
         # データ型の確認と変換
-        df[freq_key] = pd.to_numeric(df[freq_key], errors="coerce")
-        df[reference_key] = pd.to_numeric(df[reference_key], errors="coerce")
-        df[target_key] = pd.to_numeric(df[target_key], errors="coerce")
+        df[col_freq] = pd.to_numeric(df[col_freq], errors="coerce")
+        df[col_reference] = pd.to_numeric(df[col_reference], errors="coerce")
+        df[col_target] = pd.to_numeric(df[col_target], errors="coerce")
 
         # NaNを含む行を削除
-        df = df.dropna(subset=[freq_key, reference_key, target_key])
+        df = df.dropna(subset=[col_freq, col_reference, col_target])
 
         # グループ化と中央値の計算
-        grouped = df.groupby(freq_key)
-        reference_data = grouped[reference_key].median()
-        target_data = grouped[target_key].median()
+        grouped = df.groupby(col_freq)
+        reference_data = grouped[col_reference].median()
+        target_data = grouped[col_target].median()
 
         df_processed = pd.DataFrame(
             {"reference": reference_data, "target": target_data}

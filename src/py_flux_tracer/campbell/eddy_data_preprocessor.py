@@ -99,8 +99,8 @@ class EddyDataPreprocessor:
         figsize: tuple[float, float] = (10, 8),
         input_files_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
-        key1: str = "wind_w",
-        key2_list: list[str] = ["Tv"],
+        col1: str = "wind_w",
+        col2_list: list[str] = ["Tv"],
         median_range: float = 20,
         metadata_rows: int = 4,
         output_dir: str | None = None,
@@ -124,9 +124,9 @@ class EddyDataPreprocessor:
                 入力ファイル名のパターン（正規表現）。
             input_files_suffix : str
                 入力ファイルの拡張子。
-            key1 : str
+            col1 : str
                 基準変数の列名。
-            key2_list : list[str]
+            col2_list : list[str]
                 比較変数の列名のリスト。
             median_range : float
                 中央値を中心とした範囲。
@@ -180,22 +180,22 @@ class EddyDataPreprocessor:
             df = self.add_uvw_columns(df)
             lags_list = EddyDataPreprocessor._calculate_lag_time(
                 df,
-                key1,
-                key2_list,
+                col1,
+                col2_list,
             )
             all_lags_indices.append(lags_list)
         self.logger.info("すべてのCSVファイルにおける遅れ時間が計算されました。")
 
         # Convert all_lags_indices to a DataFrame
         lags_indices_df: pd.DataFrame = pd.DataFrame(
-            all_lags_indices, columns=key2_list
+            all_lags_indices, columns=col2_list
         )
 
         # フォーマット用のキーの最大の長さ
-        max_key_length: int = max(len(column) for column in lags_indices_df.columns)
+        max_col_name_length: int = max(len(column) for column in lags_indices_df.columns)
 
         if print_results:
-            self.logger.info(f"カラム`{key1}`に対する遅れ時間を表示します。")
+            self.logger.info(f"カラム`{col1}`に対する遅れ時間を表示します。")
 
         # 結果を格納するためのリスト
         output_data = []
@@ -234,16 +234,16 @@ class EddyDataPreprocessor:
             # 結果とメタデータを出力データに追加
             output_data.append(
                 {
-                    "key1": key1,
-                    "key2": column,
-                    "key2_lag": round(mean_seconds, 2),  # 数値として小数点2桁を保持
+                    "col1": col1,
+                    "col2": column,
+                    "col2_lag": round(mean_seconds, 2),  # 数値として小数点2桁を保持
                     "lag_unit": "s",
                     "median_range": median_range,
                 }
             )
 
             if print_results:
-                print(f"{column:<{max_key_length}} : {mean_seconds:.2f} s")
+                print(f"{column:<{max_col_name_length}} : {mean_seconds:.2f} s")
 
         # 結果をCSVファイルとして出力
         if output_dir is not None:
@@ -385,8 +385,8 @@ class EddyDataPreprocessor:
         ratio_dir: str,
         input_file_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
-        key_ch4_conc: str = "Ultra_CH4_ppm_C",
-        key_c2h6_conc: str = "Ultra_C2H6_ppb",
+        col_ch4_conc: str = "Ultra_CH4_ppm_C",
+        col_c2h6_conc: str = "Ultra_C2H6_ppb",
         output_ratio: bool = True,
         output_resampled: bool = True,
         ratio_csv_prefix: str = "SAC.Ultra",
@@ -433,9 +433,9 @@ class EddyDataPreprocessor:
                 ファイル名からソートキーを抽出する正規表現パターン。デフォルトでは、最初の数字グループでソートします。
             input_files_suffix : str
                 入力ファイルの拡張子（.datや.csvなど）。デフォルトは".dat"。
-            key_ch4_conc : str
+            col_ch4_conc : str
                 CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
-            key_c2h6_conc : str
+            col_c2h6_conc : str
                 C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
             output_ratio : bool, optional
                 線形回帰を行うかどうか。デフォルトはTrue。
@@ -520,8 +520,8 @@ class EddyDataPreprocessor:
 
             # 相関係数とC2H6/CH4比を計算
             if output_ratio:
-                ch4_data: pd.Series = df[key_ch4_conc]
-                c2h6_data: pd.Series = df[key_c2h6_conc]
+                ch4_data: pd.Series = df[col_ch4_conc]
+                c2h6_data: pd.Series = df[col_c2h6_conc]
 
                 ratio_row: dict[str, str | float] = {
                     "Date": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
@@ -571,16 +571,16 @@ class EddyDataPreprocessor:
         input_dir: str,
         input_file_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
-        key_ch4_conc: str = "Ultra_CH4_ppm_C",
-        key_c2h6_conc: str = "Ultra_C2H6_ppb",
+        col_ch4_conc: str = "Ultra_CH4_ppm_C",
+        col_c2h6_conc: str = "Ultra_C2H6_ppb",
         output_ratio: bool = True,
         ratio_dir: str | None = None,
         output_resampled: bool = True,
         resampled_dir: str | None = None,
         output_lag_times: bool = True,  # lag times解析の有効化フラグ
         lag_times_dir: str | None = None,  # lag timesの結果出力ディレクトリ
-        lag_times_key1: str = "wind_w",  # 基準変数
-        lag_times_key2_list: list[str] = ["Tv"],  # 比較変数のリスト
+        lag_times_col1: str = "wind_w",  # 基準変数
+        lag_times_col2_list: list[str] = ["Tv"],  # 比較変数のリスト
         lag_times_median_range: float = 20,  # 中央値を中心とした範囲
         lag_times_plot_range: tuple[float, float] = (
             -50,
@@ -632,9 +632,9 @@ class EddyDataPreprocessor:
                 ファイル名からソートキーを抽出する正規表現パターン。
             input_files_suffix : str
                 入力ファイルの拡張子（.datや.csvなど）。デフォルトは".dat"。
-            key_ch4_conc : str
+            col_ch4_conc : str
                 CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
-            key_c2h6_conc : str
+            col_c2h6_conc : str
                 C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
             output_ratio : bool
                 線形回帰を行うかどうか。デフォルトはTrue。
@@ -644,9 +644,9 @@ class EddyDataPreprocessor:
                 lag times解析を行うかどうか。デフォルトはFalse。
             lag_times_dir : str | None
                 lag times解析結果の出力ディレクトリ。
-            lag_times_key1 : str
+            lag_times_col1 : str
                 lag times解析の基準変数。デフォルトは"wind_w"。
-            lag_times_key2_list : list[str]
+            lag_times_col2_list : list[str]
                 lag times解析の比較変数のリスト。デフォルトは["Tv"]。
             lag_times_median_range : float
                 lag times解析の中央値を中心とした範囲。デフォルトは20。
@@ -749,8 +749,8 @@ class EddyDataPreprocessor:
 
             # 相関係数とC2H6/CH4比を計算
             if output_ratio:
-                ch4_data: pd.Series = df[key_ch4_conc]
-                c2h6_data: pd.Series = df[key_c2h6_conc]
+                ch4_data: pd.Series = df[col_ch4_conc]
+                c2h6_data: pd.Series = df[col_c2h6_conc]
 
                 ratio_row: dict[str, str | float] = {
                     "Date": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
@@ -785,8 +785,8 @@ class EddyDataPreprocessor:
                 df = self.add_uvw_columns(df)
                 lags_list = EddyDataPreprocessor._calculate_lag_time(
                     df,
-                    lag_times_key1,
-                    lag_times_key2_list,
+                    lag_times_col1,
+                    lag_times_col2_list,
                 )
                 all_lags_indices.append(lags_list)
 
@@ -809,7 +809,7 @@ class EddyDataPreprocessor:
         if output_lag_times and lag_times_dir is not None:
             # lag timesの解析結果をDataFrameに変換
             lags_indices_df = pd.DataFrame(
-                all_lags_indices, columns=lag_times_key2_list
+                all_lags_indices, columns=lag_times_col2_list
             )
             lag_times_output_data = []
 
@@ -845,9 +845,9 @@ class EddyDataPreprocessor:
                 # 結果を格納
                 lag_times_output_data.append(
                     {
-                        "key1": lag_times_key1,
-                        "key2": column,
-                        "key2_lag": round(mean_seconds, 2),
+                        "col1": lag_times_col1,
+                        "col2": column,
+                        "col2_lag": round(mean_seconds, 2),
                         "lag_unit": "s",
                         "median_range": lag_times_median_range,
                     }
@@ -863,28 +863,28 @@ class EddyDataPreprocessor:
                 )
 
                 # 遅れ時間を表示
-                self.logger.info(f"カラム`{lag_times_key1}`に対する遅れ時間:")
-                max_key_length = max(len(column) for column in lag_times_df["key2"])
+                self.logger.info(f"カラム`{lag_times_col1}`に対する遅れ時間:")
+                max_col_name_length = max(len(column) for column in lag_times_df["col2"])
                 for _, row in lag_times_df.iterrows():
-                    print(f"{row['key2']:<{max_key_length}} : {row['key2_lag']:.2f} s")
+                    print(f"{row['col2']:<{max_col_name_length}} : {row['col2_lag']:.2f} s")
 
     @staticmethod
     def _calculate_lag_time(
         df: pd.DataFrame,
-        key1: str,
-        key2_list: list[str],
+        col1: str,
+        col2_list: list[str],
     ) -> list[int]:
         """
-        指定された基準変数（key1）と比較変数のリスト（key2_list）の間の遅れ時間（ディレイ）を計算する。
-        周波数が10Hzでkey1がkey2より10.0秒遅れている場合は、+100がインデックスとして取得される
+        指定された基準変数（col1）と比較変数のリスト（col2_list）の間の遅れ時間（ディレイ）を計算する。
+        周波数が10Hzでcol1がcol2より10.0秒遅れている場合は、+100がインデックスとして取得される
 
         Parameters:
         -----
             df : pd.DataFrame
                 遅れ時間の計算に使用するデータフレーム
-            key1 : str
+            col1 : str
                 基準変数の列名
-            key2_list : list[str]
+            col2_list : list[str]
                 比較変数の列名のリスト
 
         Returns:
@@ -893,9 +893,9 @@ class EddyDataPreprocessor:
                 各比較変数に対する遅れ時間（ディレイ）のリスト
         """
         lags_list: list[int] = []
-        for key2 in key2_list:
-            data1: np.ndarray = np.array(df[key1].values)
-            data2: np.ndarray = np.array(df[key2].values)
+        for col2 in col2_list:
+            data1: np.ndarray = np.array(df[col1].values)
+            data2: np.ndarray = np.array(df[col2].values)
 
             # 平均を0に調整
             data1 = data1 - data1.mean()

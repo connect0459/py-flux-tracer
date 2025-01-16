@@ -40,13 +40,13 @@ class CorrectingUtils:
                 coef_a=coef_a,
                 coef_b=coef_b,
                 coef_c=coef_c,
-                ch4_key="ch4_ppm",
-                h2o_key="h2o_ppm",
+                col_ch4="ch4_ppm",
+                col_h2o="h2o_ppm",
                 h2o_threshold=2000,
             )
             # 負の値のエタン濃度の補正など
             df_corrected = CorrectingUtils._remove_bias(
-                df=df_corrected, ch4_ppm_key="ch4_ppm", c2h6_ppb_key="c2h6_ppb"
+                df=df_corrected, col_ch4_ppm="ch4_ppm", col_c2h6_ppb="c2h6_ppb"
             )
             return df_corrected
         else:
@@ -58,8 +58,8 @@ class CorrectingUtils:
         coef_a: float,
         coef_b: float,
         coef_c: float,
-        ch4_key: str = "ch4_ppm",
-        h2o_key: str = "h2o_ppm",
+        col_ch4: str = "ch4_ppm",
+        col_h2o: str = "h2o_ppm",
         h2o_threshold: float | None = 2000,
     ) -> pd.DataFrame:
         """
@@ -82,9 +82,9 @@ class CorrectingUtils:
                 補正曲線の1次係数
             coef_c : float
                 補正曲線の2次係数
-            ch4_key : str
+            col_ch4 : str
                 CH4濃度を示すカラム名
-            h2o_key : str
+            col_h2o : str
                 水蒸気濃度を示すカラム名
             h2o_threshold : float | None
                 水蒸気濃度の下限値（この値未満のデータは除外）
@@ -97,7 +97,7 @@ class CorrectingUtils:
         # 元のデータを保護するためコピーを作成
         df = df.copy()
         # 水蒸気濃度の配列を取得
-        h2o = np.array(df[h2o_key])
+        h2o = np.array(df[col_h2o])
 
         # 補正項の計算
         correction_curve = coef_a + coef_b * h2o + coef_c * pow(h2o, 2)
@@ -105,20 +105,20 @@ class CorrectingUtils:
         correction_term = -(correction_curve - max_correction)
 
         # CH4濃度の補正
-        df[ch4_key] = df[ch4_key] + correction_term
+        df[col_ch4] = df[col_ch4] + correction_term
 
         # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
         if h2o_threshold is not None:
-            df.loc[df[h2o_key] < h2o_threshold, ch4_key] = np.nan
-            df = df.dropna(subset=[ch4_key])
+            df.loc[df[col_h2o] < h2o_threshold, col_ch4] = np.nan
+            df = df.dropna(subset=[col_ch4])
 
         return df
 
     @staticmethod
     def _remove_bias(
         df: pd.DataFrame,
-        ch4_ppm_key: str = "ch4_ppm",
-        c2h6_ppb_key: str = "c2h6_ppb",
+        col_ch4_ppm: str = "ch4_ppm",
+        col_c2h6_ppb: str = "c2h6_ppb",
     ) -> pd.DataFrame:
         """
         データフレームからバイアスを除去します。
@@ -127,9 +127,9 @@ class CorrectingUtils:
         ------
             df : pd.DataFrame
                 バイアスを除去する対象のデータフレーム。
-            ch4_ppm_key : str
+            col_ch4_ppm : str
                 CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
-            c2h6_ppb_key : str
+            col_c2h6_ppb : str
                 C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
 
         Returns:
@@ -138,8 +138,8 @@ class CorrectingUtils:
                 バイアスが除去されたデータフレーム。
         """
         df_processed: pd.DataFrame = df.copy()
-        c2h6_min = np.percentile(df_processed[c2h6_ppb_key], 5)
-        df_processed[c2h6_ppb_key] = df_processed[c2h6_ppb_key] - c2h6_min
-        ch4_min = np.percentile(df_processed[ch4_ppm_key], 5)
-        df_processed[ch4_ppm_key] = df_processed[ch4_ppm_key] - ch4_min + 2.0
+        c2h6_min = np.percentile(df_processed[col_c2h6_ppb], 5)
+        df_processed[col_c2h6_ppb] = df_processed[col_c2h6_ppb] - c2h6_min
+        ch4_min = np.percentile(df_processed[col_ch4_ppm], 5)
+        df_processed[col_ch4_ppm] = df_processed[col_ch4_ppm] - ch4_min + 2.0
         return df_processed
