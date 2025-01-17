@@ -45,18 +45,18 @@ def test_add_uvw_columns(preprocessor, sample_df):
     result = preprocessor.add_uvw_columns(sample_df)
 
     # 必要な列が追加されていることを確認
-    assert "wind_u" in result.columns
-    assert "wind_v" in result.columns
-    assert "wind_w" in result.columns
-    assert "rad_wind_dir" in result.columns
-    assert "rad_wind_inc" in result.columns
-    assert "degree_wind_dir" in result.columns
-    assert "degree_wind_inc" in result.columns
+    assert "edp_wind_u" in result.columns
+    assert "edp_wind_v" in result.columns
+    assert "edp_wind_w" in result.columns
+    assert "edp_rad_wind_dir" in result.columns
+    assert "edp_rad_wind_inc" in result.columns
+    assert "edp_degree_wind_dir" in result.columns
+    assert "edp_degree_wind_inc" in result.columns
 
     # 値が数値であることを確認
-    assert np.issubdtype(result["wind_u"].dtype, np.number)
-    assert np.issubdtype(result["wind_v"].dtype, np.number)
-    assert np.issubdtype(result["wind_w"].dtype, np.number)
+    assert np.issubdtype(result["edp_wind_u"].dtype, np.number)
+    assert np.issubdtype(result["edp_wind_v"].dtype, np.number)
+    assert np.issubdtype(result["edp_wind_w"].dtype, np.number)
 
 
 def test_add_uvw_columns_missing_columns():

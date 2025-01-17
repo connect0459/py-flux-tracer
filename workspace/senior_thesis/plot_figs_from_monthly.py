@@ -228,7 +228,7 @@ if __name__ == "__main__":
                 # 図の作成と保存
                 mfg.plot_turbulence(
                     df=df_for_turb,
-                    col_uz="wind_w",
+                    col_uz="edp_wind_w",
                     output_dir=(os.path.join(output_dir, "turbulences", target_tag)),
                     output_filename=f"turbulence-{date}.png",
                     add_serial_labels=False,
@@ -703,8 +703,8 @@ if __name__ == "__main__":
 
             # mfg.plot_wind_rose_sources(
             #     df=df_season,
-            #     output_dir=(os.path.join(output_dir, "wind_rose")),
-            #     output_filename=f"wind_rose-{tag}.png",
+            #     output_dir=(os.path.join(output_dir, "edp_wind_rose")),
+            #     output_filename=f"edp_wind_rose-{tag}.png",
             #     col_datetime="Date",
             #     col_ch4_flux="Fch4_ultra",
             #     col_c2h6_flux="Fc2h6_ultra",
@@ -723,8 +723,8 @@ if __name__ == "__main__":
             # )
             mfg.plot_wind_rose_sources(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "wind_rose")),
-                output_filename=f"wind_rose_stacked-{tag}.png",
+                output_dir=(os.path.join(output_dir, "edp_wind_rose")),
+                output_filename=f"edp_wind_rose_stacked-{tag}.png",
                 col_datetime="Date",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",

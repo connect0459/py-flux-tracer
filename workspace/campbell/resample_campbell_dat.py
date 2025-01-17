@@ -8,15 +8,15 @@ if __name__ == "__main__":
 
     input_dir: str = f"{root_path}/eddy_csv"
     resampled_dir: str = f"{root_path}/eddy_csv-resampled"
-    ratio_dir: str = f"{root_path}/calc-py"
+    c2c1_ratio_dir: str = f"{root_path}/calc-py"
 
     try:
         edp = EddyDataPreprocessor(fs=10)
         edp.output_resampled_data(
             input_dir=input_dir,
+            c2c1_ratio_dir=c2c1_ratio_dir,
             resampled_dir=resampled_dir,
-            ratio_dir=ratio_dir,
-            output_ratio=True,
+            output_c2c1_ratio=True,
             output_resampled=True,
         )
     except KeyboardInterrupt:

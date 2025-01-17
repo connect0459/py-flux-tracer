@@ -2059,7 +2059,7 @@ class MonthlyFiguresGenerator:
 
             # NaNや無限大を含む行を削除
             df = df.replace([np.inf, -np.inf], np.nan).dropna(
-                subset=[col_ch4, col_c2h6, "wind_w"]
+                subset=[col_ch4, col_c2h6, "edp_wind_w"]
             )
 
             # データが十分な行数を持っているか確認
@@ -2093,7 +2093,7 @@ class MonthlyFiguresGenerator:
 
                 # コスペクトル
                 _, cs, _ = calculator.calculate_co_spectrum(
-                    col1="wind_w",
+                    col1="edp_wind_w",
                     col2=col,
                     dimensionless=True,
                     frequency_weighted=True,
@@ -2353,7 +2353,7 @@ class MonthlyFiguresGenerator:
         self,
         df: pd.DataFrame,
         output_dir: str | Path | None = None,
-        output_filename: str = "wind_rose.png",
+        output_filename: str = "edp_wind_rose.png",
         col_datetime: str = "Date",
         col_ch4_flux: str = "Fch4",
         col_c2h6_flux: str = "Fc2h6",
@@ -2382,7 +2382,7 @@ class MonthlyFiguresGenerator:
             output_dir : str | Path | None
                 生成された図を保存するディレクトリのパス
             output_filename : str
-                保存するファイル名（デフォルトは"wind_rose.png"）
+                保存するファイル名（デフォルトは"edp_wind_rose.png"）
             col_ch4_flux : str
                 CH4フラックスを示すカラム名
             col_c2h6_flux : str
