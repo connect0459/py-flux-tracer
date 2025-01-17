@@ -100,8 +100,8 @@ class EmissionData:
             raise ValueError("Delta CH4 must be a non-negative number")
 
         # delta_c2h6のバリデーション
-        if not isinstance(self.delta_c2h6, (int, float)) or self.delta_c2h6 < 0:
-            raise ValueError("Delta C2H6 must be a non-negative number")
+        if not isinstance(self.delta_c2h6, (int, float)):
+            raise ValueError("Delta C2H6 must be a int or float")
 
         # ratioのバリデーション
         if not isinstance(self.ratio, (int, float)) or self.ratio < 0:
