@@ -49,7 +49,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
+   "execution_count": 2,
    "id": "82bb8a9d",
    "metadata": {},
    "outputs": [],
@@ -143,7 +143,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 3,
    "id": "281be5f3-4925-45cc-9bd7-ba722b071315",
    "metadata": {
     "scrolled": false
@@ -152,7 +152,10 @@
    "source": [
     "# 時系列データの描画\n",
     "if g_timeseries:\n",
-    "    g_msa.plot_conc_timeseries(show_fig=True)\n",
+    "    source_names: list[str] = g_msa.get_source_names()\n",
+    "    g_msa.plot_conc_timeseries(\n",
+    "        source_name=source_names[0], save_fig=False, show_fig=True\n",
+    "    )\n",
     "\n",
     "# ホットスポット検出\n",
     "if g_scatter_c2c1:\n",
@@ -178,8 +181,8 @@
     "\n",
     "    g_msa.plot_mapbox(\n",
     "        df=df_processed,\n",
+    "        col_conc=\"ch4_ppm\",\n",
     "        mapbox_access_token=g_mapbox_access_token,\n",
-    "        col=\"ch4_ppm\",\n",
     "        value_range=(1.95, 2.3),\n",
     "        tick_font_size=20,\n",
     "        title_font_size=20,\n",
@@ -192,7 +195,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 11,
+   "execution_count": 5,
    "id": "e56a2a2d-3c76-4138-80c4-284e4e13885d",
    "metadata": {
     "scrolled": true
@@ -205,7 +208,7 @@
     "    g_msa.plot_mapbox(\n",
     "        df=df_processed,\n",
     "        mapbox_access_token=g_mapbox_access_token,\n",
-    "        col=\"c2h6_ppb\",\n",
+    "        col_conc=\"c2h6_ppb\",\n",
     "        value_range=(0, 20),\n",
     "        tick_font_size=20,\n",
     "        title_font_size=20,\n",
@@ -238,7 +241,7 @@
     "    g_msa.plot_mapbox(\n",
     "        df=df_processed,\n",
     "        mapbox_access_token=g_mapbox_access_token,\n",
-    "        col=\"c2c1_ratio_delta\",\n",
+    "        col_conc=\"c2c1_ratio_delta\",\n",
     "        value_range=(0, 10),\n",
     "        tick_font_size=20,\n",
     "        title_font_size=20,\n",

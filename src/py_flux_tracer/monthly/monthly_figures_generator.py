@@ -1997,20 +1997,25 @@ class MonthlyFiguresGenerator:
 
     def plot_spectra(
         self,
-        input_dir: str,
-        output_dir: str,
         fs: float,
         lag_second: float,
+        input_dir: str | Path | None,
+        output_dir: str | Path | None,
+        output_basename: str = "spectrum",
         col_ch4: str = "Ultra_CH4_ppm_C",
         col_c2h6: str = "Ultra_C2H6_ppb",
+        col_tv: str = "Tv",
         label_ch4: str | None = None,
         label_c2h6: str | None = None,
-        are_inputs_resampled: bool = True,
+        label_tv: str | None = None,
         file_pattern: str = "*.csv",
-        output_basename: str = "spectrum",
+        markersize: float = 14,
+        are_inputs_resampled: bool = True,
+        save_fig: bool = True,
+        show_fig: bool = True,
         plot_power: bool = True,
         plot_co: bool = True,
-        markersize: float = 14,
+        add_tv_in_co: bool = True,
     ) -> None:
         """
         月間の平均パワースペクトル密度を計算してプロットする。
@@ -2020,31 +2025,58 @@ class MonthlyFiguresGenerator:
 
         Parameters:
         ------
-            input_dir : str
-                データファイルが格納されているディレクトリ。
-            output_dir : str
-                出力先ディレクトリ。
             fs : float
                 サンプリング周波数。
             lag_second : float
                 ラグ時間（秒）。
+            input_dir : str | Path | None
+                データファイルが格納されているディレクトリ。
+            output_dir : str | Path | None
+                出力先ディレクトリ。
             col_ch4 : str, optional
                 CH4の濃度データが入ったカラムのキー。デフォルトは"Ultra_CH4_ppm_C"。
             col_c2h6 : str, optional
                 C2H6の濃度データが入ったカラムのキー。デフォルトは"Ultra_C2H6_ppb"。
-            are_inputs_resampled : bool, optional
-                入力データが再サンプリングされているかどうか。デフォルトはTrue。
+            col_tv : str, optional
+                気温データが入ったカラムのキー。デフォルトは"Tv"。
+            label_ch4 : str | None, optional
+                CH4のラベル。デフォルトはNone。
+            label_c2h6 : str | None, optional
+                C2H6のラベル。デフォルトはNone。
+            label_tv : str | None, optional
+                気温のラベル。デフォルトはNone。
             file_pattern : str, optional
                 処理対象のファイルパターン。デフォルトは"*.csv"。
-            output_basename : str, optional
-                出力ファイル名。デフォルトは"spectrum"。
+            markersize : float, optional
+                プロットマーカーのサイズ。デフォルトは14。
+            are_inputs_resampled : bool, optional
+                入力データが再サンプリングされているかどうか。デフォルトはTrue。
+            save_fig : bool, optional
+                図を保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                図を表示するかどうか。デフォルトはTrue。
+            plot_power : bool, optional
+                パワースペクトルをプロットするかどうか。デフォルトはTrue。
+            plot_co : bool, optional
+                COのスペクトルをプロットするかどうか。デフォルトはTrue。
+            add_tv_in_co : bool, optional
+                顕熱フラックスのコスペクトルを表示するかどうか。デフォルトはTrue。
         """
+        # 出力ディレクトリの作成
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                )
+            os.makedirs(output_dir, exist_ok=True)
+
         # データの読み込みと結合
-        edp = EddyDataPreprocessor()
+        edp = EddyDataPreprocessor(fs=fs)
+        col_wind_w: str = EddyDataPreprocessor.WIND_W
 
         # 各変数のパワースペクトルを格納する辞書
         power_spectra = {col_ch4: [], col_c2h6: []}
-        co_spectra = {col_ch4: [], col_c2h6: []}
+        co_spectra = {col_ch4: [], col_c2h6: [], col_tv: []}
         freqs = None
 
         # プログレスバーを表示しながらファイルを処理
@@ -2059,7 +2091,7 @@ class MonthlyFiguresGenerator:
 
             # NaNや無限大を含む行を削除
             df = df.replace([np.inf, -np.inf], np.nan).dropna(
-                subset=[col_ch4, col_c2h6, "edp_wind_w"]
+                subset=[col_ch4, col_c2h6, col_tv, col_wind_w]
             )
 
             # データが十分な行数を持っているか確認
@@ -2074,100 +2106,91 @@ class MonthlyFiguresGenerator:
                 lag_second=lag_second,
             )
 
-            # 各変数のパワースペクトルを計算して保存
             for col in power_spectra.keys():
-                f, ps = calculator.calculate_power_spectrum(
-                    col=col,
-                    dimensionless=True,
-                    frequency_weighted=True,
-                    interpolate_points=True,
-                    scaling="density",
-                )
-                # 最初のファイル処理時にfreqsを初期化
-                if freqs is None:
-                    freqs = f
-                    power_spectra[col].append(ps)
-                # 以降は周波数配列の長さが一致する場合のみ追加
-                elif len(f) == len(freqs):
-                    power_spectra[col].append(ps)
+                # 各変数のパワースペクトルを計算して保存
+                if plot_power:
+                    f, ps = calculator.calculate_power_spectrum(
+                        col=col,
+                        dimensionless=True,
+                        frequency_weighted=True,
+                        interpolate_points=True,
+                        scaling="density",
+                    )
+                    # 最初のファイル処理時にfreqsを初期化
+                    if freqs is None:
+                        freqs = f
+                        power_spectra[col].append(ps)
+                    # 以降は周波数配列の長さが一致する場合のみ追加
+                    elif len(f) == len(freqs):
+                        power_spectra[col].append(ps)
 
                 # コスペクトル
-                _, cs, _ = calculator.calculate_co_spectrum(
-                    col1="edp_wind_w",
-                    col2=col,
+                if plot_co:
+                    _, cs, _ = calculator.calculate_co_spectrum(
+                        col1=col_wind_w,
+                        col2=col,
+                        dimensionless=True,
+                        frequency_weighted=True,
+                        interpolate_points=True,
+                        scaling="spectrum",
+                    )
+                    if freqs is not None and len(cs) == len(freqs):
+                        co_spectra[col].append(cs)
+
+            # 顕熱フラックスのコスペクトル計算を追加
+            if plot_co and add_tv_in_co:
+                _, cs_heat, _ = calculator.calculate_co_spectrum(
+                    col1=col_wind_w,
+                    col2=col_tv,
                     dimensionless=True,
                     frequency_weighted=True,
                     interpolate_points=True,
-                    # scaling="density",
                     scaling="spectrum",
                 )
-                if freqs is not None and len(cs) == len(freqs):
-                    co_spectra[col].append(cs)
+                if freqs is not None and len(cs_heat) == len(freqs):
+                    co_spectra[col_tv].append(cs_heat)
 
         # 各変数のスペクトルを平均化
-        averaged_power_spectra = {
-            col: np.mean(spectra, axis=0) for col, spectra in power_spectra.items()
-        }
-        averaged_co_spectra = {
-            col: np.mean(spectra, axis=0) for col, spectra in co_spectra.items()
-        }
-
-        # # プロット設定
-        # plt.rcParams.update(
-        #     {
-        #         "font.size": 20,
-        #         "axes.labelsize": 20,
-        #         "axes.titlesize": 20,
-        #         "xtick.labelsize": 20,
-        #         "ytick.labelsize": 20,
-        #         "legend.fontsize": 20,
-        #     }
-        # )
+        if plot_power:
+            averaged_power_spectra = {
+                col: np.mean(spectra, axis=0) for col, spectra in power_spectra.items()
+            }
+        if plot_co:
+            averaged_co_spectra = {
+                col: np.mean(spectra, axis=0) for col, spectra in co_spectra.items()
+            }
+        # 顕熱フラックスの平均コスペクトル計算
+        if plot_co and add_tv_in_co and co_spectra[col_tv]:
+            averaged_heat_co_spectra = np.mean(co_spectra[col_tv], axis=0)
 
         # プロット設定を修正
         plot_configs = [
             {
                 "col": col_ch4,
                 "psd_ylabel": r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
-                "co_ylabel": r"$fCo_{w\mathrm{CH_4}} / (\sigma_w \sigma_{\mathrm{CH_4}})$",
+                "co_ylabel": r"$fC_{w\mathrm{CH_4}} / \overline{w'\mathrm{CH_4}'}$",
                 "color": "red",
                 "label": label_ch4,
             },
             {
                 "col": col_c2h6,
                 "psd_ylabel": r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
-                "co_ylabel": r"$fCo_{w\mathrm{C_2H_6}} / (\sigma_w \sigma_{\mathrm{C_2H_6}})$",
+                "co_ylabel": r"$fC_{w\mathrm{C_2H_6}} / \overline{w'\mathrm{C_2H_6}'}$",
                 "color": "orange",
                 "label": label_c2h6,
             },
         ]
-
-        # # パワースペクトルの図を作成
-        # if plot_power:
-        #     _, axes_psd = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
-        #     for ax, config in zip(axes_psd, plot_configs):
-        #         ax.scatter(
-        #             freqs,
-        #             averaged_power_spectra[config["col"]],
-        #             c=config["color"],
-        #             s=100,
-        #         )
-        #         ax.set_xscale("log")
-        #         ax.set_yscale("log")
-        #         ax.set_xlim(0.001, 10)
-        #         ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
-        #         ax.text(0.1, 0.06, "-2/3", fontsize=18)
-        #         ax.set_ylabel(config["psd_ylabel"])
-        #         if config["label"] is not None:
-        #             ax.text(
-        #                 0.02, 0.98, config["label"], transform=ax.transAxes, va="top"
-        #             )
-        #         ax.grid(True, alpha=0.3)
-        #         ax.set_xlabel("f (Hz)")
+        plot_tv_config = {
+            "col": col_tv,
+            "psd_ylabel": r"$fS_{T_v} / s_{T_v}^2$",
+            "co_ylabel": r"$fC_{wT_v} / \overline{w'T_v'}$",
+            "color": "blue",
+            "label": label_tv,
+        }
 
         # パワースペクトルの図を作成
         if plot_power:
-            _, axes_psd = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
+            fig_power, axes_psd = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
             for ax, config in zip(axes_psd, plot_configs):
                 ax.plot(
                     freqs,
@@ -2190,56 +2213,53 @@ class MonthlyFiguresGenerator:
                 ax.set_xlabel("f (Hz)")
 
             plt.tight_layout()
-            os.makedirs(output_dir, exist_ok=True)
-            output_path_psd: str = os.path.join(
-                output_dir, f"power_{output_basename}.png"
-            )
-            plt.savefig(
-                output_path_psd,
-                dpi=300,
-                bbox_inches="tight",
-            )
-            plt.close()
 
-        # # コスペクトルの図を作成
-        # if plot_co:
-        #     _, axes_cosp = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
-        #     for ax, config in zip(axes_cosp, plot_configs):
-        #         ax.scatter(
-        #             freqs,
-        #             averaged_co_spectra[config["col"]],
-        #             c=config["color"],
-        #             s=100,
-        #         )
-        #         ax.set_xscale("log")
-        #         ax.set_yscale("log")
-        #         ax.set_xlim(0.001, 10)
-        #         ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
-        #         ax.text(0.1, 0.1, "-4/3", fontsize=18)
-        #         ax.set_ylabel(config["co_ylabel"])
-        #         if config["label"] is not None:
-        #             ax.text(
-        #                 0.02, 0.98, config["label"], transform=ax.transAxes, va="top"
-        #             )
-        #         ax.grid(True, alpha=0.3)
-        #         ax.set_xlabel("f (Hz)")
+            if save_fig:
+                output_path_psd: str = os.path.join(
+                    output_dir, f"power_{output_basename}.png"
+                )
+                plt.savefig(
+                    output_path_psd,
+                    dpi=300,
+                    bbox_inches="tight",
+                )
+            if show_fig:
+                plt.show()
+            else:
+                plt.close(fig=fig_power)
 
         # コスペクトルの図を作成
         if plot_co:
-            _, axes_cosp = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
+            fig_co, axes_cosp = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
             for ax, config in zip(axes_cosp, plot_configs):
+                # 顕熱フラックスのコスペクトルを先に描画（背景として）
+                if add_tv_in_co and len(co_spectra[col_tv]) > 0:
+                    ax.plot(
+                        freqs,
+                        averaged_heat_co_spectra,
+                        "o",
+                        color="gray",
+                        alpha=0.3,
+                        markersize=markersize,
+                        label=plot_tv_config["label"]
+                        if plot_tv_config["label"]
+                        else None,
+                    )
+
+                # CH4またはC2H6のコスペクトルを描画
                 ax.plot(
                     freqs,
                     averaged_co_spectra[config["col"]],
-                    "o",  # マーカーを丸に設定
+                    "o",
                     color=config["color"],
                     markersize=markersize,
+                    label=config["label"] if config["label"] else None,
                 )
                 ax.set_xscale("log")
                 ax.set_yscale("log")
                 ax.set_xlim(0.001, 10)
-                ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
-                ax.text(0.1, 0.1, "-4/3", fontsize=18)
+                # ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
+                # ax.text(0.1, 0.1, "-4/3", fontsize=18)
                 ax.set_ylabel(config["co_ylabel"])
                 if config["label"] is not None:
                     ax.text(
@@ -2247,15 +2267,24 @@ class MonthlyFiguresGenerator:
                     )
                 ax.grid(True, alpha=0.3)
                 ax.set_xlabel("f (Hz)")
+                # 凡例を追加（顕熱フラックスが含まれる場合）
+                if add_tv_in_co and label_tv:
+                    ax.legend(loc="lower left")
 
             plt.tight_layout()
-            output_path_csd: str = os.path.join(output_dir, f"co_{output_basename}.png")
-            plt.savefig(
-                output_path_csd,
-                dpi=300,
-                bbox_inches="tight",
-            )
-            plt.close()
+            if save_fig:
+                output_path_csd: str = os.path.join(
+                    output_dir, f"co_{output_basename}.png"
+                )
+                plt.savefig(
+                    output_path_csd,
+                    dpi=300,
+                    bbox_inches="tight",
+                )
+            if show_fig:
+                plt.show()
+            else:
+                plt.close(fig=fig_co)
 
     def plot_turbulence(
         self,

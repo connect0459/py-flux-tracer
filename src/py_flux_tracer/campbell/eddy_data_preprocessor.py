@@ -10,6 +10,15 @@ from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 
 
 class EddyDataPreprocessor:
+    # カラム名を定数として定義
+    WIND_U = "edp_wind_u"
+    WIND_V = "edp_wind_v"
+    WIND_W = "edp_wind_w"
+    RAD_WIND_DIR = "edp_rad_wind_dir"
+    RAD_WIND_INC = "edp_rad_wind_inc"
+    DEGREE_WIND_DIR = "edp_degree_wind_dir"
+    DEGREE_WIND_INC = "edp_degree_wind_inc"
+
     def __init__(
         self,
         fs: float = 10,
@@ -37,7 +46,7 @@ class EddyDataPreprocessor:
         """
         DataFrameに水平風速u、v、鉛直風速wの列を追加する関数。
         各成分のキーは`wind_u`、`wind_v`、`wind_w`である。
-        
+
         Parameters
         -----
             df : pd.DataFrame
@@ -83,13 +92,13 @@ class EddyDataPreprocessor:
             )
         )
 
-        processed_df["edp_wind_u"] = wind_u_array_rotated
-        processed_df["edp_wind_v"] = wind_v_array
-        processed_df["edp_wind_w"] = wind_w_array_rotated
-        processed_df["edp_rad_wind_dir"] = wind_direction
-        processed_df["edp_rad_wind_inc"] = wind_inclination
-        processed_df["edp_degree_wind_dir"] = np.degrees(wind_direction)
-        processed_df["edp_degree_wind_inc"] = np.degrees(wind_inclination)
+        processed_df[self.WIND_U] = wind_u_array_rotated
+        processed_df[self.WIND_V] = wind_v_array
+        processed_df[self.WIND_W] = wind_w_array_rotated
+        processed_df[self.RAD_WIND_DIR] = wind_direction
+        processed_df[self.RAD_WIND_INC] = wind_inclination
+        processed_df[self.DEGREE_WIND_DIR] = np.degrees(wind_direction)
+        processed_df[self.DEGREE_WIND_INC] = np.degrees(wind_inclination)
 
         return processed_df
 
@@ -192,7 +201,9 @@ class EddyDataPreprocessor:
         )
 
         # フォーマット用のキーの最大の長さ
-        max_col_name_length: int = max(len(column) for column in lags_indices_df.columns)
+        max_col_name_length: int = max(
+            len(column) for column in lags_indices_df.columns
+        )
 
         if print_results:
             self.logger.info(f"カラム`{col1}`に対する遅れ時間を表示します。")
@@ -256,6 +267,17 @@ class EddyDataPreprocessor:
 
         return results
 
+    def get_generated_columns_names(self) -> list[str]:
+        return [
+            self.WIND_U,
+            self.WIND_V,
+            self.WIND_W,
+            self.RAD_WIND_DIR,
+            self.RAD_WIND_INC,
+            self.DEGREE_WIND_DIR,
+            self.DEGREE_WIND_INC,
+        ]
+
     def get_resampled_df(
         self,
         filepath: str,
@@ -294,7 +316,7 @@ class EddyDataPreprocessor:
         5. 指定されたサンプリングレートでリサンプリングする
         6. 欠損値(NaN)を前後の値から線形補間する
         7. DateTimeインデックスを削除する
-        
+
         Parameters:
         -----
             filepath : str
@@ -467,9 +489,13 @@ class EddyDataPreprocessor:
         """
         # 出力オプションとディレクトリの検証
         if output_resampled and resampled_dir is None:
-            raise ValueError("output_resampled が True の場合、resampled_dir を指定する必要があります")
+            raise ValueError(
+                "output_resampled が True の場合、resampled_dir を指定する必要があります"
+            )
         if output_c2c1_ratio and c2c1_ratio_dir is None:
-            raise ValueError("output_c2c1_ratio が True の場合、c2c1_ratio_dir を指定する必要があります")
+            raise ValueError(
+                "output_c2c1_ratio が True の場合、c2c1_ratio_dir を指定する必要があります"
+            )
 
         # ディレクトリの作成（必要な場合のみ）
         if output_resampled:
@@ -565,7 +591,7 @@ class EddyDataPreprocessor:
             )
             ratio_path: str = os.path.join(c2c1_ratio_dir, ratio_filename)
             ratio_df.to_csv(ratio_path, index=False)
-    
+
     @staticmethod
     def _calculate_lag_time(
         df: pd.DataFrame,

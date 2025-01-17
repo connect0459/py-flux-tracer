@@ -962,13 +962,13 @@ class MobileSpatialAnalyzer:
     def plot_mapbox(
         self,
         df: pd.DataFrame,
-        col: str,
+        col_conc: str,
         mapbox_access_token: str,
-        sort_value_column: bool = True,
+        sort_conc_column: bool = True,
         output_dir: str | Path | None = None,
         output_filename: str = "mapbox_plot.html",
-        lat_column: str = "latitude",
-        lon_column: str = "longitude",
+        col_lat: str = "latitude",
+        col_lon: str = "longitude",
         colorscale: str = "Jet",
         center_lat: float | None = None,
         center_lon: float | None = None,
@@ -992,19 +992,19 @@ class MobileSpatialAnalyzer:
         ------
             df : pd.DataFrame
                 プロットするデータを含むDataFrame
-            col : str
+            col_conc : str
                 カラーマッピングに使用する列名
             mapbox_access_token : str
                 Mapboxのアクセストークン
-            sort_value_column : bool
+            sort_conc_column : bool
                 value_columnをソートするか否か。デフォルトはTrue。
             output_dir : str | Path | None
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名。デフォルトは"mapbox_plot.html"
-            lat_column : str
+            col_lat : str
                 緯度の列名。デフォルトは"latitude"
-            lon_column : str
+            col_lon : str
                 経度の列名。デフォルトは"longitude"
             colorscale : str
                 使用するカラースケール。デフォルトは"Jet"
@@ -1037,9 +1037,9 @@ class MobileSpatialAnalyzer:
             show_fig : bool
                 図を表示するかどうか。デフォルトはTrue
         """
-        df_mapping: pd.DataFrame = df.copy().dropna(subset=[col])
-        if sort_value_column:
-            df_mapping = df_mapping.sort_values(col)
+        df_mapping: pd.DataFrame = df.copy().dropna(subset=[col_conc])
+        if sort_conc_column:
+            df_mapping = df_mapping.sort_values(col_conc)
         # 中心座標の設定
         center_lat = center_lat if center_lat is not None else self._center_lat
         center_lon = center_lon if center_lon is not None else self._center_lon
@@ -1047,23 +1047,23 @@ class MobileSpatialAnalyzer:
         # カラーマッピングの範囲を設定
         cmin, cmax = 0, 0
         if value_range is None:
-            cmin = df_mapping[col].min()
-            cmax = df_mapping[col].max()
+            cmin = df_mapping[col_conc].min()
+            cmax = df_mapping[col_conc].max()
         else:
             cmin, cmax = value_range
 
         # カラーバーのタイトルを設定
-        title_text = colorbar_title if colorbar_title is not None else col
+        title_text = colorbar_title if colorbar_title is not None else col_conc
 
         # Scattermapboxのデータを作成
         scatter_data = go.Scattermapbox(
-            lat=df_mapping[lat_column],
-            lon=df_mapping[lon_column],
-            text=df_mapping[col].astype(str),
+            lat=df_mapping[col_lat],
+            lon=df_mapping[col_lon],
+            text=df_mapping[col_conc].astype(str),
             hoverinfo="text",
             mode="markers",
             marker=dict(
-                color=df_mapping[col],
+                color=df_mapping[col_conc],
                 size=marker_size,
                 reversescale=False,
                 autocolorscale=False,
@@ -1625,14 +1625,15 @@ class MobileSpatialAnalyzer:
         window_size: int,
         col_ch4_ppm: str = "ch4_ppm",
         col_c2h6_ppb: str = "c2h6_ppb",
+        col_h2o_ppm: str = "h2o_ppm",
         ch4_threshold: float = 0.05,
         c2h6_threshold: float = 0.0,
+        use_quantile: bool = True,
     ) -> pd.DataFrame:
         """
         ホットスポットのパラメータを計算します。
-        このメソッドは、指定されたデータフレームに対して移動平均や相関を計算し、
-        各種のデルタ値や比率を追加します。これにより、ホットスポットの分析に必要な
-        パラメータを整形します。
+        このメソッドは、指定されたデータフレームに対して移動平均（または5パーセンタイル）や相関を計算し、
+        各種のデルタ値や比率を追加します。
 
         Parameters:
         ------
@@ -1644,49 +1645,73 @@ class MobileSpatialAnalyzer:
                 CH4濃度を示すカラム名
             col_c2h6_ppb : str
                 C2H6濃度を示すカラム名
+            col_h2o_ppm : str
+                H2O濃度を示すカラム名
             ch4_threshold : float
                 CH4の閾値
             c2h6_threshold : float
                 C2H6の閾値
+            use_quantile : bool
+                Trueの場合は5パーセンタイルを使用、Falseの場合は移動平均を使用
 
         Returns:
         ------
             pd.DataFrame
                 計算されたパラメータを含むデータフレーム
         """
-        # 移動平均の計算
-        df["ch4_ppm_mv"] = (
-            df[col_ch4_ppm]
-            .rolling(window=window_size, center=True, min_periods=1)
-            .mean()
-        )
-        df["c2h6_ppb_mv"] = (
-            df[col_c2h6_ppb]
-            .rolling(window=window_size, center=True, min_periods=1)
-            .mean()
-        )
+        # データのコピーを作成
+        df = df.copy()
 
         # 移動相関の計算
         df["ch4_c2h6_correlation"] = (
-            df[col_ch4_ppm]
-            .rolling(window=window_size, min_periods=1)
-            .corr(df[col_c2h6_ppb])
+            df[col_ch4_ppm].rolling(window=window_size).corr(df[col_c2h6_ppb])
         )
 
-        # 移動平均からの偏差
+        # バックグラウンド値の計算（5パーセンタイルまたは移動平均）
+        if use_quantile:
+            df["ch4_ppm_mv"] = (
+                df[col_ch4_ppm]
+                .rolling(window=window_size, center=True, min_periods=1)
+                .quantile(0.05)
+            )
+            df["c2h6_ppb_mv"] = (
+                df[col_c2h6_ppb]
+                .rolling(window=window_size, center=True, min_periods=1)
+                .quantile(0.05)
+            )
+        else:
+            df["ch4_ppm_mv"] = (
+                df[col_ch4_ppm]
+                .rolling(window=window_size, center=True, min_periods=1)
+                .mean()
+            )
+            df["c2h6_ppb_mv"] = (
+                df[col_c2h6_ppb]
+                .rolling(window=window_size, center=True, min_periods=1)
+                .mean()
+            )
+
+        # デルタ値の計算
         df["ch4_ppm_delta"] = df[col_ch4_ppm] - df["ch4_ppm_mv"]
         df["c2h6_ppb_delta"] = df[col_c2h6_ppb] - df["c2h6_ppb_mv"]
 
         # C2H6/CH4の比率計算
         df["c2c1_ratio"] = df[col_c2h6_ppb] / df[col_ch4_ppm]
 
-        # デルタ値に基づく比の計算
-        df["c2c1_ratio_delta"] = np.where(
-            (df["ch4_ppm_delta"].abs() >= ch4_threshold)
-            & (df["c2h6_ppb_delta"] >= c2h6_threshold),
-            df["c2h6_ppb_delta"] / df["ch4_ppm_delta"],
-            np.nan,
-        )
+        # デルタ値に基づく比の計算とフィルタリング
+        df["c2c1_ratio_delta"] = df["c2h6_ppb_delta"] / df["ch4_ppm_delta"]
+
+        # フィルタリング条件の適用
+        df.loc[df["ch4_ppm_delta"] < ch4_threshold, "c2c1_ratio_delta"] = np.nan
+        df.loc[df["c2h6_ppb_delta"] < -10.0, "c2h6_ppb_delta"] = np.nan
+        df.loc[df["c2h6_ppb_delta"] > 1000.0, "c2h6_ppb_delta"] = np.nan
+        df.loc[df["c2h6_ppb_delta"] < c2h6_threshold, "c2c1_ratio_delta"] = 0.0
+
+        # 水蒸気濃度によるフィルタリング
+        df.loc[df[col_h2o_ppm] < 2000, [col_ch4_ppm, col_c2h6_ppb]] = np.nan
+
+        # 欠損値の除去
+        df = df.dropna(subset=[col_ch4_ppm])
 
         return df
 

@@ -88,6 +88,176 @@ class SpectrumCalculator:
         )
         return freqs, co_spectrum, corr_coef
 
+    # def calculate_cross_spectrum(
+    #     self,
+    #     col1: str,
+    #     col2: str,
+    #     dimensionless: bool = True,
+    #     frequency_weighted: bool = True,
+    #     interpolate_points: bool = True,
+    #     scaling: str = "spectrum",
+    # ) -> tuple:
+    #     """
+    #     指定されたcol1とcol2のコスペクトルとクアドラチャスペクトルをDataFrameから計算するためのメソッド。
+
+    #     Parameters:
+    #     ------
+    #         col1 : str
+    #             データの列名1。
+    #         col2 : str
+    #             データの列名2。
+    #         dimensionless : bool, optional
+    #             Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
+    #         frequency_weighted : bool, optional
+    #             周波数の重みづけを適用するかどうか。デフォルトはTrue。
+    #         interpolate_points : bool, optional
+    #             等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
+    #         scaling : str
+    #             "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
+
+    #     Returns:
+    #     ------
+    #         tuple
+    #             (freqs, co_spectrum, quadrature_spectrum, corr_coef)
+    #             - freqs : np.ndarray
+    #                 周波数軸（対数スケールの場合は対数変換済み）。
+    #             - co_spectrum : np.ndarray
+    #                 コスペクトル（対数スケールの場合は対数変換済み）。
+    #             - quadrature_spectrum : np.ndarray
+    #                 クアドラチャスペクトル（対数スケールの場合は対数変換済み）。
+    #             - corr_coef : float
+    #                 変数の相関係数。
+    #     """
+    #     # バリデーション
+    #     valid_scaling_options = ["density", "spectrum"]
+    #     if scaling not in valid_scaling_options:
+    #         raise ValueError(
+    #             f"'scaling'は次のパラメータから選択してください: {valid_scaling_options}"
+    #         )
+
+    #     fs: float = self._fs
+    #     df: pd.DataFrame = self._df.copy()
+    #     # col1とcol2に一致するデータを取得
+    #     data1: np.ndarray = np.array(df[col1].values)
+    #     data2: np.ndarray = np.array(df[col2].values)
+
+    #     # 遅れ時間の補正
+    #     if col2 in self._cols_apply_lag_time:
+    #         data1, data2 = SpectrumCalculator._correct_lag_time(
+    #             data1=data1, data2=data2, fs=fs, lag_second=self._lag_second
+    #         )
+
+    #     # トレンド除去
+    #     data1 = SpectrumCalculator._detrend(data=data1, first=True)
+    #     data2 = SpectrumCalculator._detrend(data=data2, first=True)
+
+    #     # トレンド除去後のデータでパラメータを計算
+    #     data_length: int = len(data1)  # データ長
+    #     corr_coef: float = np.corrcoef(data1, data2)[0, 1]  # 相関係数の計算
+
+    #     # 窓関数の適用
+    #     window_scale = 1.0
+    #     if self._apply_window:
+    #         window = SpectrumCalculator._generate_window_function(
+    #             type=self._window_type, data_length=data_length
+    #         )
+    #         data1 *= window
+    #         data2 *= window
+    #         window_scale = np.mean(window**2)
+
+    #     # FFTの計算
+    #     fft1 = np.fft.rfft(data1)
+    #     fft2 = np.fft.rfft(data2)
+
+    #     # 周波数軸の作成
+    #     freqs: np.ndarray = np.fft.rfftfreq(data_length, 1.0 / self._fs)
+
+    #     # fft.cと同様のコスペクトル計算ロジック
+    #     co_spectrum = np.zeros(len(freqs))
+    #     quad_spectrum = np.zeros(len(freqs))
+
+    #     for i in range(1, len(freqs)):  # 0Hz成分を除外
+    #         z1 = fft1[i]
+    #         z2 = fft2[i]
+    #         z1_star = np.conj(z1)
+    #         z2_star = np.conj(z2)
+
+    #         # x1 = z1 + z1*, x2 = z2 + z2*
+    #         x1 = z1 + z1_star
+    #         x2 = z2 + z2_star
+    #         x1_re = x1.real
+    #         x1_im = x1.imag
+    #         x2_re = x2.real
+    #         x2_im = x2.imag
+
+    #         # y1 = z1 - z1*, y2 = z2 - z2*
+    #         y1 = z1 - z1_star
+    #         y2 = z2 - z2_star
+    #         # 虚部と実部を入れ替え
+    #         y1_re = y1.imag
+    #         y1_im = -y1.real
+    #         y2_re = y2.imag
+    #         y2_im = -y2.real
+
+    #         # コスペクトルとクァドラチャスペクトルの計算
+    #         conj_x1_x2 = complex(
+    #             x1_re * x2_re + x1_im * x2_im, x1_im * x2_re - x1_re * x2_im
+    #         )
+    #         conj_y1_y2 = complex(
+    #             y1_re * y2_re + y1_im * y2_im, y1_im * y2_re - y1_re * y2_im
+    #         )
+
+    #         # スケーリングパラメータを計算
+    #         scale_factor = 0.5 / (len(data1) * window_scale)  # spectrumの場合
+    #         # スペクトル密度の場合、周波数間隔で正規化
+    #         if scaling == "density":
+    #             df = freqs[1] - freqs[0]  # 周波数間隔
+    #             scale_factor = 0.5 / (len(data1) * window_scale * df)
+
+    #         # スケーリングを適用
+    #         co_spectrum[i] = conj_x1_x2.real * scale_factor
+    #         quad_spectrum[i] = conj_y1_y2.real * scale_factor
+
+    #     # 周波数の重みづけ
+    #     if frequency_weighted:
+    #         co_spectrum[1:] *= freqs[1:]
+    #         quad_spectrum[1:] *= freqs[1:]
+
+    #     # 無次元化
+    #     if dimensionless:
+    #         cov_matrix: np.ndarray = np.cov(data1, data2)
+    #         covariance: float = cov_matrix[0, 1]  # 共分散
+    #         co_spectrum /= covariance
+    #         quad_spectrum /= covariance
+
+    #     if interpolate_points:
+    #         # 補間処理（0Hz除外の前に実施）
+    #         log_freq_min = np.log10(0.001)
+    #         log_freq_max = np.log10(freqs[-1])
+    #         log_freq_resampled = np.logspace(log_freq_min, log_freq_max, self._plots)
+
+    #         # コスペクトルとクアドラチャスペクトルの補間
+    #         co_resampled = np.interp(
+    #             log_freq_resampled, freqs, co_spectrum, left=np.nan, right=np.nan
+    #         )
+    #         quad_resampled = np.interp(
+    #             log_freq_resampled, freqs, quad_spectrum, left=np.nan, right=np.nan
+    #         )
+
+    #         # NaNを除外
+    #         valid_mask = ~np.isnan(co_resampled)
+    #         freqs = log_freq_resampled[valid_mask]
+    #         co_spectrum = co_resampled[valid_mask]
+    #         quad_spectrum = quad_resampled[valid_mask]
+
+    #     # 0Hz成分を除外
+    #     nonzero_mask = freqs != 0
+    #     freqs = freqs[nonzero_mask]
+    #     co_spectrum = co_spectrum[nonzero_mask]
+    #     quad_spectrum = quad_spectrum[nonzero_mask]
+
+    #     return freqs, co_spectrum, quad_spectrum, corr_coef
+
     def calculate_cross_spectrum(
         self,
         col1: str,
@@ -97,37 +267,6 @@ class SpectrumCalculator:
         interpolate_points: bool = True,
         scaling: str = "spectrum",
     ) -> tuple:
-        """
-        指定されたcol1とcol2のコスペクトルとクアドラチャスペクトルをDataFrameから計算するためのメソッド。
-
-        Parameters:
-        ------
-            col1 : str
-                データの列名1。
-            col2 : str
-                データの列名2。
-            dimensionless : bool, optional
-                Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
-            frequency_weighted : bool, optional
-                周波数の重みづけを適用するかどうか。デフォルトはTrue。
-            interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
-            scaling : str
-                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
-
-        Returns:
-        ------
-            tuple
-                (freqs, co_spectrum, quadrature_spectrum, corr_coef)
-                - freqs : np.ndarray
-                    周波数軸（対数スケールの場合は対数変換済み）。
-                - co_spectrum : np.ndarray
-                    コスペクトル（対数スケールの場合は対数変換済み）。
-                - quadrature_spectrum : np.ndarray
-                    クアドラチャスペクトル（対数スケールの場合は対数変換済み）。
-                - corr_coef : float
-                    変数の相関係数。
-        """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
         if scaling not in valid_scaling_options:
@@ -137,7 +276,7 @@ class SpectrumCalculator:
 
         fs: float = self._fs
         df: pd.DataFrame = self._df.copy()
-        # col1とcol2に一致するデータを取得
+        # データ取得と前処理
         data1: np.ndarray = np.array(df[col1].values)
         data2: np.ndarray = np.array(df[col2].values)
 
@@ -148,75 +287,25 @@ class SpectrumCalculator:
             )
 
         # トレンド除去
-        data1 = SpectrumCalculator._detrend(data=data1, fs=fs, first=True)
-        data2 = SpectrumCalculator._detrend(data=data2, fs=fs, first=True)
+        data1 = SpectrumCalculator._detrend(data=data1, first=True)
+        data2 = SpectrumCalculator._detrend(data=data2, first=True)
 
-        # トレンド除去後のデータでパラメータを計算
-        data_length: int = len(data1)  # データ長
-        corr_coef: float = np.corrcoef(data1, data2)[0, 1]  # 相関係数の計算
+        # 相関係数の計算
+        corr_coef: float = np.corrcoef(data1, data2)[0, 1]
 
-        # 窓関数の適用
-        window_scale = 1.0
-        if self._apply_window:
-            window = SpectrumCalculator._generate_window_function(
-                type=self._window_type, data_length=data_length
-            )
-            data1 *= window
-            data2 *= window
-            window_scale = np.mean(window**2)
+        # クロススペクトル計算
+        freqs, Pxy = signal.csd(
+            data1,
+            data2,
+            fs=self._fs,
+            window=self._window_type,
+            nperseg=1024,
+            scaling=scaling,
+        )
 
-        # FFTの計算
-        fft1 = np.fft.rfft(data1)
-        fft2 = np.fft.rfft(data2)
-
-        # 周波数軸の作成
-        freqs: np.ndarray = np.fft.rfftfreq(data_length, 1.0 / self._fs)
-
-        # fft.cと同様のコスペクトル計算ロジック
-        co_spectrum = np.zeros(len(freqs))
-        quad_spectrum = np.zeros(len(freqs))
-
-        for i in range(1, len(freqs)):  # 0Hz成分を除外
-            z1 = fft1[i]
-            z2 = fft2[i]
-            z1_star = np.conj(z1)
-            z2_star = np.conj(z2)
-
-            # x1 = z1 + z1*, x2 = z2 + z2*
-            x1 = z1 + z1_star
-            x2 = z2 + z2_star
-            x1_re = x1.real
-            x1_im = x1.imag
-            x2_re = x2.real
-            x2_im = x2.imag
-
-            # y1 = z1 - z1*, y2 = z2 - z2*
-            y1 = z1 - z1_star
-            y2 = z2 - z2_star
-            # 虚部と実部を入れ替え
-            y1_re = y1.imag
-            y1_im = -y1.real
-            y2_re = y2.imag
-            y2_im = -y2.real
-
-            # コスペクトルとクァドラチャスペクトルの計算
-            conj_x1_x2 = complex(
-                x1_re * x2_re + x1_im * x2_im, x1_im * x2_re - x1_re * x2_im
-            )
-            conj_y1_y2 = complex(
-                y1_re * y2_re + y1_im * y2_im, y1_im * y2_re - y1_re * y2_im
-            )
-
-            # スケーリングパラメータを計算
-            scale_factor = 0.5 / (len(data1) * window_scale)  # spectrumの場合
-            # スペクトル密度の場合、周波数間隔で正規化
-            if scaling == "density":
-                df = freqs[1] - freqs[0]  # 周波数間隔
-                scale_factor = 0.5 / (len(data1) * window_scale * df)
-
-            # スケーリングを適用
-            co_spectrum[i] = conj_x1_x2.real * scale_factor
-            quad_spectrum[i] = conj_y1_y2.real * scale_factor
+        # コスペクトルとクアドラチャスペクトルの抽出
+        co_spectrum = np.real(Pxy)
+        quad_spectrum = np.imag(Pxy)
 
         # 周波数の重みづけ
         if frequency_weighted:
@@ -226,17 +315,17 @@ class SpectrumCalculator:
         # 無次元化
         if dimensionless:
             cov_matrix: np.ndarray = np.cov(data1, data2)
-            covariance: float = cov_matrix[0, 1]  # 共分散
+            covariance: float = cov_matrix[0, 1]
             co_spectrum /= covariance
             quad_spectrum /= covariance
 
         if interpolate_points:
-            # 補間処理（0Hz除外の前に実施）
+            # 補間処理
             log_freq_min = np.log10(0.001)
             log_freq_max = np.log10(freqs[-1])
             log_freq_resampled = np.logspace(log_freq_min, log_freq_max, self._plots)
 
-            # コスペクトルとクアドラチャスペクトルの補間
+            # スペクトルの補間
             co_resampled = np.interp(
                 log_freq_resampled, freqs, co_spectrum, left=np.nan, right=np.nan
             )
@@ -298,7 +387,7 @@ class SpectrumCalculator:
 
         # データの取得とトレンド除去
         data: np.ndarray = np.array(self._df[col].values)
-        data = SpectrumCalculator._detrend(data, self._fs)
+        data = SpectrumCalculator._detrend(data)
 
         # welchメソッドでパワースペクトル計算
         freqs, power_spectrum = signal.welch(
@@ -309,7 +398,7 @@ class SpectrumCalculator:
         if frequency_weighted:
             power_spectrum = freqs * power_spectrum
 
-        # # 無次元化（0Hz除外の前に実施）
+        # 無次元化（0Hz除外の前に実施）
         if dimensionless:
             variance = np.var(data)
             power_spectrum /= variance
@@ -361,27 +450,33 @@ class SpectrumCalculator:
         ------
             tuple
                 - data1 : np.ndarray
-                    補正された基準データ
+                    基準データ（シフトなし）
                 - data2 : np.ndarray
                     補正された遅れているデータ
-
-        Raises:
-        ------
-            ValueError
-                lag_secondが負の値の場合
         """
         if lag_second < 0:
             raise ValueError("lag_second must be non-negative.")
+
         # lag_secondをサンプリング周波数でスケーリングしてインデックスに変換
         lag_index: int = int(lag_second * fs)
-        # データ1とデータ2の共通部分を抽出
-        data1 = data1[lag_index:]
-        data2 = data2[:-lag_index]
+
+        # データの長さを取得
+        data_length = len(data1)
+
+        # data2のみをシフト（NaNで初期化）
+        shifted_data2 = np.full(data_length, np.nan)
+        shifted_data2[:-lag_index] = data2[lag_index:] if lag_index > 0 else data2
+
+        # NaNを含まない部分のみを抽出
+        valid_mask = ~np.isnan(shifted_data2)
+        data1 = data1[valid_mask]
+        data2 = shifted_data2[valid_mask]
+
         return data1, data2
 
     @staticmethod
     def _detrend(
-        data: np.ndarray, fs: float, first: bool = True, second: bool = False
+        data: np.ndarray, first: bool = True, second: bool = False
     ) -> np.ndarray:
         """
         データから一次トレンドおよび二次トレンドを除去します。
@@ -390,8 +485,6 @@ class SpectrumCalculator:
         ------
             data : np.ndarray
                 入力データ
-            fs : float
-                サンプリング周波数
             first : bool, optional
                 一次トレンドを除去するかどうか. デフォルトはTrue.
             second : bool, optional
@@ -468,7 +561,7 @@ class SpectrumCalculator:
         """
         高周波数領域に対して3点移動平均を適用する処理を行う。
         この処理により、高周波数成分のノイズを低減し、スペクトルの滑らかさを向上させる。
-        
+
         Parameters:
         ------
             spectrum : np.ndarray
@@ -477,7 +570,7 @@ class SpectrumCalculator:
                 対応する周波数データ
             freq_threshold : float
                 高周波数の閾値
-        
+
         Returns:
         ------
             np.ndarray
