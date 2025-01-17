@@ -2102,8 +2102,6 @@ class MonthlyFiguresGenerator:
             calculator = SpectrumCalculator(
                 df=df,
                 fs=fs,
-                cols_apply_lag_time=[col_ch4, col_c2h6],
-                lag_second=lag_second,
             )
 
             for col in power_spectra.keys():
@@ -2133,6 +2131,8 @@ class MonthlyFiguresGenerator:
                         frequency_weighted=True,
                         interpolate_points=True,
                         scaling="spectrum",
+                        apply_lag_correction_to_col2=True,
+                        lag_second=lag_second,
                     )
                     if freqs is not None and len(cs) == len(freqs):
                         co_spectra[col].append(cs)

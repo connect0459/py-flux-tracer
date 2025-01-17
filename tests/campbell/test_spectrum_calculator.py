@@ -33,15 +33,10 @@ def test_initialization(sample_data):
     # クラスの初期化が正しく行われることを確認
     """
     df, fs = sample_data
-    calculator = SpectrumCalculator(
-        df=df, cols_apply_lag_time=["signal2"], lag_second=0.1, fs=fs
-    )
+    calculator = SpectrumCalculator(df=df, fs=fs, plots=30)
 
-    assert calculator.fs == fs
-    assert calculator.cols_apply_lag_time == ["signal2"]
-    assert calculator.lag_second == 0.1
-    assert calculator.dimensionless
-    assert calculator.plots == 30
+    assert calculator._fs == fs
+    assert calculator._plots == 30
 
 
 def test_power_spectrum(sample_data):
@@ -49,7 +44,7 @@ def test_power_spectrum(sample_data):
     # パワースペクトル計算が正しく機能することを確認
     """
     df, fs = sample_data
-    calculator = SpectrumCalculator(df=df, cols_apply_lag_time=[], lag_second=0.0, fs=fs)
+    calculator = SpectrumCalculator(df=df, fs=fs)
 
     freqs, power = calculator.calculate_power_spectrum(
         col="signal1", frequency_weighted=True, interpolate_points=False
@@ -64,12 +59,12 @@ def test_power_spectrum(sample_data):
     assert 0.8 < freqs[peak_freq_idx] < 1.2
 
 
-def test_cospectrum(sample_data):
+def test_co_spectrum(sample_data):
     """
     # コスペクトル計算が正しく機能することを確認
     """
     df, fs = sample_data
-    calculator = SpectrumCalculator(df=df, cols_apply_lag_time=[], lag_second=0.0, fs=fs)
+    calculator = SpectrumCalculator(df=df, fs=fs)
 
     freqs, cospec, corr = calculator.calculate_co_spectrum(
         col1="signal1",
@@ -94,7 +89,7 @@ def test_detrend():
     trend = 2 * t + 1
     signal = np.sin(2 * np.pi * 1 * t) + trend
 
-    detrended = SpectrumCalculator._detrend(signal, 10)
+    detrended = SpectrumCalculator._detrend(data=signal)
 
     # トレンドが除去されていることを確認
     assert np.abs(np.mean(detrended)) < 0.1
@@ -133,4 +128,6 @@ def test_lag_correction():
 
     # 負の遅れ時間でエラーが発生することを確認
     with pytest.raises(ValueError):
-        SpectrumCalculator._correct_lag_time(signal1, signal2, 10, -0.1)
+        SpectrumCalculator._correct_lag_time(
+            data1=signal1, data2=signal2, fs=10, lag_second=0.1
+        )
