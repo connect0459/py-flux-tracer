@@ -9,6 +9,11 @@ jobs:
   deploy:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    # GitHub Pagesへのデプロイ権限を追加
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -34,3 +39,18 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: twine upload dist/*
+
+      # GitHub Pagesの設定
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      # docsフォルダをアップロード
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "docs"
+
+      # GitHub Pagesにデプロイ
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
