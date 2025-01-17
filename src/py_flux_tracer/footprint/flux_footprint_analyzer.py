@@ -11,6 +11,7 @@ from PIL import Image
 from PIL.ImageFile import ImageFile
 from datetime import datetime
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
+from ..commons.figure_utils import FigureUtils
 from ..commons.hotspot_data import HotspotData, HotspotType
 
 
@@ -74,7 +75,9 @@ class FluxFootprintAnalyzer:
         self._got_satellite_image: bool = False
 
         # 図表の初期設定
-        FluxFootprintAnalyzer.setup_plot_params(labelsize, ticksize, plot_params)
+        FigureUtils.setup_plot_params(
+            font_size=labelsize, tick_size=ticksize, plot_params=plot_params
+        )
         # ロガー
         log_level: int = INFO
         if logging_debug:
@@ -118,52 +121,6 @@ class FluxFootprintAnalyzer:
         ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
         new_logger.addHandler(ch)  # StreamHandlerの追加
         return new_logger
-
-    @staticmethod
-    def setup_plot_params(labelsize: float, ticksize: float, plot_params=None) -> None:
-        """
-        matplotlibのプロットパラメータを設定します。
-
-        Parameters:
-        ------
-            labelsize : float
-                軸ラベルのフォントサイズ。
-            ticksize : float
-                軸目盛りのフォントサイズ。
-            plot_params : Optional[Dict[str, any]]
-                matplotlibのプロットパラメータの辞書。
-
-        Returns:
-        ------
-            None
-                このメソッドは戻り値を持ちませんが、プロットパラメータを更新します。
-        """
-        # デフォルトのプロットパラメータ
-        default_params = {
-            "font.family": ["Arial", "Dejavu Sans"],
-            "axes.edgecolor": "None",
-            "axes.labelcolor": "black",
-            "text.color": "black",
-            "xtick.color": "black",
-            "ytick.color": "black",
-            "grid.color": "gray",
-            "axes.grid": False,
-            "xtick.major.size": 0,
-            "ytick.major.size": 0,
-            "ytick.direction": "out",
-            "ytick.major.width": 1.0,
-            "axes.linewidth": 1.0,
-            "grid.linewidth": 1.0,
-            "font.size": labelsize,
-            "xtick.labelsize": ticksize,
-            "ytick.labelsize": ticksize,
-        }
-
-        # plot_paramsが定義されている場合、デフォルトに追記
-        if plot_params:
-            default_params.update(plot_params)
-
-        plt.rcParams.update(default_params)  # プロットパラメータを更新
 
     def calculate_flux_footprint(
         self,
@@ -449,6 +406,7 @@ class FluxFootprintAnalyzer:
     def get_satellite_image_from_local(
         self,
         local_image_path: str,
+        alpha: float = 1.0,
     ) -> ImageFile:
         """
         ローカルファイルから衛星画像を読み込みます。
@@ -457,11 +415,13 @@ class FluxFootprintAnalyzer:
         ------
             local_image_path : str
                 ローカル画像のパス
+            alpha : float, optional
+                画像の透過率（0.0～1.0）。デフォルトは1.0。
 
         Returns:
         ------
             ImageFile
-                読み込んだ衛星画像
+                読み込んだ衛星画像（透過設定済み）
 
         Raises:
         ------
@@ -472,9 +432,22 @@ class FluxFootprintAnalyzer:
             raise FileNotFoundError(
                 f"指定されたローカル画像が存在しません: {local_image_path}"
             )
+        # 画像を読み込む
         image = Image.open(local_image_path)
+
+        # RGBAモードに変換して透過率を設定
+        if image.mode != "RGBA":
+            image = image.convert("RGBA")
+
+        # 透過率を設定
+        data = image.getdata()
+        new_data = [(r, g, b, int(255 * alpha)) for r, g, b, a in data]
+        image.putdata(new_data)
+
         self._got_satellite_image = True
-        self.logger.info(f"ローカル画像を使用しました: {local_image_path}")
+        self.logger.info(
+            f"ローカル画像を使用しました（透過率: {alpha}）: {local_image_path}"
+        )
         return image
 
     def plot_flux_footprint(
@@ -590,6 +563,7 @@ class FluxFootprintAnalyzer:
         reduce_c_function: callable = np.mean,
         hotspots: list[HotspotData] | None = None,
         hotspot_colors: dict[HotspotType, str] | None = None,
+        hotspot_labels: dict[HotspotType, str] | None = None,
         hotspot_markers: dict[HotspotType, str] | None = None,
         lat_correction: float = 1,
         lon_correction: float = 1,
@@ -638,6 +612,9 @@ class FluxFootprintAnalyzer:
                 ホットスポットデータのリスト。デフォルトはNone。
             hotspot_colors : dict[HotspotType, str] | None, optional
                 ホットスポットの色を指定する辞書。
+            hotspot_labels : dict[HotspotType, str] | None, optional
+                ホットスポットの表示ラベルを指定する辞書。
+                例: {'bio': '生物', 'gas': 'ガス', 'comb': '燃焼'}
             hotspot_markers : dict[HotspotType, str] | None, optional
                 ホットスポットの形状を指定する辞書。
                 指定の例は {'bio': '^', 'gas': 'o', 'comb': 's'} （三角、丸、四角）など。
@@ -762,9 +739,16 @@ class FluxFootprintAnalyzer:
 
             # デフォルトのマーカー形状を定義
             default_markers: dict[HotspotType, str] = {
-                "bio": "o",
-                "gas": "o",
-                "comb": "o",
+                "bio": "^",  # 三角
+                "gas": "o",  # 丸
+                "comb": "s",  # 四角
+            }
+
+            # デフォルトのラベルを定義
+            default_labels: dict[HotspotType, str] = {
+                "bio": "bio",
+                "gas": "gas",
+                "comb": "comb",
             }
 
             # 座標変換のための定数
@@ -815,6 +799,9 @@ class FluxFootprintAnalyzer:
                             spots_lat.append(adjusted_lat)
 
                 if spots_lon:
+                    # 使用するラベルを決定
+                    label = (hotspot_labels or default_labels).get(spot_type, spot_type)
+
                     handle = ax_data.scatter(
                         spots_lon,
                         spots_lat,
@@ -822,7 +809,7 @@ class FluxFootprintAnalyzer:
                         marker=marker,  # マーカー形状を指定
                         s=100,
                         alpha=0.7,
-                        label=spot_type,  # "bio","gas","comb"
+                        label=label,
                         edgecolor="black",
                         linewidth=1,
                     )

@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.font_manager as fm
 from dotenv import load_dotenv
 from py_flux_tracer import (
+    FigureUtils,
     FluxFootprintAnalyzer,
     HotspotData,
     MonthlyConverter,
@@ -253,16 +254,51 @@ if __name__ == "__main__":
                 output_dir=output_dir,
                 output_filename=f"footprint_ratio{date_tag}.png",
             )
+            image_for_mono = ffa.get_satellite_image_from_local(
+                local_image_path=local_image_path, alpha=0.5
+            )  # ローカル
+
             # フットプリントを描画しない
             ffa.plot_flux_footprint_with_hotspots(
                 x_list=x_list,  # メートル単位のx座標
                 y_list=y_list,  # メートル単位のy座標
                 c_list=None,
                 hotspots=hotspots,
+                # hotspot_labels={
+                #     "bio": "生物起源",
+                #     "gas": "都市ガス起源",
+                #     "comb": "燃焼起源",
+                # },
                 hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
                 center_lat=center_lan,
                 center_lon=center_lon,
-                satellite_image=image,
+                satellite_image=image_for_mono,
+                cmap="jet",
+                vmin=0,
+                vmax=100,
+                xy_max=5000,
+                add_legend=False,
+                add_cbar=False,
+                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
+                cbar_labelpad=20,
+                output_dir=output_dir,
+                output_filename="footprint_mono.png",
+            )
+            FigureUtils.setup_plot_params(font_family=["Arial", "MS Gothic"])
+            ffa.plot_flux_footprint_with_hotspots(
+                x_list=x_list,  # メートル単位のx座標
+                y_list=y_list,  # メートル単位のy座標
+                c_list=None,
+                hotspots=hotspots,
+                hotspot_labels={
+                    "bio": "生物起源",
+                    "gas": "都市ガス起源",
+                    "comb": "燃焼起源",
+                },
+                hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
+                center_lat=center_lan,
+                center_lon=center_lon,
+                satellite_image=image_for_mono,
                 cmap="jet",
                 vmin=0,
                 vmax=100,
@@ -272,7 +308,7 @@ if __name__ == "__main__":
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
                 output_dir=output_dir,
-                output_filename="footprint_mono.png",
+                output_filename="footprint-legend-ja.png",
             )
             del x_list, y_list, c_list
 

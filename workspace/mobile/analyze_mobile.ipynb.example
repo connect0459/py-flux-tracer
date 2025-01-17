@@ -152,7 +152,7 @@
    "source": [
     "# 時系列データの描画\n",
     "if g_timeseries:\n",
-    "    g_msa.plot_timeseries(show_fig=True)\n",
+    "    g_msa.plot_conc_timeseries(show_fig=True)\n",
     "\n",
     "# ホットスポット検出\n",
     "if g_scatter_c2c1:\n",

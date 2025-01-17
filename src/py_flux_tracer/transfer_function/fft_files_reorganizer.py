@@ -33,7 +33,7 @@ class FftFileReorganizer:
         output_dir: str,
         flag_csv_path: str,
         filename_patterns: list[str] | None = None,
-        output_dirs: dict[str, str] | None = None,
+        output_dirs_struct: dict[str, str] | None = None,
         sort_by_rh: bool = True,
         logger: Logger | None = None,
         logging_debug: bool = False,
@@ -51,7 +51,7 @@ class FftFileReorganizer:
                 フラグ情報が記載されているCSVファイルのパス
             filename_patterns : list[str] | None
                 ファイル名のパターン（正規表現）のリスト
-            output_dirs : dict[str, str] | None
+            output_dirs_struct : dict[str, str] | None
                 出力ディレクトリの構造を定義する辞書
             sort_by_rh : bool
                 RHに基づいてサブディレクトリにファイルを分類するかどうか
@@ -62,12 +62,12 @@ class FftFileReorganizer:
         """
         self._fft_path: str = input_dir
         self._sorted_path: str = output_dir
-        self._output_dirs = output_dirs or self.DEFAULT_OUTPUT_DIRS
+        self._output_dirs_struct = output_dirs_struct or self.DEFAULT_OUTPUT_DIRS
         self._good_data_path: str = os.path.join(
-            output_dir, self._output_dirs["GOOD_DATA"]
+            output_dir, self._output_dirs_struct["GOOD_DATA"]
         )
         self._bad_data_path: str = os.path.join(
-            output_dir, self._output_dirs["BAD_DATA"]
+            output_dir, self._output_dirs_struct["BAD_DATA"]
         )
         self._filename_patterns: list[str] = (
             self.DEFAULT_FILENAME_PATTERNS.copy()

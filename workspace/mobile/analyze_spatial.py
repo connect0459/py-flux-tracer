@@ -1,3 +1,4 @@
+import os
 from py_flux_tracer import HotspotData, MobileSpatialAnalyzer, MSAInputConfig
 
 
@@ -190,4 +191,14 @@ if __name__ == "__main__":
             show_fig=False,
             show_scatter=False,
             print_summary=False,
+        )
+
+    source_names: list[str] = msa.get_source_names()
+    for source_name in source_names:
+        msa.plot_conc_timeseries(
+            source_name=source_name,
+            output_dir=os.path.join(output_dir,"timeseries"),
+            output_filename=f"timeseries-{source_name}.png",
+            save_fig=True,
+            show_fig=False,
         )

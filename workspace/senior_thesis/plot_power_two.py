@@ -1,5 +1,6 @@
 import os
 from py_flux_tracer import (
+    FigureUtils,
     MonthlyConverter,
     MonthlyFiguresGenerator,
 )
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     # print(df_combined.head(10))  # DataFrameの先頭10行を表示
 
     mfg = MonthlyFiguresGenerator()
-    MonthlyFiguresGenerator.setup_plot_params(font_size=22, tick_size=18)
+    FigureUtils.setup_plot_params(font_size=22, tick_size=18)
 
     for month, lag_sec, subplot_label in zip(months, lags_list, subplot_labels):
         # monthを0埋めのMM形式に変換

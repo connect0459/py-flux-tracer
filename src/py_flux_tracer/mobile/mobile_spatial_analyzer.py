@@ -711,6 +711,35 @@ class MobileSpatialAnalyzer:
             f"ホットスポット情報をCSVファイルに出力しました: {output_path}"
         )
 
+    @staticmethod
+    def extract_source_name_from_path(path: str | Path) -> str:
+        """
+        ファイルパスからソース名（拡張子なしのファイル名）を抽出します。
+
+        Parameters:
+        ------
+            path : str | Path
+                ソース名を抽出するファイルパス
+                例: "/path/to/Pico100121_241017_092120+.txt"
+
+        Returns:
+        ------
+            str
+                抽出されたソース名
+                例: "Pico100121_241017_092120+"
+
+        Examples:
+        ------
+            >>> path = "/path/to/data/Pico100121_241017_092120+.txt"
+            >>> MobileSpatialAnalyzer.extract_source_from_path(path)
+            'Pico100121_241017_092120+'
+        """
+        # Pathオブジェクトに変換
+        path_obj = Path(path)
+        # stem属性で拡張子なしのファイル名を取得
+        source_name = path_obj.stem
+        return source_name
+
     def get_preprocessed_data(
         self,
     ) -> pd.DataFrame:
@@ -754,6 +783,34 @@ class MobileSpatialAnalyzer:
                 1セクションのサイズ（度単位）
         """
         return self._section_size
+
+    def get_source_names(self, print_all: bool = False) -> list[str]:
+        """
+        データソースの名前を取得します。
+
+        Parameters
+        ----------
+        print_all : bool, optional
+            すべてのデータソース名を表示するかどうかを指定します。デフォルトはFalseです。
+
+        Returns
+        -------
+        list[str]
+            データソース名のリスト
+
+        Raises
+        ------
+        ValueError
+            データが読み込まれていない場合に発生します。
+        """
+        dfs_dict: dict[str, pd.DataFrame] = self._data
+        # データソースの選択
+        if not dfs_dict:
+            raise ValueError("データが読み込まれていません。")
+        source_name_list: list[str] = list(dfs_dict.keys())
+        if print_all:
+            print(source_name_list)
+        return source_name_list
 
     def plot_ch4_delta_histogram(
         self,
@@ -1185,14 +1242,14 @@ class MobileSpatialAnalyzer:
         else:
             plt.close(fig=fig)
 
-    def plot_timeseries(
+    def plot_conc_timeseries(
         self,
-        dpi: int = 200,
         source_name: str | None = None,
-        figsize: tuple[float, float] = (8, 4),
         output_dir: str | Path | None = None,
         output_filename: str = "timeseries.png",
-        save_fig: bool = False,
+        dpi: int = 200,
+        figsize: tuple[float, float] = (8, 4),
+        save_fig: bool = True,
         show_fig: bool = True,
         col_ch4: str = "ch4_ppm",
         col_c2h6: str = "c2h6_ppb",
@@ -1200,6 +1257,8 @@ class MobileSpatialAnalyzer:
         ylim_ch4: tuple[float, float] | None = None,
         ylim_c2h6: tuple[float, float] | None = None,
         ylim_h2o: tuple[float, float] | None = None,
+        font_size: float = 12,
+        label_pad: float = 10,
     ) -> None:
         """
         時系列データをプロットします。
@@ -1232,15 +1291,27 @@ class MobileSpatialAnalyzer:
                 C2H6プロットのy軸範囲を指定します。デフォルトはNoneです。
             ylim_h2o : tuple[float, float] | None
                 H2Oプロットのy軸範囲を指定します。デフォルトはNoneです。
+            font_size : float
+                基本フォントサイズ。デフォルトは12。
+            label_pad : float
+                y軸ラベルのパディング。デフォルトは10。
         """
+        # プロットパラメータの設定
+        plt.rcParams.update(
+            {
+                "font.size": font_size,
+                "axes.labelsize": font_size,
+                "axes.titlesize": font_size,
+                "xtick.labelsize": font_size,
+                "ytick.labelsize": font_size,
+            }
+        )
         dfs_dict: dict[str, pd.DataFrame] = self._data.copy()
         # データソースの選択
         if not dfs_dict:
             raise ValueError("データが読み込まれていません。")
 
-        if source_name is None:
-            source_name = list(dfs_dict.keys())[0]
-        elif source_name not in dfs_dict:
+        if source_name not in dfs_dict:
             raise ValueError(
                 f"指定されたデータソース '{source_name}' が見つかりません。"
             )
@@ -1255,7 +1326,7 @@ class MobileSpatialAnalyzer:
         ax1.plot(df.index, df[col_ch4], c="red")
         if ylim_ch4:
             ax1.set_ylim(ylim_ch4)
-        ax1.set_ylabel("$\\mathregular{CH_{4}}$ (ppm)")
+        ax1.set_ylabel("$\\mathregular{CH_{4}}$ (ppm)", labelpad=label_pad)
         ax1.grid(True, alpha=0.3)
 
         # C2H6プロット
@@ -1263,7 +1334,7 @@ class MobileSpatialAnalyzer:
         ax2.plot(df.index, df[col_c2h6], c="red")
         if ylim_c2h6:
             ax2.set_ylim(ylim_c2h6)
-        ax2.set_ylabel("$\\mathregular{C_{2}H_{6}}$ (ppb)")
+        ax2.set_ylabel("$\\mathregular{C_{2}H_{6}}$ (ppb)", labelpad=label_pad)
         ax2.grid(True, alpha=0.3)
 
         # H2Oプロット
@@ -1271,13 +1342,17 @@ class MobileSpatialAnalyzer:
         ax3.plot(df.index, df[col_h2o], c="red")
         if ylim_h2o:
             ax3.set_ylim(ylim_h2o)
-        ax3.set_ylabel("$\\mathregular{H_{2}O}$ (ppm)")
+        ax3.set_ylabel("$\\mathregular{H_{2}O}$ (ppm)", labelpad=label_pad)
         ax3.grid(True, alpha=0.3)
 
         # x軸のフォーマット調整
         for ax in [ax1, ax2, ax3]:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+            # 軸のラベルとグリッド線の調整
+            ax.tick_params(axis="both", which="major", labelsize=font_size)
+            ax.grid(True, alpha=0.3)
 
+        # サブプロット間の間隔調整
         plt.subplots_adjust(wspace=0.38, hspace=0.38)
 
         # 図の保存
@@ -1286,9 +1361,9 @@ class MobileSpatialAnalyzer:
                 raise ValueError(
                     "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
+            os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight")
-            self.logger.info(f"時系列プロットを保存しました: {output_path}")
 
         if show_fig:
             plt.show()
@@ -1411,21 +1486,29 @@ class MobileSpatialAnalyzer:
             all_data[source_name] = df
         return all_data
 
-    def _load_data(self, config: MSAInputConfig) -> tuple[pd.DataFrame, str]:
+    def _load_data(
+        self,
+        config: MSAInputConfig,
+        columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"],
+    ) -> tuple[pd.DataFrame, str]:
         """
         測定データを読み込み、前処理を行うメソッド。
 
         Parameters:
         ------
             config : MSAInputConfig
-                入力ファイルの設定を含むオブジェクト。
+                入力ファイルの設定を含むオブジェクト。ファイルパス、遅れ時間、サンプリング周波数、補正タイプなどの情報を持つ。
+            columns_to_shift : list[str], optional
+                シフトを適用するカラム名のリスト。デフォルトは["ch4_ppm", "c2h6_ppb", "h2o_ppm"]で、これらのカラムに対して遅れ時間の補正が行われる。
 
         Returns:
         ------
             tuple[pd.DataFrame, str]
-                読み込まれたデータフレームとそのソース名を含むタプル。
+                読み込まれたデータフレームとそのソース名を含むタプル。データフレームは前処理が施されており、ソース名はファイル名から抽出されたもの。
         """
-        source_name: str = Path(config.path).stem
+        source_name: str = MobileSpatialAnalyzer.extract_source_name_from_path(
+            config.path
+        )
         df: pd.DataFrame = pd.read_csv(config.path, na_values=["No Data", "nan"])
 
         # カラム名の標準化（測器に依存しない汎用的な名前に変更）
@@ -1442,11 +1525,10 @@ class MobileSpatialAnalyzer:
                 f"Invalid lag value: {config.lag}. Must be a non-negative float."
             )
 
-        # 遅れ時間の補正
-        columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"]
         # サンプリング周波数に応じてシフト量を調整
         shift_periods: float = -config.lag * config.fs  # fsを掛けて補正
 
+        # 遅れ時間の補正
         for col in columns_to_shift:
             df[col] = df[col].shift(shift_periods)
 

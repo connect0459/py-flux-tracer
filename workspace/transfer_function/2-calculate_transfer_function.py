@@ -23,8 +23,6 @@ col_wc2h6: str = " f*cospec_wq/wq closed"
 try:
     file_path: str = os.path.join(base_path, tf_file_name)
     tfc = TransferFunctionCalculator(file_path, " f", 0.01, 1)
-    # TransferFunctionCalculator.setup_plot_params(font_family=["MS Gothic", "Arial"])
-
     # コスペクトルのプロット
     tfc.create_plot_co_spectra(
         col1=col_wt,

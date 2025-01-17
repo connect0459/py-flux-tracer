@@ -659,8 +659,8 @@ class MonthlyFiguresGenerator:
         output_dir: str,
         output_filename: str = "diurnal.png",
         legend_only_ch4: bool = False,
-        show_label: bool = True,
-        show_legend: bool = True,
+        add_label: bool = True,
+        add_legend: bool = True,
         show_std: bool = False,  # 標準偏差表示のオプションを追加
         std_alpha: float = 0.2,  # 標準偏差の透明度
         subplot_fontsize: int = 20,
@@ -693,9 +693,9 @@ class MonthlyFiguresGenerator:
                 出力ファイル名。デフォルトは"diurnal.png"。
             legend_only_ch4 : bool, optional
                 CH4の凡例のみを表示するかどうか。デフォルトはFalse。
-            show_label : bool, optional
+            add_label : bool, optional
                 サブプロットラベルを表示するかどうか。デフォルトはTrue。
-            show_legend : bool, optional
+            add_legend : bool, optional
                 凡例を表示するかどうか。デフォルトはTrue。
             show_std : bool, optional
                 標準偏差を表示するかどうか。デフォルトはFalse。
@@ -789,8 +789,8 @@ class MonthlyFiguresGenerator:
                 time_points=time_points,
                 ylabel=ylabel,
                 subplot_label=subplot_label,
-                show_label=show_label,
-                show_legend=False,  # 個別の凡例は表示しない
+                add_label=add_label,
+                add_legend=False,  # 個別の凡例は表示しない
                 subplot_fontsize=subplot_fontsize,
             )
 
@@ -807,7 +807,7 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         # 共通の凡例
-        if show_legend:
+        if add_legend:
             all_lines = ch4_lines
             all_labels = [line.get_label() for line in ch4_lines]
             if not legend_only_ch4:
@@ -836,8 +836,8 @@ class MonthlyFiguresGenerator:
         plot_weekday: bool = True,
         plot_weekend: bool = True,
         plot_holiday: bool = True,
-        show_label: bool = True,
-        show_legend: bool = True,
+        add_label: bool = True,
+        add_legend: bool = True,
         show_std: bool = False,  # 標準偏差表示のオプションを追加
         std_alpha: float = 0.2,  # 標準偏差の透明度
         legend_only_ch4: bool = False,
@@ -870,9 +870,9 @@ class MonthlyFiguresGenerator:
                 週末をプロットするかどうか。デフォルトはTrue。
             plot_holiday : bool, optional
                 祝日をプロットするかどうか。デフォルトはTrue。
-            show_label : bool, optional
+            add_label : bool, optional
                 サブプロットラベルを表示するかどうか。デフォルトはTrue。
-            show_legend : bool, optional
+            add_legend : bool, optional
                 凡例を表示するかどうか。デフォルトはTrue。
             show_std : bool, optional
                 標準偏差を表示するかどうか。デフォルトはFalse。
@@ -1023,8 +1023,8 @@ class MonthlyFiguresGenerator:
                 time_points=time_points,
                 ylabel=ylabel,
                 subplot_label=subplot_label,
-                show_label=show_label,
-                show_legend=False,
+                add_label=add_label,
+                add_legend=False,
                 subplot_fontsize=subplot_fontsize,
             )
 
@@ -1041,7 +1041,7 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         # 共通の凡例を図の下部に配置
-        if show_legend:
+        if add_legend:
             lines_to_show = (
                 ch4_lines if legend_only_ch4 else ch4_lines[: len(selected_conditions)]
             )
@@ -1483,7 +1483,7 @@ class MonthlyFiguresGenerator:
         output_filename: str = "scatter.png",
         xlabel: str | None = None,
         ylabel: str | None = None,
-        show_label: bool = True,
+        add_label: bool = True,
         x_axis_range: tuple | None = None,
         y_axis_range: tuple | None = None,
         fixed_slope: float = 0.076,
@@ -1509,7 +1509,7 @@ class MonthlyFiguresGenerator:
                 出力先ディレクトリ
             output_filename : str, optional
                 出力ファイル名。デフォルトは"scatter.png"
-            show_label : bool, optional
+            add_label : bool, optional
                 軸ラベルを表示するかどうか。デフォルトはTrue
             x_axis_range : tuple, optional
                 x軸の範囲。デフォルトはNone。
@@ -1587,7 +1587,7 @@ class MonthlyFiguresGenerator:
             ax.ticklabel_format(style="sci", axis="y", scilimits=(0, 0))
             ax.yaxis.get_offset_text().set_position((0, 1.1))  # 指数の位置調整
 
-        if show_label:
+        if add_label:
             if xlabel is not None:
                 ax.set_xlabel(xlabel)
             if ylabel is not None:
@@ -1657,7 +1657,7 @@ class MonthlyFiguresGenerator:
         output_filename: str = "source_contributions.png",
         window_size: int = 6,  # 移動平均の窓サイズ
         print_summary: bool = True,  # 統計情報を表示するかどうか,
-        show_legend: bool = False,
+        add_legend: bool = False,
         smooth: bool = False,
         y_max: float = 100,  # y軸の上限値を追加
         subplot_label: str | None = None,
@@ -1770,7 +1770,7 @@ class MonthlyFiguresGenerator:
         ax.grid(True, alpha=0.3)
 
         # 凡例を図の下部に配置
-        if show_legend:
+        if add_legend:
             handles, labels = ax.get_legend_handles_labels()
             fig = plt.gcf()  # 現在の図を取得
             fig.legend(
@@ -1819,8 +1819,8 @@ class MonthlyFiguresGenerator:
         label_bio: str = "bio",
         col_datetime: str = "Date",
         output_filename: str = "source_contributions_by_date.png",
-        show_label: bool = True,
-        show_legend: bool = False,
+        add_label: bool = True,
+        add_legend: bool = False,
         print_summary: bool = False,  # 統計情報を表示するかどうか,
         subplot_fontsize: int = 20,
         subplot_label_weekday: str | None = None,
@@ -1847,9 +1847,9 @@ class MonthlyFiguresGenerator:
                 日時カラムの名前
             output_filename : str
                 出力ファイル名
-            show_label : bool
+            add_label : bool
                 ラベルを表示するか
-            show_legend : bool
+            add_legend : bool
                 凡例を表示するか
             subplot_fontsize : int
                 サブプロットのフォントサイズ
@@ -1924,7 +1924,7 @@ class MonthlyFiguresGenerator:
             ax.plot(time_points, total_flux, "-", color="black", alpha=0.5)
 
             # 軸の設定
-            if show_label:
+            if add_label:
                 ax.set_xlabel("Time (hour)")
                 if ax == ax1:  # 左側のプロットのラベル
                     ax.set_ylabel("Weekdays CH$_4$ flux\n" r"(nmol m$^{-2}$ s$^{-1}$)")
@@ -1959,7 +1959,7 @@ class MonthlyFiguresGenerator:
             )
 
         # 凡例を図の下部に配置
-        if show_legend:
+        if add_legend:
             # 最初のプロットから凡例のハンドルとラベルを取得
             handles, labels = ax1.get_legend_handles_labels()
             # 図の下部に凡例を配置
@@ -2368,6 +2368,7 @@ class MonthlyFiguresGenerator:
         center_on_angles: bool = True,  # 追加：45度刻みの線を境界にするかどうか
         subplot_label: str | None = None,
         add_legend: bool = True,
+        stack_bars: bool = False,  # 追加：積み上げ方式を選択するパラメータ
         print_summary: bool = True,  # 統計情報を表示するかどうか
         save_fig: bool = True,
         show_fig: bool = True,
@@ -2411,6 +2412,9 @@ class MonthlyFiguresGenerator:
                 図のサイズ
             flux_alpha : float
                 フラックスの透明度
+            stack_bars : bool, optional
+                Trueの場合、生物起源の上に都市ガス起源を積み上げます。
+                Falseの場合、両方を0から積み上げます（デフォルト）。
             save_fig : bool
                 図を保存するかどうかのフラグ
             show_fig : bool
@@ -2443,26 +2447,48 @@ class MonthlyFiguresGenerator:
             [np.radians(angle) for angle in direction_data["center_angle"]]
         )
 
-        # 生物起源と都市ガス起源を独立してプロット
-        ax.bar(
-            theta,
-            direction_data["bio_flux"],
-            width=np.radians(360 / num_directions),
-            bottom=0.0,
-            color="blue",
-            alpha=flux_alpha,
-            label=label_bio,
-        )
-
-        ax.bar(
-            theta,
-            direction_data["gas_flux"],
-            width=np.radians(360 / num_directions),
-            bottom=0.0,
-            color="red",
-            alpha=flux_alpha,
-            label=label_gas,
-        )
+        # 積み上げ方式に応じてプロット
+        if stack_bars:
+            # 生物起源を基準として描画
+            ax.bar(
+                theta,
+                direction_data["bio_flux"],
+                width=np.radians(360 / num_directions),
+                bottom=0.0,
+                color="blue",
+                alpha=flux_alpha,
+                label=label_bio,
+            )
+            # 都市ガス起源を生物起源の上に積み上げ
+            ax.bar(
+                theta,
+                direction_data["gas_flux"],
+                width=np.radians(360 / num_directions),
+                bottom=direction_data["bio_flux"],  # 生物起源の上に積み上げ
+                color="red",
+                alpha=flux_alpha,
+                label=label_gas,
+            )
+        else:
+            # 両方を0から積み上げ（デフォルト）
+            ax.bar(
+                theta,
+                direction_data["bio_flux"],
+                width=np.radians(360 / num_directions),
+                bottom=0.0,
+                color="blue",
+                alpha=flux_alpha,
+                label=label_bio,
+            )
+            ax.bar(
+                theta,
+                direction_data["gas_flux"],
+                width=np.radians(360 / num_directions),
+                bottom=0.0,
+                color="red",
+                alpha=flux_alpha,
+                label=label_gas,
+            )
 
         # y軸の範囲を設定
         if ymax is not None:
@@ -2790,8 +2816,8 @@ class MonthlyFiguresGenerator:
         time_points: pd.DatetimeIndex,
         ylabel: str,
         subplot_label: str | None = None,
-        show_label: bool = True,
-        show_legend: bool = True,
+        add_label: bool = True,
+        add_legend: bool = True,
         subplot_fontsize: int = 20,
     ) -> None:
         """日変化プロットの軸の設定を行う
@@ -2806,14 +2832,14 @@ class MonthlyFiguresGenerator:
                 y軸のラベル
             subplot_label : str | None
                 サブプロットのラベル
-            show_label : bool
+            add_label : bool
                 軸ラベルを表示するかどうか
-            show_legend : bool
+            add_legend : bool
                 凡例を表示するかどうか
             subplot_fontsize : int
                 サブプロットのフォントサイズ
         """
-        if show_label:
+        if add_label:
             ax.set_xlabel("Time (hour)")
             ax.set_ylabel(ylabel)
 
@@ -2833,7 +2859,7 @@ class MonthlyFiguresGenerator:
                 fontsize=subplot_fontsize,
             )
 
-        if show_legend:
+        if add_legend:
             ax.legend()
 
     @staticmethod
@@ -2894,59 +2920,6 @@ class MonthlyFiguresGenerator:
         ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
         new_logger.addHandler(ch)  # StreamHandlerの追加
         return new_logger
-
-    @staticmethod
-    def setup_plot_params(
-        font_family: list[str] = ["Arial", "Dejavu Sans"],
-        font_size: float = 20,
-        legend_size: float = 20,
-        tick_size: float = 20,
-        title_size: float = 20,
-        plot_params=None,
-    ) -> None:
-        """
-        matplotlibのプロットパラメータを設定します。
-
-        Parameters:
-        ------
-            font_family : list[str]
-                使用するフォントファミリーのリスト。
-            font_size : float
-                軸ラベルのフォントサイズ。
-            legend_size : float
-                凡例のフォントサイズ。
-            tick_size : float
-                軸目盛りのフォントサイズ。
-            title_size : float
-                タイトルのフォントサイズ。
-            plot_params : Optional[Dict[str, any]]
-                matplotlibのプロットパラメータの辞書。
-        """
-        # デフォルトのプロットパラメータ
-        default_params = {
-            "axes.linewidth": 1.0,
-            "axes.titlesize": title_size,  # タイトル
-            "grid.color": "gray",
-            "grid.linewidth": 1.0,
-            "font.family": font_family,
-            "font.size": font_size,  # 軸ラベル
-            "legend.fontsize": legend_size,  # 凡例
-            "text.color": "black",
-            "xtick.color": "black",
-            "ytick.color": "black",
-            "xtick.labelsize": tick_size,  # 軸目盛
-            "ytick.labelsize": tick_size,  # 軸目盛
-            "xtick.major.size": 0,
-            "ytick.major.size": 0,
-            "ytick.direction": "out",
-            "ytick.major.width": 1.0,
-        }
-
-        # plot_paramsが定義されている場合、デフォルトに追記
-        if plot_params:
-            default_params.update(plot_params)
-
-        plt.rcParams.update(default_params)  # プロットパラメータを更新
 
     @staticmethod
     def plot_flux_distributions(
