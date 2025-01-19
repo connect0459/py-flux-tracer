@@ -509,6 +509,8 @@ class MonthlyFiguresGenerator:
         subplot_label: str | None = None,
         subplot_fontsize: int = 20,
         show_ci: bool = True,
+        color_bio: str = "blue",
+        color_gas: str = "red",
         y_lim: tuple[float, float] | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
@@ -601,14 +603,18 @@ class MonthlyFiguresGenerator:
         fig, ax = plt.subplots(figsize=figsize)
 
         # G2401データのプロット
-        ax.plot(df.index, g2401_mean, "blue", label="G2401", alpha=0.7)
+        ax.plot(df.index, g2401_mean, color_bio, label="G2401", alpha=0.7)
         if show_ci:
-            ax.fill_between(df.index, g2401_lower, g2401_upper, color="blue", alpha=0.2)
+            ax.fill_between(
+                df.index, g2401_lower, g2401_upper, color=color_bio, alpha=0.2
+            )
 
         # Ultraデータのプロット
-        ax.plot(df.index, ultra_mean, "red", label="Ultra", alpha=0.7)
+        ax.plot(df.index, ultra_mean, color_gas, label="Ultra", alpha=0.7)
         if show_ci:
-            ax.fill_between(df.index, ultra_lower, ultra_upper, color="red", alpha=0.2)
+            ax.fill_between(
+                df.index, ultra_lower, ultra_upper, color=color_gas, alpha=0.2
+            )
 
         # プロットの設定
         if subplot_label:
@@ -1651,13 +1657,16 @@ class MonthlyFiguresGenerator:
         output_dir: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
+        color_bio: str = "blue",
+        color_gas: str = "red",
         label_gas: str = "gas",
         label_bio: str = "bio",
+        flux_alpha: float = 0.6,
         col_datetime: str = "Date",
         output_filename: str = "source_contributions.png",
         window_size: int = 6,  # 移動平均の窓サイズ
         print_summary: bool = True,  # 統計情報を表示するかどうか,
-        add_legend: bool = False,
+        add_legend: bool = True,
         smooth: bool = False,
         y_max: float = 100,  # y軸の上限値を追加
         subplot_label: str | None = None,
@@ -1743,16 +1752,16 @@ class MonthlyFiguresGenerator:
             time_points,
             0,
             hourly_means_smoothed["ch4_bio"],
-            color="blue",
-            alpha=0.6,
+            color=color_bio,
+            alpha=flux_alpha,
             label=label_bio,
         )
         ax.fill_between(
             time_points,
             hourly_means_smoothed["ch4_bio"],
             hourly_means_smoothed["ch4_bio"] + hourly_means_smoothed["ch4_gas"],
-            color="red",
-            alpha=0.6,
+            color=color_gas,
+            alpha=flux_alpha,
             label=label_gas,
         )
 
@@ -1815,13 +1824,16 @@ class MonthlyFiguresGenerator:
         output_dir: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
-        label_gas: str = "gas",
+        color_bio: str = "blue",
+        color_gas: str = "red",
         label_bio: str = "bio",
+        label_gas: str = "gas",
+        flux_alpha: float = 0.6,
         col_datetime: str = "Date",
         output_filename: str = "source_contributions_by_date.png",
         add_label: bool = True,
-        add_legend: bool = False,
-        print_summary: bool = False,  # 統計情報を表示するかどうか,
+        add_legend: bool = True,
+        print_summary: bool = True,  # 統計情報を表示するかどうか,
         subplot_fontsize: int = 20,
         subplot_label_weekday: str | None = None,
         subplot_label_weekend: str | None = None,
@@ -1839,10 +1851,10 @@ class MonthlyFiguresGenerator:
                 CH4フラックスのカラム名
             col_c2h6_flux : str
                 C2H6フラックスのカラム名
-            label_gas : str
-                都市ガス起源のラベル
             label_bio : str
                 生物起源のラベル
+            label_gas : str
+                都市ガス起源のラベル
             col_datetime : str
                 日時カラムの名前
             output_filename : str
@@ -1906,16 +1918,16 @@ class MonthlyFiguresGenerator:
                 time_points,
                 0,
                 hourly_means["ch4_bio"],
-                color="blue",
-                alpha=0.6,
+                color=color_bio,
+                alpha=flux_alpha,
                 label=label_bio,
             )
             ax.fill_between(
                 time_points,
                 hourly_means["ch4_bio"],
                 hourly_means["ch4_bio"] + hourly_means["ch4_gas"],
-                color="red",
-                alpha=0.6,
+                color=color_gas,
+                alpha=flux_alpha,
                 label=label_gas,
             )
 
@@ -1975,7 +1987,7 @@ class MonthlyFiguresGenerator:
 
         plt.tight_layout()
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
-        plt.close()
+        plt.close(fig=fig)
 
         # 統計情報の表示
         if print_summary:
@@ -1986,9 +1998,36 @@ class MonthlyFiguresGenerator:
                 hourly_means = data.groupby(data.index.hour)[
                     ["ch4_gas", "ch4_bio"]
                 ].mean()
-                total_flux = hourly_means["ch4_gas"] + hourly_means["ch4_bio"]
 
                 print(f"\n{label}の統計:")
+
+                # 都市ガス起源の統計
+                gas_flux = hourly_means["ch4_gas"]
+                print("\n都市ガス起源:")
+                print(f"  平均値: {gas_flux.mean():.2f}")
+                print(f"  最小値: {gas_flux.min():.2f} (Hour: {gas_flux.idxmin()})")
+                print(f"  最大値: {gas_flux.max():.2f} (Hour: {gas_flux.idxmax()})")
+                if gas_flux.min() != 0:
+                    print(f"  最大/最小比: {gas_flux.max() / gas_flux.min():.2f}")
+                print(
+                    f"  全体に占める割合: {(gas_flux.sum() / (gas_flux.sum() + hourly_means['ch4_bio'].sum()) * 100):.1f}%"
+                )
+
+                # 生物起源の統計
+                bio_flux = hourly_means["ch4_bio"]
+                print("\n生物起源:")
+                print(f"  平均値: {bio_flux.mean():.2f}")
+                print(f"  最小値: {bio_flux.min():.2f} (Hour: {bio_flux.idxmin()})")
+                print(f"  最大値: {bio_flux.max():.2f} (Hour: {bio_flux.idxmax()})")
+                if bio_flux.min() != 0:
+                    print(f"  最大/最小比: {bio_flux.max() / bio_flux.min():.2f}")
+                print(
+                    f"  全体に占める割合: {(bio_flux.sum() / (gas_flux.sum() + bio_flux.sum()) * 100):.1f}%"
+                )
+
+                # 合計フラックスの統計
+                total_flux = gas_flux + bio_flux
+                print("\n合計:")
                 print(f"  平均値: {total_flux.mean():.2f}")
                 print(f"  最小値: {total_flux.min():.2f} (Hour: {total_flux.idxmin()})")
                 print(f"  最大値: {total_flux.max():.2f} (Hour: {total_flux.idxmax()})")
@@ -2389,15 +2428,18 @@ class MonthlyFiguresGenerator:
         col_wind_dir: str = "Wind direction",
         flux_unit: str = r"(nmol m$^{-2}$ s$^{-1}$)",
         ymax: float | None = None,  # フラックスの上限値
-        label_gas: str = "都市ガス起源",
+        color_bio: str = "blue",
+        color_gas: str = "red",
         label_bio: str = "生物起源",
+        label_gas: str = "都市ガス起源",
         figsize: tuple[float, float] = (8, 8),
         flux_alpha: float = 0.4,
         num_directions: int = 8,  # 方位の数（8方位）
+        gap_degrees: float = 0.0,  # セクター間の隙間（度数）
         center_on_angles: bool = True,  # 追加：45度刻みの線を境界にするかどうか
         subplot_label: str | None = None,
         add_legend: bool = True,
-        stack_bars: bool = False,  # 追加：積み上げ方式を選択するパラメータ
+        stack_bars: bool = True,  # 追加：積み上げ方式を選択するパラメータ
         print_summary: bool = True,  # 統計情報を表示するかどうか
         save_fig: bool = True,
         show_fig: bool = True,
@@ -2418,14 +2460,21 @@ class MonthlyFiguresGenerator:
                 C2H6フラックスを示すカラム名
             col_wind_dir : str
                 風向を示すカラム名
-            label_gas : str
-                都市ガス起源のフラックスに対するラベル
+            color_bio : str
+                生物起源のフラックスに対する色
+            color_gas : str
+                都市ガス起源のフラックスに対する色
+                風向を示すカラム名
             label_bio : str
                 生物起源のフラックスに対するラベル
+            label_gas : str
+                都市ガス起源のフラックスに対するラベル
             col_datetime : str
                 日時を示すカラム名
             num_directions : int
                 風向の数（デフォルトは8）
+            gap_degrees : float
+                セクター間の隙間の大きさ（度数）。0の場合は隙間なし。
             center_on_angles: bool
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
                 Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
@@ -2442,8 +2491,8 @@ class MonthlyFiguresGenerator:
             flux_alpha : float
                 フラックスの透明度
             stack_bars : bool, optional
-                Trueの場合、生物起源の上に都市ガス起源を積み上げます。
-                Falseの場合、両方を0から積み上げます（デフォルト）。
+                Trueの場合、生物起源の上に都市ガス起源を積み上げます（デフォルト）。
+                Falseの場合、両方を0から積み上げます。
             save_fig : bool
                 図を保存するかどうかのフラグ
             show_fig : bool
@@ -2476,15 +2525,18 @@ class MonthlyFiguresGenerator:
             [np.radians(angle) for angle in direction_data["center_angle"]]
         )
 
+        # セクターの幅を計算（隙間を考慮）
+        sector_width = np.radians((360.0 / num_directions) - gap_degrees)
+
         # 積み上げ方式に応じてプロット
         if stack_bars:
             # 生物起源を基準として描画
             ax.bar(
                 theta,
                 direction_data["bio_flux"],
-                width=np.radians(360 / num_directions),
+                width=sector_width,  # 隙間を考慮した幅
                 bottom=0.0,
-                color="blue",
+                color=color_bio,
                 alpha=flux_alpha,
                 label=label_bio,
             )
@@ -2492,29 +2544,29 @@ class MonthlyFiguresGenerator:
             ax.bar(
                 theta,
                 direction_data["gas_flux"],
-                width=np.radians(360 / num_directions),
-                bottom=direction_data["bio_flux"],  # 生物起源の上に積み上げ
-                color="red",
+                width=sector_width,  # 隙間を考慮した幅
+                bottom=direction_data["bio_flux"],
+                color=color_gas,
                 alpha=flux_alpha,
                 label=label_gas,
             )
         else:
-            # 両方を0から積み上げ（デフォルト）
+            # 両方を0から積み上げ
             ax.bar(
                 theta,
                 direction_data["bio_flux"],
-                width=np.radians(360 / num_directions),
+                width=sector_width,  # 隙間を考慮した幅
                 bottom=0.0,
-                color="blue",
+                color=color_bio,
                 alpha=flux_alpha,
                 label=label_bio,
             )
             ax.bar(
                 theta,
                 direction_data["gas_flux"],
-                width=np.radians(360 / num_directions),
+                width=sector_width,  # 隙間を考慮した幅
                 bottom=0.0,
-                color="red",
+                color=color_gas,
                 alpha=flux_alpha,
                 label=label_gas,
             )
@@ -2985,7 +3037,11 @@ class MonthlyFiguresGenerator:
 
         # KDEプロット（確率密度推定）
         sns.kdeplot(
-            data=g2401_flux, label="G2401", color="blue", alpha=0.5, bw_adjust=bandwidth
+            data=g2401_flux,
+            label="G2401",
+            color="blue",
+            alpha=0.5,
+            bw_adjust=bandwidth,
         )
         sns.kdeplot(
             data=ultra_flux, label="Ultra", color="red", alpha=0.5, bw_adjust=bandwidth
