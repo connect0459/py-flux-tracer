@@ -80,7 +80,7 @@ west_sections_list: list[int] = [
 output_dir: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs"
 )
-print_summary: bool = False
+print_summary: bool = True
 
 if __name__ == "__main__":
     msa = MobileSpatialAnalyzer(

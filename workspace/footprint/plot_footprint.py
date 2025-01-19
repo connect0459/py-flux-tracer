@@ -254,22 +254,28 @@ if __name__ == "__main__":
                 output_dir=output_dir,
                 output_filename=f"footprint_ratio{date_tag}.png",
             )
-            image_for_mono = ffa.get_satellite_image_from_local(
-                local_image_path=local_image_path, alpha=0.5
-            )  # ローカル
 
+            image_for_mono = ffa.get_satellite_image_from_local(
+                local_image_path=local_image_path,
+                alpha=0.5,
+                grayscale=True,
+            )  # ローカル
             # フットプリントを描画しない
             ffa.plot_flux_footprint_with_hotspots(
                 x_list=x_list,  # メートル単位のx座標
                 y_list=y_list,  # メートル単位のy座標
                 c_list=None,
                 hotspots=hotspots,
-                # hotspot_labels={
-                #     "bio": "生物起源",
-                #     "gas": "都市ガス起源",
-                #     "comb": "燃焼起源",
-                # },
+                hotspots_alpha=0.8,
+                hotspot_labels={
+                    "bio": "生物起源",
+                    "gas": "都市ガス起源",
+                    "comb": "燃焼起源",
+                },
+                # hotspot_colors={"bio": "blue", "gas": "red", "comb": "green"},
+                hotspot_colors={"bio": "gray", "gas": "gray", "comb": "green"},
                 hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
+                legend_bbox_to_anchor=(0.50, -0.01),
                 center_lat=center_lan,
                 center_lon=center_lon,
                 satellite_image=image_for_mono,
@@ -277,7 +283,7 @@ if __name__ == "__main__":
                 vmin=0,
                 vmax=100,
                 xy_max=5000,
-                add_legend=False,
+                add_legend=True,
                 add_cbar=False,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,

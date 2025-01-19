@@ -662,6 +662,7 @@ if __name__ == "__main__":
                 subplot_label=subplot_label,
                 subplot_fontsize=24,
                 y_max=110,
+                print_summary=False,
             )
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
@@ -675,18 +676,50 @@ if __name__ == "__main__":
                 label_bio="生物起源",
                 label_gas="都市ガス起源",
                 add_legend=True,
+                print_summary=False,
+            )
+
+            source_mono_config: dict[str, str | float | bool] = {
+                "color_bio": "gray",
+                "color_gas": "black",
+                "label_bio": "生物起源",
+                "label_gas": "都市ガス起源",
+                "flux_alpha": 0.7,
+            }
+            mfg.logger.info("図1の統計を表示します。season: " + tag)
+            mfg.plot_source_contributions_diurnal(
+                df=df_season,
+                output_dir=(os.path.join(output_dir, "sources")),
+                output_filename=f"source_contributions_seasons-mono-{tag}.png",
+                col_ch4_flux="Fch4_ultra",
+                col_c2h6_flux="Fc2h6_ultra",
+                subplot_fontsize=24,
+                y_max=110,
+                color_bio=source_mono_config["color_bio"],
+                color_gas=source_mono_config["color_gas"],
+                flux_alpha=source_mono_config["flux_alpha"],
+                label_bio=source_mono_config["label_bio"],
+                label_gas=source_mono_config["label_gas"],
+                add_legend=(tag == "fall"),
+                print_summary=True,
             )
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_season,
                 output_dir=(os.path.join(output_dir, "sources")),
-                output_filename=f"source_contributions_seasons_by_date-{tag}.png",
+                output_filename=f"source_contributions_seasons_by_date-mono-{tag}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
-                subplot_label_weekday=subplot_label,
                 subplot_fontsize=24,
                 y_max=110,
+                color_bio=source_mono_config["color_bio"],
+                color_gas=source_mono_config["color_gas"],
+                flux_alpha=source_mono_config["flux_alpha"],
+                label_bio=source_mono_config["label_bio"],
+                label_gas=source_mono_config["label_gas"],
+                add_legend=(tag == "fall"),
+                print_summary=True,
             )
-            
+
             # 2024年7月1日から2024年7月31日までのデータを除外
             df_season_filtered = df_season.copy()
             mask = ~(
@@ -701,44 +734,55 @@ if __name__ == "__main__":
                 (df_season["Date"].dt.hour >= 10) & (df_season["Date"].dt.hour < 16)
             ]
 
-            # mfg.plot_wind_rose_sources(
-            #     df=df_season,
-            #     output_dir=(os.path.join(output_dir, "edp_wind_rose")),
-            #     output_filename=f"edp_wind_rose-{tag}.png",
-            #     col_datetime="Date",
-            #     col_ch4_flux="Fch4_ultra",
-            #     col_c2h6_flux="Fc2h6_ultra",
-            #     col_wind_dir="Wind direction",
-            #     ymax=80,
-            #     label_gas="gas",
-            #     label_bio="bio",
-            #     # label_gas="都市ガス起源",
-            #     # label_bio="生物起源",
-            #     num_directions=8,  # 方位の数（8方位）
-            #     subplot_label=subplot_label,
-            #     print_summary=True,  # 統計情報を表示するかどうか
-            #     add_legend=False,
-            #     save_fig=True,
-            #     show_fig=False,
-            # )
+            wind_rose_config: dict[str, str | float | bool] = {
+                "color_bio": "gray",
+                "color_gas": "black",
+                "label_bio": "生物起源",
+                "label_gas": "都市ガス起源",
+                "flux_alpha": 0.7,
+            }
             mfg.plot_wind_rose_sources(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "edp_wind_rose")),
-                output_filename=f"edp_wind_rose_stacked-{tag}.png",
+                output_dir=(os.path.join(output_dir, "wind_rose")),
+                output_filename=f"wind_rose_stacked-mono-{tag}.png",
                 col_datetime="Date",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
                 col_wind_dir="Wind direction",
                 ymax=100,
-                label_gas="gas",
-                label_bio="bio",
-                # label_gas="都市ガス起源",
-                # label_bio="生物起源",
+                label_gas=wind_rose_config["label_gas"],
+                label_bio=wind_rose_config["label_bio"],
+                color_bio=wind_rose_config["color_bio"],
+                color_gas=wind_rose_config["color_gas"],
+                gap_degrees=3.0,
                 num_directions=8,  # 方位の数（8方位）
-                flux_alpha=0.6,
+                flux_alpha=wind_rose_config["flux_alpha"],
                 subplot_label=subplot_label,
                 print_summary=False,  # 統計情報を表示するかどうか
                 add_legend=False,
+                stack_bars=True,
+                save_fig=True,
+                show_fig=False,
+            )
+
+            mfg.plot_wind_rose_sources(
+                df=df_season,
+                output_dir=(os.path.join(output_dir, "wind_rose")),
+                output_filename="wind_rose_stacked-mono-legend-ja.png",
+                col_datetime="Date",
+                col_ch4_flux="Fch4_ultra",
+                col_c2h6_flux="Fc2h6_ultra",
+                col_wind_dir="Wind direction",
+                ymax=100,
+                color_bio="gray",
+                color_gas="black",
+                label_gas="都市ガス起源",
+                label_bio="生物起源",
+                num_directions=8,  # 方位の数（8方位）
+                flux_alpha=wind_rose_config["flux_alpha"],
+                subplot_label=subplot_label,
+                print_summary=False,  # 統計情報を表示するかどうか
+                add_legend=True,
                 stack_bars=True,
                 save_fig=True,
                 show_fig=False,
