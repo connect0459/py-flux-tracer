@@ -407,6 +407,7 @@ class FluxFootprintAnalyzer:
         self,
         local_image_path: str,
         alpha: float = 1.0,
+        grayscale: bool = False,
     ) -> ImageFile:
         """
         ローカルファイルから衛星画像を読み込みます。
@@ -417,6 +418,8 @@ class FluxFootprintAnalyzer:
                 ローカル画像のパス
             alpha : float, optional
                 画像の透過率（0.0～1.0）。デフォルトは1.0。
+            grayscale : bool, optional
+                Trueの場合、画像を白黒に変換します。デフォルトはFalse。
 
         Returns:
         ------
@@ -432,12 +435,16 @@ class FluxFootprintAnalyzer:
             raise FileNotFoundError(
                 f"指定されたローカル画像が存在しません: {local_image_path}"
             )
+
         # 画像を読み込む
         image = Image.open(local_image_path)
 
-        # RGBAモードに変換して透過率を設定
-        if image.mode != "RGBA":
-            image = image.convert("RGBA")
+        # 白黒変換が指定されている場合
+        if grayscale:
+            image = image.convert("L")  # グレースケールに変換
+
+        # RGBAモードに変換
+        image = image.convert("RGBA")
 
         # 透過率を設定
         data = image.getdata()
@@ -446,7 +453,7 @@ class FluxFootprintAnalyzer:
 
         self._got_satellite_image = True
         self.logger.info(
-            f"ローカル画像を使用しました（透過率: {alpha}）: {local_image_path}"
+            f"ローカル画像を使用しました（透過率: {alpha}, 白黒: {grayscale}）: {local_image_path}"
         )
         return image
 
@@ -562,9 +569,11 @@ class FluxFootprintAnalyzer:
         cmap: str = "jet",
         reduce_c_function: callable = np.mean,
         hotspots: list[HotspotData] | None = None,
+        hotspots_alpha: float = 0.7,
         hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_labels: dict[HotspotType, str] | None = None,
         hotspot_markers: dict[HotspotType, str] | None = None,
+        legend_bbox_to_anchor: tuple[float, float] = (0.55, -0.01),
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | None = None,
@@ -610,14 +619,19 @@ class FluxFootprintAnalyzer:
                 フットプリントの集約関数（デフォルトはnp.mean）。
             hotspots : list[HotspotData] | None, optional
                 ホットスポットデータのリスト。デフォルトはNone。
+            hotspots_alpha : float, optional
+                ホットスポットの透明度。デフォルトは0.7。
             hotspot_colors : dict[HotspotType, str] | None, optional
                 ホットスポットの色を指定する辞書。
+                例: {'bio': 'blue', 'gas': 'red', 'comb': 'green'}
             hotspot_labels : dict[HotspotType, str] | None, optional
                 ホットスポットの表示ラベルを指定する辞書。
                 例: {'bio': '生物', 'gas': 'ガス', 'comb': '燃焼'}
             hotspot_markers : dict[HotspotType, str] | None, optional
                 ホットスポットの形状を指定する辞書。
-                指定の例は {'bio': '^', 'gas': 'o', 'comb': 's'} （三角、丸、四角）など。
+                例: {'bio': '^', 'gas': 'o', 'comb': 's'}
+            legend_bbox_to_anchor : tuple[float, flaot], optional
+                ホットスポットの凡例の位置。デフォルトは (0.55, -0.01) 。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
             lon_correction : float, optional
@@ -808,7 +822,7 @@ class FluxFootprintAnalyzer:
                         c=color,
                         marker=marker,  # マーカー形状を指定
                         s=100,
-                        alpha=0.7,
+                        alpha=hotspots_alpha,
                         label=label,
                         edgecolor="black",
                         linewidth=1,
@@ -847,7 +861,7 @@ class FluxFootprintAnalyzer:
             ax_data.legend(
                 handles=spot_handles,
                 loc="upper center",  # 位置を上部中央に
-                bbox_to_anchor=(0.55, -0.01),  # 図の下に配置
+                bbox_to_anchor=legend_bbox_to_anchor,  # 図の下に配置
                 ncol=len(spot_handles),  # ハンドルの数に応じて列数を設定
             )
 
