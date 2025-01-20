@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from geopy.distance import geodesic
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.hotspot_data import HotspotData, HotspotType
-from .correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
+from .correcting_utils import CorrectingUtils, H2OCorrectionConfig, BiasRemovalConfig
 
 
 @dataclass
@@ -204,22 +204,21 @@ class MSAInputConfig:
             測器の遅れ時間（秒）
         path : Path | str
             ファイルパス
-        correction_type : str | None
-            適用する補正式の種類を表す文字列
+        bias_removal : BiasRemovalConfig | None
+            バイアス除去の設定。None（または未定義）の場合は補正を実施しない。
+        h2o_correction : H2OCorrectionConfig | None
+            水蒸気補正の設定。None（または未定義）の場合は補正を実施しない。
     """
 
-    fs: float  # サンプリング周波数（Hz）
-    lag: float  # 測器の遅れ時間（秒）
-    path: Path | str  # ファイルパス
-    correction_type: str | None = None  # 適用する補正式の種類を表す文字列
+    fs: float
+    lag: float
+    path: Path | str
+    bias_removal: BiasRemovalConfig | None = None
+    h2o_correction: H2OCorrectionConfig | None = None
 
     def __post_init__(self) -> None:
         """
         インスタンス生成後に入力値の検証を行います。
-
-        Raises:
-        ------
-            ValueError: 遅延時間が負の値である場合、またはサポートされていないファイル拡張子の場合。
         """
         # fsが有効かを確認
         if not isinstance(self.fs, (int, float)) or self.fs <= 0:
@@ -238,16 +237,6 @@ class MSAInputConfig:
             raise ValueError(
                 f"Unsupported file extension: '{extension}'. Supported: {supported_extensions}"
             )
-        # 与えられたcorrection_typeがNoneでない場合、CORRECTION_TYPES_PATTERNに含まれているかを検証します
-        if self.correction_type is not None:
-            if not isinstance(self.correction_type, str):
-                raise ValueError(
-                    f"Invalid correction_type: {self.correction_type}. Must be a str instance."
-                )
-            if self.correction_type not in CORRECTION_TYPES_PATTERN:
-                raise ValueError(
-                    f"Invalid correction_type: {self.correction_type}. Must be one of {CORRECTION_TYPES_PATTERN}."
-                )
 
     @classmethod
     def validate_and_create(
@@ -255,7 +244,8 @@ class MSAInputConfig:
         fs: float,
         lag: float,
         path: Path | str,
-        correction_type: str | None,
+        h2o_correction: H2OCorrectionConfig | None = None,
+        bias_removal: BiasRemovalConfig | None = None,
     ) -> "MSAInputConfig":
         """
         入力値を検証し、MSAInputConfigインスタンスを生成するファクトリメソッドです。
@@ -271,15 +261,23 @@ class MSAInputConfig:
                 遅延時間。0以上のfloatである必要があります。
             path : Path | str
                 入力ファイルのパス。サポートされている拡張子は.txtと.csvです。
-            correction_type : str | None
-                適用する補正式の種類を表す文字列。
+            bias_removal : BiasRemovalConfig | None
+                バイアス除去の設定。None（または未定義）の場合は補正を実施しない。
+            h2o_correction : H2OCorrectionConfig | None
+                水蒸気補正の設定。None（または未定義）の場合は補正を実施しない。
 
         Returns:
         ------
             MSAInputConfig
                 検証された入力設定を持つMSAInputConfigオブジェクト。
         """
-        return cls(fs=fs, lag=lag, path=path, correction_type=correction_type)
+        return cls(
+            fs=fs,
+            lag=lag,
+            path=path,
+            bias_removal=bias_removal,
+            h2o_correction=h2o_correction,
+        )
 
 
 class MobileSpatialAnalyzer:
@@ -338,6 +336,14 @@ class MobileSpatialAnalyzer:
             column_mapping : dict[str, str]
                 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。
                 - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をcolに指定してください。
+                - デフォルト: {
+                    "Time Stamp": "timestamp",
+                    "CH4 (ppm)": "ch4_ppm",
+                    "C2H6 (ppb)": "c2h6_ppb",
+                    "H2O (ppm)": "h2o_ppm",
+                    "Latitude": "latitude",
+                    "Longitude": "longitude",
+                }
             na_values : list[str]
                 NaNと判定する値のパターン。
             logger : Logger | None
@@ -1642,12 +1648,32 @@ class MobileSpatialAnalyzer:
         # 緯度経度とシフト対象カラムのnanを一度に削除
         df = df.dropna(subset=[col_latitude, col_longitude] + columns_to_shift)
 
-        # 水蒸気干渉などの補正式を適用
-        if config.correction_type is not None:
-            df = CorrectingUtils.correct_df_by_type(df, config.correction_type)
-        else:
-            self.logger.warn(
-                f"'correction_type' is None, so no correction functions will be applied. Source: {source_name}"
+        # 水蒸気補正の適用
+        h2o_correction: H2OCorrectionConfig = config.h2o_correction
+        if config.h2o_correction is not None and all(
+            x is not None
+            for x in [
+                h2o_correction.coef_a,
+                h2o_correction.coef_b,
+                h2o_correction.coef_c,
+            ]
+        ):
+            df = CorrectingUtils.correct_h2o_interference(
+                df=df,
+                coef_a=h2o_correction.coef_a,
+                coef_b=h2o_correction.coef_b,
+                coef_c=h2o_correction.coef_c,
+                h2o_ppm_threshold=h2o_correction.h2o_ppm_threshold,
+            )
+
+        # バイアス除去の適用
+        bias_removal: BiasRemovalConfig = config.bias_removal
+        if bias_removal is not None:
+            df = CorrectingUtils.remove_bias(
+                df=df,
+                percentile=bias_removal.percentile,
+                bottom_ch4_ppm=bias_removal.bottom_ch4_ppm,
+                bottom_c2h6_ppb=bias_removal.bottom_c2h6_ppb,
             )
 
         return df, source_name

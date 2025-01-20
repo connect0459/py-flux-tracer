@@ -1,6 +1,21 @@
 import os
-from py_flux_tracer import HotspotData, MobileSpatialAnalyzer, MSAInputConfig
+from py_flux_tracer import (
+    HotspotData,
+    MobileSpatialAnalyzer,
+    MSAInputConfig,
+    H2OCorrectionConfig,
+    BiasRemovalConfig,
+)
 
+# picoデータの補正式に関するパラメータ
+pico_h2o_correction = H2OCorrectionConfig(
+    coef_a=2.0631,  # 切片
+    coef_b=1.0111e-06,  # 1次の係数
+    coef_c=-1.8683e-10,  # 2次の係数
+)
+pico_bias_removal = BiasRemovalConfig(
+    percentile=5.0,
+)
 
 # MSAInputConfigによる詳細指定
 inputs: list[MSAInputConfig] = [
@@ -8,67 +23,78 @@ inputs: list[MSAInputConfig] = [
         lag=7,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
     MSAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
-        correction_type="pico_1",
+        h2o_correction=pico_h2o_correction,
+        bias_removal=pico_bias_removal,
     ),
 ]
 
@@ -193,11 +219,12 @@ if __name__ == "__main__":
             print_summary=False,
         )
 
+    # 各回の時系列データを可視化
     source_names: list[str] = msa.get_source_names()
     for source_name in source_names:
         msa.plot_conc_timeseries(
             source_name=source_name,
-            output_dir=os.path.join(output_dir,"timeseries"),
+            output_dir=os.path.join(output_dir, "timeseries"),
             output_filename=f"timeseries-{source_name}.png",
             save_fig=True,
             show_fig=False,

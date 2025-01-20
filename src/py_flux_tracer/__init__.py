@@ -3,7 +3,11 @@ from .campbell.spectrum_calculator import SpectrumCalculator
 from .commons.figure_utils import FigureUtils
 from .commons.hotspot_data import HotspotData, HotspotType
 from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
-from .mobile.correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
+from .mobile.correcting_utils import (
+    CorrectingUtils,
+    H2OCorrectionConfig,
+    BiasRemovalConfig,
+)
 from .mobile.mobile_spatial_analyzer import (
     EmissionData,
     HotspotParameters,
@@ -47,7 +51,8 @@ __all__ = [
     "HotspotType",
     "FluxFootprintAnalyzer",
     "CorrectingUtils",
-    "CORRECTION_TYPES_PATTERN",
+    "H2OCorrectionConfig",
+    "BiasRemovalConfig",
     "EmissionData",
     "HotspotParameters",
     "MobileSpatialAnalyzer",

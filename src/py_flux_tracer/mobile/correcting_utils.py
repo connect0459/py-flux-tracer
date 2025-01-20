@@ -1,66 +1,58 @@
 import numpy as np
 import pandas as pd
+from dataclasses import dataclass
 
-"""
-CORRECTION_TYPES_PATTERN (list[str]): 補正式の種類を定義するリスト。correct_df_by_typeで使用する。
-"""
-CORRECTION_TYPES_PATTERN: list[str] = ["pico_1"]
+
+@dataclass
+class H2OCorrectionConfig:
+    """水蒸気補正の設定を保持するデータクラス
+
+    Parameters
+    ----------
+    coef_a : float | None
+        補正曲線の切片
+    coef_b : float | None
+        補正曲線の1次係数
+    coef_c : float | None
+        補正曲線の2次係数
+    h2o_ppm_threshold : float | None
+        水蒸気濃度の下限値（この値未満のデータは除外）
+    """
+
+    coef_a: float | None = None
+    coef_b: float | None = None
+    coef_c: float | None = None
+    h2o_ppm_threshold: float | None = 2000
+
+@dataclass
+class BiasRemovalConfig:
+    """バイアス除去の設定を保持するデータクラス
+
+    Parameters
+    ----------
+    percentile : float
+        バイアス除去に使用するパーセンタイル値
+    bottom_ch4_ppm : float
+        補正前の値から最小値を引いた後に足すCH4濃度の下限値。
+    bottom_c2h6_ppb : float
+        補正前の値から最小値を引いた後に足すC2H6濃度の下限値。
+    """
+
+    percentile: float = 5.0
+    bottom_ch4_ppm: float = 2.0
+    bottom_c2h6_ppb: float = 0
 
 
 class CorrectingUtils:
     @staticmethod
-    def correct_df_by_type(df: pd.DataFrame, correction_type: str) -> pd.DataFrame:
-        """
-        指定された補正式に基づいてデータフレームを補正します。
-
-        Parameters:
-        ------
-            df : pd.DataFrame
-                補正対象のデータフレーム。
-            correction_type : str
-                適用する補正式の種類。CORRECTION_TYPES_PATTERNから選択する。
-
-        Returns:
-        ------
-            pd.DataFrame
-                補正後のデータフレーム。
-
-        Raises:
-        ------
-            ValueError
-                無効な補正式が指定された場合。
-        """
-        if correction_type == "pico_1":
-            coef_a: float = 2.0631  # 切片
-            coef_b: float = 1.0111e-06  # 1次の係数
-            coef_c: float = -1.8683e-10  # 2次の係数
-            # 水蒸気補正
-            df_corrected: pd.DataFrame = CorrectingUtils._correct_h2o_interference(
-                df=df,
-                coef_a=coef_a,
-                coef_b=coef_b,
-                coef_c=coef_c,
-                col_ch4="ch4_ppm",
-                col_h2o="h2o_ppm",
-                h2o_threshold=2000,
-            )
-            # 負の値のエタン濃度の補正など
-            df_corrected = CorrectingUtils._remove_bias(
-                df=df_corrected, col_ch4_ppm="ch4_ppm", col_c2h6_ppb="c2h6_ppb"
-            )
-            return df_corrected
-        else:
-            raise ValueError(f"invalid correction_type: {correction_type}.")
-
-    @staticmethod
-    def _correct_h2o_interference(
+    def correct_h2o_interference(
         df: pd.DataFrame,
         coef_a: float,
         coef_b: float,
         coef_c: float,
-        col_ch4: str = "ch4_ppm",
-        col_h2o: str = "h2o_ppm",
-        h2o_threshold: float | None = 2000,
+        col_ch4_ppm: str = "ch4_ppm",
+        col_h2o_ppm: str = "h2o_ppm",
+        h2o_ppm_threshold: float | None = 2000,
     ) -> pd.DataFrame:
         """
         水蒸気干渉を補正するためのメソッドです。
@@ -82,11 +74,11 @@ class CorrectingUtils:
                 補正曲線の1次係数
             coef_c : float
                 補正曲線の2次係数
-            col_ch4 : str
+            col_ch4_ppm : str
                 CH4濃度を示すカラム名
-            col_h2o : str
+            col_h2o_ppm : str
                 水蒸気濃度を示すカラム名
-            h2o_threshold : float | None
+            h2o_ppm_threshold : float | None
                 水蒸気濃度の下限値（この値未満のデータは除外）
 
         Returns:
@@ -95,9 +87,9 @@ class CorrectingUtils:
                 水蒸気干渉が補正されたデータフレーム
         """
         # 元のデータを保護するためコピーを作成
-        df = df.copy()
+        df_h2o_corrected = df.copy()
         # 水蒸気濃度の配列を取得
-        h2o = np.array(df[col_h2o])
+        h2o = np.array(df_h2o_corrected[col_h2o_ppm])
 
         # 補正項の計算
         correction_curve = coef_a + coef_b * h2o + coef_c * pow(h2o, 2)
@@ -105,20 +97,23 @@ class CorrectingUtils:
         correction_term = -(correction_curve - max_correction)
 
         # CH4濃度の補正
-        df[col_ch4] = df[col_ch4] + correction_term
+        df_h2o_corrected[col_ch4_ppm] = df_h2o_corrected[col_ch4_ppm] + correction_term
 
         # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
-        if h2o_threshold is not None:
-            df.loc[df[col_h2o] < h2o_threshold, col_ch4] = np.nan
-            df = df.dropna(subset=[col_ch4])
+        if h2o_ppm_threshold is not None:
+            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = np.nan
+            df_h2o_corrected = df_h2o_corrected.dropna(subset=[col_ch4_ppm])
 
-        return df
+        return df_h2o_corrected
 
     @staticmethod
-    def _remove_bias(
+    def remove_bias(
         df: pd.DataFrame,
         col_ch4_ppm: str = "ch4_ppm",
         col_c2h6_ppb: str = "c2h6_ppb",
+        bottom_ch4_ppm: float = 2.0,
+        bottom_c2h6_ppb: float = 0,
+        percentile: float = 5,
     ) -> pd.DataFrame:
         """
         データフレームからバイアスを除去します。
@@ -131,15 +126,21 @@ class CorrectingUtils:
                 CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
             col_c2h6_ppb : str
                 C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
-
+            bottom_ch4_ppm : float
+                補正前の値から最小値を引いた後に足すCH4濃度。
+            bottom_c2h6_ppb : float
+                補正前の値から最小値を引いた後に足すC2H6濃度。
+            percentile : float
+                下位何パーセンタイルの値を最小値として補正を行うか。
+                
         Returns:
         ------
             pd.DataFrame
                 バイアスが除去されたデータフレーム。
         """
         df_processed: pd.DataFrame = df.copy()
-        c2h6_min = np.percentile(df_processed[col_c2h6_ppb], 5)
-        df_processed[col_c2h6_ppb] = df_processed[col_c2h6_ppb] - c2h6_min
-        ch4_min = np.percentile(df_processed[col_ch4_ppm], 5)
-        df_processed[col_ch4_ppm] = df_processed[col_ch4_ppm] - ch4_min + 2.0
+        c2h6_min = np.percentile(df_processed[col_c2h6_ppb], percentile)
+        df_processed[col_c2h6_ppb] = df_processed[col_c2h6_ppb] - c2h6_min + bottom_c2h6_ppb
+        ch4_min = np.percentile(df_processed[col_ch4_ppm], percentile)
+        df_processed[col_ch4_ppm] = df_processed[col_ch4_ppm] - ch4_min + bottom_ch4_ppm
         return df_processed
