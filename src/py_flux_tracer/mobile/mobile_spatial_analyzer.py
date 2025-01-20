@@ -183,7 +183,7 @@ class HotspotParameters:
     USE_QUANTILE : bool
         5パーセンタイルを使用するかどうかのフラグ
     """
-    
+
     CH4_PPM: str = "ch4_ppm"
     C2H6_PPB: str = "c2h6_ppb"
     H2O_PPM: str = "h2o_ppm"
@@ -885,6 +885,13 @@ class MobileSpatialAnalyzer:
         dpi: int = 200,
         figsize: tuple[int, int] = (8, 6),
         fontsize: float = 20,
+        hotspot_colors: dict[HotspotType, str] = {
+            "bio": "blue",
+            "gas": "red",
+            "comb": "green",
+        },
+        xlabel: str = "Δ$\\mathregular{CH_{4}}$ (ppm)",
+        ylabel: str = "Frequency",
         xlim: tuple[float, float] | None = None,
         ylim: tuple[float, float] | None = None,
         save_fig: bool = True,
@@ -909,6 +916,12 @@ class MobileSpatialAnalyzer:
                 図のサイズ。デフォルトは(8, 6)。
             fontsize : float
                 フォントサイズ。デフォルトは20。
+            hotspot_colors : dict[HotspotType, str]
+                ホットスポットの色を定義する辞書。
+            xlabel : str
+                x軸のラベル。
+            ylabel : str
+                y軸のラベル。
             xlim : tuple[float, float] | None
                 x軸の範囲。Noneの場合は自動設定。
             ylim : tuple[float, float] | None
@@ -978,9 +991,6 @@ class MobileSpatialAnalyzer:
         # 積み上げヒストグラムを作成
         bottom = np.zeros_like(hist_data.get("bio", np.zeros(len(bins) - 1)))
 
-        # 色の定義をHotspotTypeを使用して型安全に定義
-        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
-
         # HotspotTypeのリテラル値を使用してイテレーション
         for type_name in get_args(HotspotType):
             if type_name in hist_data:
@@ -989,7 +999,7 @@ class MobileSpatialAnalyzer:
                     hist_data[type_name],
                     width=np.diff(bins)[0],
                     bottom=bottom,
-                    color=colors[type_name],
+                    color=hotspot_colors[type_name],
                     label=type_name,
                     alpha=0.6,
                     align="edge",
@@ -998,8 +1008,8 @@ class MobileSpatialAnalyzer:
 
         if yscale_log:
             plt.yscale("log")
-        plt.xlabel("Δ$\\mathregular{CH_{4}}$ (ppm)")
-        plt.ylabel("Frequency")
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
         plt.legend()
         plt.grid(True, which="both", ls="-", alpha=0.2)
 
@@ -1195,7 +1205,22 @@ class MobileSpatialAnalyzer:
         output_filename: str = "scatter_c2c1.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (4, 4),
+        hotspot_colors: dict[HotspotType, str] = {
+            "bio": "blue",
+            "gas": "red",
+            "comb": "green",
+        },
+        hotspot_labels: dict[HotspotType, str] = {
+            "bio": "bio",
+            "gas": "gas",
+            "comb": "comb",
+        },
         fontsize: float = 12,
+        xlim: tuple[float, float] = (0, 2.0),
+        ylim: tuple[float, float] = (0, 50),
+        xlabel: str = "Δ$\\mathregular{CH_{4}}$ (ppm)",
+        ylabel: str = "Δ$\\mathregular{C_{2}H_{6}}$ (ppb)",
+        add_legend: bool = True,
         save_fig: bool = True,
         show_fig: bool = True,
         ratio_labels: dict[float, tuple[float, float, str]] | None = None,
@@ -1217,6 +1242,10 @@ class MobileSpatialAnalyzer:
                 図のサイズ。デフォルトは(4, 4)。
             fontsize : float
                 フォントサイズ。デフォルトは12。
+            hotspot_colors : dict[HotspotType, str]
+                ホットスポットの色を定義する辞書。
+            hotspot_labels : dict[HotspotType, str]
+                ホットスポットのラベルを定義する辞書。
             save_fig : bool
                 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig : bool
@@ -1233,6 +1262,16 @@ class MobileSpatialAnalyzer:
                     0.030: (1.0, 40, "0.03"),
                     0.076: (0.20, 42, "0.076 (Osaka)")
                 }
+            xlim : tuple[float, float]
+                x軸の範囲を指定します。デフォルトは(0, 2.0)です。
+            ylim : tuple[float, float]
+                y軸の範囲を指定します。デフォルトは(0, 50)です。
+            xlabel : str
+                x軸のラベルを指定します。デフォルトは"Δ$\\mathregular{CH_{4}}$ (ppm)"です。
+            ylabel : str
+                y軸のラベルを指定します。デフォルトは"Δ$\\mathregular{C_{2}H_{6}}$ (ppb)"です。
+            add_legend : bool
+                凡例を追加するかどうか。
         """
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -1246,10 +1285,6 @@ class MobileSpatialAnalyzer:
         for spot in hotspots:
             type_data[spot.type].append((spot.delta_ch4, spot.delta_c2h6))
 
-        # 色とラベルの定義
-        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
-        labels: dict[HotspotType, str] = {"bio": "bio", "gas": "gas", "comb": "comb"}
-
         # タイプごとにプロット（データが存在する場合のみ）
         for spot_type, data in type_data.items():
             if data:  # データが存在する場合のみプロット
@@ -1258,10 +1293,10 @@ class MobileSpatialAnalyzer:
                     ch4_values,
                     c2h6_values,
                     "o",
-                    c=colors[spot_type],
+                    c=hotspot_colors[spot_type],
                     alpha=0.5,
                     ms=2,
-                    label=labels[spot_type],
+                    label=hotspot_labels[spot_type],
                 )
 
         # デフォルトの比率とラベル設定
@@ -1287,11 +1322,12 @@ class MobileSpatialAnalyzer:
             plt.plot(x, y, "-", c="black", alpha=0.5)
             plt.text(x_pos, y_pos, label)
 
-        plt.ylim(0, 50)
-        plt.xlim(0, 2.0)
-        plt.ylabel("Δ$\\mathregular{C_{2}H_{6}}$ (ppb)")
-        plt.xlabel("Δ$\\mathregular{CH_{4}}$ (ppm)")
-        plt.legend()
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        if add_legend:
+            plt.legend()
 
         # グラフの保存または表示
         if save_fig:
@@ -1555,6 +1591,9 @@ class MobileSpatialAnalyzer:
         self,
         config: MSAInputConfig,
         columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"],
+        col_timestamp: str = "timestamp",
+        col_latitude: str = "latitude",
+        col_longitude: str = "longitude",
     ) -> tuple[pd.DataFrame, str]:
         """
         測定データを読み込み、前処理を行うメソッド。
@@ -1565,6 +1604,12 @@ class MobileSpatialAnalyzer:
                 入力ファイルの設定を含むオブジェクト。ファイルパス、遅れ時間、サンプリング周波数、補正タイプなどの情報を持つ。
             columns_to_shift : list[str], optional
                 シフトを適用するカラム名のリスト。デフォルトは["ch4_ppm", "c2h6_ppb", "h2o_ppm"]で、これらのカラムに対して遅れ時間の補正が行われる。
+            col_timestamp : str, optional
+                タイムスタンプのカラム名。デフォルトは"timestamp"。
+            col_latitude : str, optional
+                緯度のカラム名。デフォルトは"latitude"。
+            col_longitude : str, optional
+                経度のカラム名。デフォルトは"longitude"。
 
         Returns:
         ------
@@ -1578,12 +1623,9 @@ class MobileSpatialAnalyzer:
 
         # カラム名の標準化（測器に依存しない汎用的な名前に変更）
         df = df.rename(columns=self._column_mapping)
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df[col_timestamp] = pd.to_datetime(df[col_timestamp])
         # インデックスを設定（元のtimestampカラムは保持）
-        df = df.set_index("timestamp", drop=False)
-
-        # 緯度経度のnanを削除
-        df = df.dropna(subset=["latitude", "longitude"])
+        df = df.set_index(col_timestamp, drop=False)
 
         if config.lag < 0:
             raise ValueError(
@@ -1597,7 +1639,8 @@ class MobileSpatialAnalyzer:
         for col in columns_to_shift:
             df[col] = df[col].shift(shift_periods)
 
-        df = df.dropna(subset=columns_to_shift)
+        # 緯度経度とシフト対象カラムのnanを一度に削除
+        df = df.dropna(subset=[col_latitude, col_longitude] + columns_to_shift)
 
         # 水蒸気干渉などの補正式を適用
         if config.correction_type is not None:
@@ -2270,6 +2313,11 @@ class MobileSpatialAnalyzer:
         output_dir: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
         figsize: tuple[float, float] = (12, 5),
+        hotspot_colors: dict[HotspotType, str] = {
+            "bio": "blue",
+            "gas": "red",
+            "comb": "green",
+        },
         add_legend: bool = True,
         hist_log_y: bool = False,
         hist_xlim: tuple[float, float] | None = None,
@@ -2297,6 +2345,8 @@ class MobileSpatialAnalyzer:
                 プロットの解像度。デフォルトは300。
             figsize : tuple[float, float]
                 プロットのサイズ。デフォルトは(12, 5)。
+            hotspot_colors : dict[HotspotType, str]
+                ホットスポットの色を定義する辞書。
             add_legend : bool
                 凡例を追加するかどうか。デフォルトはTrue。
             hist_log_y : bool
@@ -2330,9 +2380,6 @@ class MobileSpatialAnalyzer:
         else:
             fig, ax1 = plt.subplots(1, 1, figsize=(figsize[0] // 2, figsize[1]))
             axes = [ax1]
-
-        # カラーマップの定義
-        colors: dict[HotspotType, str] = {"bio": "blue", "gas": "red", "comb": "green"}
 
         # 存在するタイプを確認
         # HotspotTypeの定義順を基準にソート
@@ -2369,7 +2416,7 @@ class MobileSpatialAnalyzer:
                     bottom=bottom,
                     alpha=0.6,
                     label=spot_type,
-                    color=colors[spot_type],
+                    color=hotspot_colors[spot_type],
                 )
                 bottom += counts
 
@@ -2398,7 +2445,7 @@ class MobileSpatialAnalyzer:
                     df[mask]["delta_ch4"],
                     alpha=0.6,
                     label=spot_type,
-                    color=colors[spot_type],
+                    color=hotspot_colors[spot_type],
                 )
 
             ax2.set_xlabel("Emission Rate (L min$^{-1}$)")
