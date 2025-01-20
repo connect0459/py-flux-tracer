@@ -3,13 +3,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+from typing import Literal
 
 
 def plot_stacked_fluxes(
     input_filepath: str,
     output_dir: str,
     output_filename: str = "ch4_flux_stacked_bar_directions.png",
-    concentration_unit: str = "nano",
+    concentration_unit: Literal["nano", "micro"] = "nano",
     figsize: tuple[float, float] = (20, 13),
     ylim: float | None = None,
 ):
@@ -32,10 +33,6 @@ def plot_stacked_fluxes(
     if concentration_unit == "micro":
         flux_unit = "μmol m$^{-2}$ s$^{-1}$"
         flux_magnification = 1 / 1000
-    elif concentration_unit != "nano":
-        raise ValueError(
-            "concentration_unitには`micro`または`nano`を指定する必要があります。"
-        )
 
     # データの読み込み
     df: pd.DataFrame = pd.read_csv(input_filepath, skiprows=[1])

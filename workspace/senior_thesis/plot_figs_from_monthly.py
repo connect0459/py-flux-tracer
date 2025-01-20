@@ -36,7 +36,8 @@ months_two: list[str] = [
     "09_10",
     "11_12",
 ]
-months: list[int] = [5, 6, 7, 8, 9, 10, 11]
+# months: list[int] = [5, 6, 7, 8, 9, 10, 11]
+months: list[int] = [5, 6, 7, 8, 9, 10, 11, 12]
 subplot_labels: list[list[str | None]] = [
     # ["(a1)", "(a2)"],
     # ["(b1)", "(b2)"],
@@ -62,7 +63,8 @@ output_dir = (
 plot_turbulences: bool = False
 plot_spectra: bool = False
 plot_spectra_two: bool = False
-plot_timeseries: bool = True
+plot_timeseries: bool = False
+plot_comparison: bool = True
 plot_diurnals: bool = False
 diurnal_subplot_fontsize: float = 36
 plot_scatter: bool = False
@@ -163,7 +165,7 @@ if __name__ == "__main__":
         )
         df_combined_without_fleeze.loc[freeze_mask, "Fch4_ultra"] = 0
         df_combined_without_fleeze.loc[freeze_mask, "Fc2h6_ultra"] = 0
-        mfg.plot_ch4c2h6_timeseries(
+        mfg.plot_c1c2_timeseries(
             df=df_combined_without_fleeze,
             output_dir=os.path.join(output_dir, "tests"),
             col_ch4_flux="Fch4_ultra",
@@ -172,22 +174,6 @@ if __name__ == "__main__":
             c2h6_ylim=(-0.1, 6),
             start_date="2024-05-15",
             end_date="2024-11-30",
-        )
-        mfg.plot_ch4_flux_comparison(
-            df=df_combined,
-            output_dir=os.path.join(output_dir, "tests"),
-            output_filename="timeseries-g2401_ultra-11.png",
-            cols_flux=["Fch4_picaro", "Fch4_ultra"],
-            labels=["G2401", "Ultra"],
-            colors=["blue", "red"],
-            # y_lim=(10, 60),
-            start_date="2024-10-01",
-            end_date="2024-11-30",
-            show_ci=False,
-            apply_ma=False,
-            x_interval="10days",  # "month"または"10days"を指定
-            save_fig=True,
-            show_fig=False,
         )
         mfg.logger.info("'timeseries'を作成しました。")
 
@@ -247,37 +233,10 @@ if __name__ == "__main__":
                 # )
                 continue
 
-    if plot_spectra_two:
-        for month in months_two:
-            month_str = month
-            mfg.logger.info(f"{month_str}の処理を開始します。")
-
-            # パワースペクトルのプロット
-            mfg.plot_spectra(
-                input_dir=f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{month_str}",
-                output_dir=(os.path.join(output_dir, "spectra", "two")),
-                output_basename=f"spectrum-two-{month}",
-                fs=10,
-                lag_second=10,
-                plot_co=False,
-            )
-            mfg.logger.info("'spectra_two'を作成しました。")
-
-    for month, lag_sec, subplot_label in zip(months, lags_list, subplot_labels):
+    for month, subplot_label in zip(months, subplot_labels):
         # monthを0埋めのMM形式に変換
         month_str = f"{month:02d}"
         mfg.logger.info(f"{month_str}の処理を開始します。")
-
-        if plot_spectra:
-            # パワースペクトルのプロット
-            mfg.plot_spectra(
-                input_dir=f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-{month_str}",
-                output_dir=(os.path.join(output_dir, "spectra")),
-                output_basename=f"spectrum-{month}",
-                fs=10,
-                lag_second=lag_sec,
-            )
-            mfg.logger.info("'spectra'を作成しました。")
 
         # 月ごとのDataFrameを作成
         df_month: pd.DataFrame = MonthlyConverter.extract_monthly_data(
@@ -559,26 +518,51 @@ if __name__ == "__main__":
             )
             mfg.logger.info("'sources'を作成しました。")
 
-        flux_data = {
-            "G2401": df_month["Fch4_picaro"],
-            "Ultra": df_month["Fch4_ultra"],
-        }
-        colors = {
-            "G2401": "blue",
-            "Ultra": "red",
-        }
-        MonthlyFiguresGenerator.plot_flux_distributions(
-            flux_data=flux_data,
-            month=month,
-            output_dir=os.path.join(output_dir, "tests"),
-            colors=colors,
-            output_filename="flux_distribution_month_{month}.png",
-            show_fig=False,
-        )
+        # flux_data = {
+        #     "G2401": df_month["Fch4_picaro"],
+        #     "Ultra": df_month["Fch4_ultra"],
+        # }
+        # colors = {
+        #     "G2401": "blue",
+        #     "Ultra": "red",
+        # }
+        # MonthlyFiguresGenerator.plot_fluxes_distributions(
+        #     flux_data=flux_data,
+        #     month=month,
+        #     output_dir=os.path.join(output_dir, "tests"),
+        #     colors=colors,
+        #     output_filename="flux_distribution_month_{month}.png",
+        #     show_fig=False,
+        # )
+        if plot_comparison:
+            # 開始日から1か月後の日付を計算
+            start_date = f"2024-{month_str}-01"
+            end_date = (pd.to_datetime(start_date) + pd.DateOffset(months=1)).strftime(
+                "%Y-%m-%d"
+            )
+
+            mfg.plot_fluxes_comparison(
+                df=df_combined,
+                output_dir=os.path.join(output_dir, "comparison"),
+                output_filename=f"timeseries-g2401_ultra-{month_str}.png",
+                cols_flux=["Fch4_picaro", "Fch4_ultra"],
+                labels=["G2401", "Ultra"],
+                colors=["blue", "red"],
+                # y_lim=(10, 60),
+                start_date=start_date,
+                end_date=end_date,
+                include_end_date=False,
+                show_ci=False,
+                apply_ma=False,
+                hourly_mean=True,
+                x_interval="10days",  # "month"または"10days"を指定
+                save_fig=True,
+                show_fig=False,
+            )
 
     # 2ヶ月毎
     months_dos: list[list[int]] = [[5, 6], [7, 8], [9, 10], [11]]
-    for month_dos, lag_sec, subplot_label in zip(months_dos, lags_list, subplot_labels):
+    for month_dos, subplot_label in zip(months_dos, subplot_labels):
         # monthを0埋めのMM形式に変換
         month_str = "_".join(f"{month:02d}" for month in month_dos)
         mfg.logger.info(f"{month_str}の処理を開始します。")

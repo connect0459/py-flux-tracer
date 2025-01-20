@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy import stats
+from pathlib import Path
 from datetime import datetime
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 
@@ -112,7 +113,7 @@ class EddyDataPreprocessor:
         col2_list: list[str] = ["Tv"],
         median_range: float = 20,
         metadata_rows: int = 4,
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_tag: str = "",
         plot_range_tuple: tuple = (-50, 200),
         print_results: bool = True,
@@ -141,7 +142,7 @@ class EddyDataPreprocessor:
                 中央値を中心とした範囲。
             metadata_rows : int
                 メタデータの行数。
-            output_dir : str | None
+            output_dir : str | Path | None
                 出力ディレクトリのパス。Noneの場合は保存しない。
             output_tag : str
                 出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。

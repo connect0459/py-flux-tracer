@@ -329,7 +329,7 @@ class MonthlyFiguresGenerator:
             analyze_top_values(df, col_c2h6_conc)
             analyze_top_values(df, col_c2h6_flux)
 
-    def plot_ch4c2h6_timeseries(
+    def plot_c1c2_timeseries(
         self,
         df: pd.DataFrame,
         output_dir: str,
@@ -513,7 +513,7 @@ class MonthlyFiguresGenerator:
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
-    def plot_ch4_flux_comparison(
+    def plot_fluxes_comparison(
         self,
         df: pd.DataFrame,
         output_dir: str,
@@ -530,10 +530,14 @@ class MonthlyFiguresGenerator:
         y_lim: tuple[float, float] | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
+        include_end_date: bool = True,
         figsize: tuple[float, float] = (12, 6),
         legend_loc: str = "upper right",
         apply_ma: bool = True,  # 移動平均を適用するかどうか
+        hourly_mean: bool = False,  # 1時間平均を適用するかどうか
         x_interval: Literal["month", "10days"] = "month",  # "month" または "10days"
+        xlabel: str = "Month",
+        ylabel: str = "CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
         save_fig: bool = True,
         show_fig: bool = False,
     ) -> None:
@@ -571,14 +575,22 @@ class MonthlyFiguresGenerator:
                 開始日（YYYY-MM-DD形式）
             end_date : str | None
                 終了日（YYYY-MM-DD形式）
+            include_end_date : bool
+                終了日を含めるかどうか。Falseの場合、終了日の前日までを表示
             figsize : tuple[float, float]
                 図のサイズ
             legend_loc : str
                 凡例の位置
             apply_ma : bool
                 移動平均を適用するかどうか
+            hourly_mean : bool
+                1時間平均を適用するかどうか
             x_interval : Literal['month', '10days']
                 x軸の目盛り間隔。"month"（月初めのみ）または"10days"（10日刻み）
+            xlabel : str
+                x軸のラベル（通常は"Month"）
+            ylabel : str
+                y軸のラベル（通常は"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)"）
             save_fig : bool
                 図を保存するかどうか
             show_fig : bool
@@ -593,6 +605,15 @@ class MonthlyFiguresGenerator:
         if not isinstance(df.index, pd.DatetimeIndex):
             df[col_datetime] = pd.to_datetime(df[col_datetime])
             df.set_index(col_datetime, inplace=True)
+
+        # 1時間平均の適用
+        if hourly_mean:
+            # 時間情報のみを使用してグループ化
+            df = df.groupby([df.index.date, df.index.hour]).mean()
+            # マルチインデックスを日時インデックスに変換
+            df.index = pd.to_datetime(
+                [f"{date} {hour:02d}:00:00" for date, hour in df.index]
+            )
 
         # 日付範囲の処理
         if start_date is not None:
@@ -612,17 +633,26 @@ class MonthlyFiguresGenerator:
             start_dt = df.index.normalize().min()
 
         if end_date is not None:
-            end_dt = (
-                pd.to_datetime(end_date).normalize()
-                + pd.Timedelta(days=1)
-                - pd.Timedelta(seconds=1)
-            )
+            if include_end_date:
+                end_dt = (
+                    pd.to_datetime(end_date).normalize()
+                    + pd.Timedelta(days=1)
+                    - pd.Timedelta(seconds=1)
+                )
+            else:
+                # 終了日を含まない場合、終了日の前日の23:59:59まで
+                end_dt = pd.to_datetime(end_date).normalize() - pd.Timedelta(seconds=1)
+
             df_max_date = (
                 df.index.normalize().max().normalize()
             )  # 日付のみの比較のため正規化
 
             # データの最大日付が指定終了日より前の場合にのみ警告
-            if df_max_date.date() < pd.to_datetime(end_date).date():
+            compare_date = pd.to_datetime(end_date).date()
+            if not include_end_date:
+                compare_date = compare_date - pd.Timedelta(days=1)
+
+            if df_max_date.date() < compare_date:
                 self.logger.warning(
                     f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
@@ -663,8 +693,8 @@ class MonthlyFiguresGenerator:
                 fontsize=subplot_fontsize,
             )
 
-        ax.set_ylabel("CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
-        ax.set_xlabel("Month")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
 
         if y_lim is not None:
             ax.set_ylim(y_lim)
@@ -685,10 +715,13 @@ class MonthlyFiguresGenerator:
             ax.xaxis.set_minor_locator(mdates.DayLocator())
             ax.grid(True, which="minor", alpha=0.1)  # マイナー線の表示設定
 
-        # カスタムフォーマッタの作成（MMのみ表示）
+        # カスタムフォーマッタの作成（月初めの1日のみMMを表示）
         def date_formatter(x, p):
             date = mdates.num2date(x)
-            return f"{date.strftime('%m')}"
+            # 月初めの1日の場合のみ月を表示
+            if date.day == 1:
+                return f"{date.strftime('%m')}"
+            return ""
 
         ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
         plt.setp(ax.xaxis.get_majorticklabels(), ha="right", rotation=0)
@@ -3078,7 +3111,7 @@ class MonthlyFiguresGenerator:
         return new_logger
 
     @staticmethod
-    def plot_flux_distributions(
+    def plot_fluxes_distributions(
         flux_data: dict[str, pd.Series],
         month: int,
         output_dir: str | Path | None = None,

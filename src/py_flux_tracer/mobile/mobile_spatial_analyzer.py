@@ -279,6 +279,7 @@ class MobileSpatialAnalyzer:
             "Latitude": "latitude",
             "Longitude": "longitude",
         },
+        na_values: list[str] = ["No Data", "nan"],
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -306,6 +307,8 @@ class MobileSpatialAnalyzer:
             column_mapping : dict[str, str]
                 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。
                 - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をcolに指定してください。
+            na_values : list[str]
+                NaNと判定する値のパターン。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
@@ -328,6 +331,7 @@ class MobileSpatialAnalyzer:
         self._correlation_threshold: float = correlation_threshold
         self._hotspot_area_meter: float = hotspot_area_meter
         self._column_mapping: dict[str, str] = column_mapping
+        self._na_values:list[str] = na_values
         self._num_sections: int = num_sections
         # セクションの範囲
         section_size: float = 360 / num_sections
@@ -1509,7 +1513,7 @@ class MobileSpatialAnalyzer:
         source_name: str = MobileSpatialAnalyzer.extract_source_name_from_path(
             config.path
         )
-        df: pd.DataFrame = pd.read_csv(config.path, na_values=["No Data", "nan"])
+        df: pd.DataFrame = pd.read_csv(config.path, na_values=self._na_values)
 
         # カラム名の標準化（測器に依存しない汎用的な名前に変更）
         df = df.rename(columns=self._column_mapping)

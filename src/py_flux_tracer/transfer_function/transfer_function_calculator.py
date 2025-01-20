@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 from scipy.optimize import curve_fit
 
 
@@ -85,7 +86,7 @@ class TransferFunctionCalculator:
         figsize: tuple[int, int] = (10, 8),
         label1: str | None = None,
         label2: str | None = None,
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_basename: str = "co",
         add_legend: bool = True,
         add_xy_labels: bool = True,
@@ -113,7 +114,7 @@ class TransferFunctionCalculator:
                 1つ目のデータのラベル名。デフォルトはNone。
             label2 : str, optional
                 2つ目のデータのラベル名。デフォルトはNone。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename : str, optional
                 保存するファイル名のベース。デフォルトは"co"。
@@ -182,7 +183,7 @@ class TransferFunctionCalculator:
         reference_name: str,
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_basename: str = "ratio",
         show_fig: bool = True,
     ) -> None:
@@ -199,7 +200,7 @@ class TransferFunctionCalculator:
                 ターゲットの名前。
             figsize : tuple[int, int], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename : str, optional
                 保存するファイル名のベース。デフォルトは"ratio"。
@@ -232,7 +233,7 @@ class TransferFunctionCalculator:
         cls,
         file_path: str,
         gas_configs: list[tuple[str, str, str, str]],
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_basename: str = "all_tf_curves",
         col_datetime: str = "Date",
         add_xlabel: bool = True,
@@ -259,7 +260,7 @@ class TransferFunctionCalculator:
                 ガスごとの設定のリスト。各タプルは以下の要素を含む:
                 (係数のカラム名, ガスの表示ラベル, 平均線の色, 出力ファイル用のガス名)
                 例: [("a_ch4-used", "CH$_4$", "red", "ch4")]
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 出力ディレクトリ。Noneの場合は保存しない。
             output_basename : str, optional
                 出力ファイル名のベース。デフォルトは"all_tf_curves"。
@@ -385,7 +386,7 @@ class TransferFunctionCalculator:
         reference_name: str,
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_basename: str = "tf",
         show_fig: bool = True,
         add_xlabel: bool = True,
@@ -408,7 +409,7 @@ class TransferFunctionCalculator:
                 ターゲットの名前。
             figsize : tuple[int, int], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_basename : str, optional
                 保存するファイル名のベース。デフォルトは"tf"。

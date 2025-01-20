@@ -18,6 +18,15 @@ class MonthlyConverter:
         self,
         directory: str | Path,
         file_pattern: str = "SA.Ultra.*.xlsx",
+        na_values: list[str] = [
+            "#DIV/0!",
+            "#VALUE!",
+            "#REF!",
+            "#N/A",
+            "#NAME?",
+            "NAN",
+            "nan",
+        ],
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -30,6 +39,8 @@ class MonthlyConverter:
                 Excelファイルが格納されているディレクトリのパス
             file_pattern : str
                 ファイル名のパターン。デフォルトは'SA.Ultra.*.xlsx'。
+            na_values : list[str]
+                NaNと判定する値のパターン。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
@@ -41,6 +52,7 @@ class MonthlyConverter:
             log_level = DEBUG
         self.logger: Logger = MonthlyConverter.setup_logger(logger, log_level)
 
+        self._na_values: list[str] = na_values
         self._directory = Path(directory)
         if not self._directory.exists():
             raise NotADirectoryError(f"Directory not found: {self._directory}")
@@ -206,14 +218,7 @@ class MonthlyConverter:
                         sheet_name=sheet_name,
                         header=header,
                         skiprows=skiprows,
-                        na_values=[
-                            "#DIV/0!",
-                            "#VALUE!",
-                            "#REF!",
-                            "#N/A",
-                            "#NAME?",
-                            "NAN",
-                        ],
+                        na_values=self._na_values,
                     )
                     # 年と月を追加
                     df["year"] = file_date.year

@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy import signal
+from typing import Literal
 
 
 class SpectrumCalculator:
@@ -42,6 +43,8 @@ class SpectrumCalculator:
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
+        detrend_1st: bool = True,
+        detrend_2nd: bool = False,
         apply_lag_correction_to_col2: bool = True,
         lag_second: float | None = None,
     ) -> tuple:
@@ -62,6 +65,10 @@ class SpectrumCalculator:
                 等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
             scaling : str
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
+            detrend_1st : bool, optional
+                1次トレンドを除去するかどうか。デフォルトはTrue。
+            detrend_2nd : bool, optional
+                2次トレンドを除去するかどうか。デフォルトはFalse。
             apply_lag_correction_to_col2 : bool, optional
                 col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
             lag_second : float | None, optional
@@ -85,6 +92,8 @@ class SpectrumCalculator:
             frequency_weighted=frequency_weighted,
             interpolate_points=interpolate_points,
             scaling=scaling,
+            detrend_1st=detrend_1st,
+            detrend_2nd=detrend_2nd,
             apply_lag_correction_to_col2=apply_lag_correction_to_col2,
             lag_second=lag_second,
         )
@@ -98,6 +107,8 @@ class SpectrumCalculator:
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
+        detrend_1st: bool = True,
+        detrend_2nd: bool = False,
         apply_lag_correction_to_col2: bool = True,
         lag_second: float | None = None,
     ) -> tuple:
@@ -118,6 +129,10 @@ class SpectrumCalculator:
                 等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
             scaling : str
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
+            detrend_1st : bool, optional
+                1次トレンドを除去するかどうか。デフォルトはTrue。
+            detrend_2nd : bool, optional
+                2次トレンドを除去するかどうか。デフォルトはFalse。
             apply_lag_correction_to_col2 : bool, optional
                 col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
             lag_second : float | None, optional
@@ -158,8 +173,13 @@ class SpectrumCalculator:
             )
 
         # トレンド除去
-        data1 = SpectrumCalculator._detrend(data=data1, first=True)
-        data2 = SpectrumCalculator._detrend(data=data2, first=True)
+        if detrend_1st or detrend_2nd:
+            data1 = SpectrumCalculator._detrend(
+                data=data1, first=detrend_1st, second=detrend_2nd
+            )
+            data2 = SpectrumCalculator._detrend(
+                data=data2, first=detrend_1st, second=detrend_2nd
+            )
 
         # 相関係数の計算
         corr_coef: float = np.corrcoef(data1, data2)[0, 1]
@@ -225,6 +245,8 @@ class SpectrumCalculator:
         frequency_weighted: bool = True,
         interpolate_points: bool = True,
         scaling: str = "spectrum",
+        detrend_1st: bool = True,
+        detrend_2nd: bool = False,
     ) -> tuple:
         """
         指定されたcolに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
@@ -242,6 +264,10 @@ class SpectrumCalculator:
                 等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。
             scaling : str, optional
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
+            detrend_1st : bool, optional
+                1次トレンドを除去するかどうか。デフォルトはTrue。
+            detrend_2nd : bool, optional
+                2次トレンドを除去するかどうか。デフォルトはFalse。
 
         Returns:
         ------
@@ -258,7 +284,11 @@ class SpectrumCalculator:
 
         # データの取得とトレンド除去
         data: np.ndarray = np.array(self._df[col].values)
-        data = SpectrumCalculator._detrend(data)
+        # どちらか一方でもTrueの場合は適用
+        if detrend_1st or detrend_2nd:
+            data = SpectrumCalculator._detrend(
+                data=data, first=detrend_1st, second=detrend_2nd
+            )
 
         # welchメソッドでパワースペクトル計算
         freqs, power_spectrum = signal.welch(
@@ -394,13 +424,15 @@ class SpectrumCalculator:
         return detrended_data
 
     @staticmethod
-    def _generate_window_function(type: str, data_length: int) -> np.ndarray:
+    def _generate_window_function(
+        type: Literal["hanning", "hamming", "blackman"], data_length: int
+    ) -> np.ndarray:
         """
         指定された種類の窓関数を適用する
 
         Parameters:
         ------
-            type : str
+            type : Literal['hanning', 'hamming', 'blackman']
                 窓関数の種類 ('hanning', 'hamming', 'blackman')
             data_length : int
                 データ長
@@ -415,15 +447,11 @@ class SpectrumCalculator:
             - 指定された種類の窓関数を適用し、numpy配列として返す
             - 無効な種類が指定された場合、警告を表示しHann窓を適用する
         """
-        if type == "hanning":
-            return np.hanning(data_length)
-        elif type == "hamming":
+        if type == "hamming":
             return np.hamming(data_length)
         elif type == "blackman":
             return np.blackman(data_length)
-        else:
-            print('Warning: Invalid argument "type". Return hanning window.')
-            return np.hanning(data_length)
+        return np.hanning(data_length)
 
     @staticmethod
     def _smooth_spectrum(
