@@ -9,10 +9,25 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from PIL import Image
 from PIL.ImageFile import ImageFile
+from pathlib import Path
+from typing import Literal, Mapping
 from datetime import datetime
+from dataclasses import dataclass
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.figure_utils import FigureUtils
 from ..commons.hotspot_data import HotspotData, HotspotType
+
+
+@dataclass
+class DefaultColumnNames:
+    """デフォルトのカラム名定義"""
+
+    DATETIME: str = "Date"
+    WIND_DIRECTION: str = "Wind direction"
+    WIND_SPEED: str = "WS vector"
+    FRICTION_VELOCITY: str = "u*"
+    SIGMA_V: str = "sigmaV"
+    STABILITY: str = "z/L"
 
 
 class FluxFootprintAnalyzer:
@@ -32,13 +47,27 @@ class FluxFootprintAnalyzer:
     """
 
     EARTH_RADIUS_METER: int = 6371000  # 地球の半径（メートル）
+    # クラス内部で生成するカラム名
+    COL_FFA_IS_WEEKDAY = "ffa_is_weekday"
+    COL_FFA_RADIAN = "ffa_radian"
+    COL_FFA_WIND_DIR_360 = "ffa_wind_direction_360"
 
     def __init__(
         self,
         z_m: float,
+        na_values: list[str] = [
+            "#DIV/0!",
+            "#VALUE!",
+            "#REF!",
+            "#N/A",
+            "#NAME?",
+            "NAN",
+            "nan",
+        ],
+        column_mapping: Mapping[str, str] | None = None,
         labelsize: float = 20,
         ticksize: float = 16,
-        plot_params=None,
+        plot_params: dict[str, any] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -49,28 +78,43 @@ class FluxFootprintAnalyzer:
         ------
             z_m : float
                 測定の高さ（メートル単位）。
+            na_values : list[str]
+                NaNと判定する値のパターン。
+            column_mapping : Mapping[str, str] | None, optional
+                入力データのカラム名とデフォルトカラム名のマッピング
+                例: {
+                    "wind_dir": "WIND_DIRECTION",
+                    "ws": "WIND_SPEED",
+                    "ustar": "FRICTION_VELOCITY",
+                    "sigma_v": "SIGMA_V",
+                    "stability": "STABILITY",
+                    "timestamp": "DATETIME",
+                }
             labelsize : float
                 軸ラベルのフォントサイズ。デフォルトは20。
             ticksize : float
                 軸目盛りのフォントサイズ。デフォルトは16。
-            plot_params : Optional[Dict[str, any]]
+            plot_params : dict[str, any] | None
                 matplotlibのプロットパラメータを指定する辞書。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを生成します。
             logging_debug : bool
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
-        # 定数や共通の変数
-        self._required_columns: list[str] = [
-            "Date",
-            "WS vector",
-            "u*",
-            "z/L",
-            "Wind direction",
-            "sigmaV",
-        ]  # 必要なカラムの名前
-        self._col_weekday: str = "ffa_is_weekday"  # クラスで生成するカラムのキー名
+        # デフォルトのカラム名を設定
+        self._default_cols = DefaultColumnNames()
+        # カラム名マッピングの作成
+        self._cols = self._create_column_mapping(column_mapping)
+        # 必須カラムのリストを作成
+        self._required_columns = [
+            self._cols[self._default_cols.WIND_DIRECTION],
+            self._cols[self._default_cols.WIND_SPEED],
+            self._cols[self._default_cols.FRICTION_VELOCITY],
+            self._cols[self._default_cols.SIGMA_V],
+            self._cols[self._default_cols.STABILITY],
+        ]
         self._z_m: float = z_m  # 測定高度
+        self._na_values: list[str] = na_values
         # 状態を管理するフラグ
         self._got_satellite_image: bool = False
 
@@ -83,6 +127,75 @@ class FluxFootprintAnalyzer:
         if logging_debug:
             log_level = DEBUG
         self.logger: Logger = FluxFootprintAnalyzer.setup_logger(logger, log_level)
+
+    def _create_column_mapping(
+        self, mapping: Mapping[str, str] | None
+    ) -> Mapping[str, str]:
+        """カラム名マッピングを作成"""
+        if mapping is None:
+            # マッピングが指定されていない場合はデフォルト値をそのまま使用
+            return {
+                self._default_cols.DATETIME: self._default_cols.DATETIME,
+                self._default_cols.WIND_DIRECTION: self._default_cols.WIND_DIRECTION,
+                self._default_cols.WIND_SPEED: self._default_cols.WIND_SPEED,
+                self._default_cols.FRICTION_VELOCITY: self._default_cols.FRICTION_VELOCITY,
+                self._default_cols.SIGMA_V: self._default_cols.SIGMA_V,
+                self._default_cols.STABILITY: self._default_cols.STABILITY,
+            }
+
+        # デフォルトのマッピングを作成
+        result = {
+            self._default_cols.DATETIME: self._default_cols.DATETIME,
+            self._default_cols.WIND_DIRECTION: self._default_cols.WIND_DIRECTION,
+            self._default_cols.WIND_SPEED: self._default_cols.WIND_SPEED,
+            self._default_cols.FRICTION_VELOCITY: self._default_cols.FRICTION_VELOCITY,
+            self._default_cols.SIGMA_V: self._default_cols.SIGMA_V,
+            self._default_cols.STABILITY: self._default_cols.STABILITY,
+        }
+
+        # 指定されたマッピングで上書き
+        for input_col, default_col in mapping.items():
+            if hasattr(self._default_cols, default_col):
+                result[getattr(self._default_cols, default_col)] = input_col
+            else:
+                self.logger.warning(f"Unknown default column name: {default_col}")
+
+        return result
+
+    def check_required_columns(
+        self,
+        df: pd.DataFrame,
+        col_datetime: str | None = None,
+    ) -> bool:
+        """
+        必須カラムの存在チェック
+
+        Parameters
+        ----------
+            df : pd.DataFrame
+                チェック対象のデータフレーム
+            col_datetime : str | None
+                日時カラム名（指定された場合はチェックから除外）
+
+        Returns
+        -------
+            bool
+                すべての必須カラムが存在する場合True
+        """
+        check_columns: list[str] = [
+            col for col in self._required_columns if col != col_datetime
+        ]
+
+        missing_columns = [col for col in check_columns if col not in df.columns]
+
+        if missing_columns:
+            self.logger.error(
+                f"Required columns are missing: {missing_columns}"
+                f"\nAvailable columns: {df.columns.tolist()}"
+            )
+            return False
+
+        return True
 
     @staticmethod
     def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
@@ -158,15 +271,22 @@ class FluxFootprintAnalyzer:
             - 返却される座標は測定タワーを原点(0,0)とした相対位置です
             - すべての距離はメートル単位で表されます
             - 正のx値は東方向、正のy値は北方向を示します
+            Required columns (default names):
+                - Wind direction: 風向 (度)
+                - WS vector: 風速 (m/s)
+                - u*: 摩擦速度 (m/s)
+                - sigmaV: 風速の標準偏差 (m/s)
+                - z/L: 安定度パラメータ (無次元)
         """
-        df: pd.DataFrame = df.copy()
+        col_weekday: str = self.COL_FFA_IS_WEEKDAY
+        df_internal: pd.DataFrame = df.copy()
 
         # インデックスがdatetimeであることを確認し、必要に応じて変換
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df.index = pd.to_datetime(df.index)
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal.index = pd.to_datetime(df_internal.index)
 
         # DatetimeIndexから直接dateプロパティにアクセス
-        datelist: np.ndarray = np.array(df.index.date)
+        datelist: np.ndarray = np.array(df_internal.index.date)
 
         # 各日付が平日かどうかを判定し、リストに格納
         numbers: list[int] = [
@@ -174,10 +294,10 @@ class FluxFootprintAnalyzer:
         ]
 
         # col_weekdayに基づいてデータフレームに平日情報を追加
-        df.loc[:, self._col_weekday] = numbers  # .locを使用して値を設定
+        df_internal.loc[:, col_weekday] = numbers  # .locを使用して値を設定
 
         # 値が1のもの(平日)をコピーする
-        data_weekday: pd.DataFrame = df[df[self._col_weekday] == 1].copy()
+        data_weekday: pd.DataFrame = df_internal[df_internal[col_weekday] == 1].copy()
         # 特定の時間帯を抽出
         data_weekday = data_weekday.between_time(
             start_time, end_time
@@ -186,27 +306,42 @@ class FluxFootprintAnalyzer:
 
         directions: list[float] = [
             wind_direction if wind_direction >= 0 else wind_direction + 360
-            for wind_direction in data_weekday["Wind direction"]
+            for wind_direction in data_weekday[
+                self._cols[self._default_cols.WIND_DIRECTION]
+            ]
         ]
 
-        data_weekday.loc[:, "Wind direction_360"] = directions
-        data_weekday.loc[:, "radian"] = data_weekday["Wind direction_360"] / 180 * np.pi
+        data_weekday.loc[:, self.COL_FFA_WIND_DIR_360] = directions
+        data_weekday.loc[:, self.COL_FFA_RADIAN] = (
+            data_weekday[self.COL_FFA_WIND_DIR_360] / 180 * np.pi
+        )
 
         # 風向が欠測なら除去
-        data_weekday = data_weekday.dropna(subset=["Wind direction", col_flux])
+        data_weekday = data_weekday.dropna(
+            subset=[self._cols[self._default_cols.WIND_DIRECTION], col_flux]
+        )
 
         # 数値型への変換を確実に行う
-        numeric_columns: list[str] = ["u*", "WS vector", "sigmaV", "z/L"]
+        numeric_columns: list[str] = [
+            self._cols[self._default_cols.FRICTION_VELOCITY],
+            self._cols[self._default_cols.WIND_SPEED],
+            self._cols[self._default_cols.SIGMA_V],
+            self._cols[self._default_cols.STABILITY],
+        ]
         for col in numeric_columns:
             data_weekday[col] = pd.to_numeric(data_weekday[col], errors="coerce")
 
         # 地面修正量dの計算
         z_m: float = self._z_m
-        Z_d: float = FluxFootprintAnalyzer._calculate_ground_correction(
+        z_d: float = FluxFootprintAnalyzer._calculate_ground_correction(
             z_m=z_m,
-            wind_speed=data_weekday["WS vector"].values,
-            friction_velocity=data_weekday["u*"].values,
-            stability_parameter=data_weekday["z/L"].values,
+            wind_speed=data_weekday[self._cols[self._default_cols.WIND_SPEED]].values,
+            friction_velocity=data_weekday[
+                self._cols[self._default_cols.FRICTION_VELOCITY]
+            ].values,
+            stability_parameter=data_weekday[
+                self._cols[self._default_cols.STABILITY]
+            ].values,
         )
 
         x_list: list[float] = []
@@ -215,13 +350,14 @@ class FluxFootprintAnalyzer:
 
         # tqdmを使用してプログレスバーを表示
         for i in tqdm(range(len(data_weekday)), desc="Calculating footprint"):
-            dUstar: float = data_weekday["u*"].iloc[i]
-            dU: float = data_weekday["WS vector"].iloc[i]
-            sigmaV: float = data_weekday["sigmaV"].iloc[i]
-            dzL: float = data_weekday["z/L"].iloc[i]
+            dUstar: float = data_weekday[self._cols[self._default_cols.FRICTION_VELOCITY]].iloc[i]
+            dU: float = data_weekday[self._cols[self._default_cols.WIND_SPEED]].iloc[i]
+            sigmaV: float = data_weekday[self._cols[self._default_cols.SIGMA_V]].iloc[i]
+            dzL: float = data_weekday[self._cols[self._default_cols.STABILITY]].iloc[i]
+
 
             if pd.isna(dUstar) or pd.isna(dU) or pd.isna(sigmaV) or pd.isna(dzL):
-                self.logger.warning(f"#N/A fields are exist.: i = {i}")
+                self.logger.warning(f"NaN fields are exist.: i = {i}")
                 continue
             elif dUstar < 5.0 and dUstar != 0.0 and dU > 0.1:
                 phi_m, phi_c, n = FluxFootprintAnalyzer._calculate_stability_parameters(
@@ -229,13 +365,13 @@ class FluxFootprintAnalyzer:
                 )
                 m, U, r, mu, ksi = (
                     FluxFootprintAnalyzer._calculate_footprint_parameters(
-                        dUstar=dUstar, dU=dU, Z_d=Z_d, phi_m=phi_m, phi_c=phi_c, n=n
+                        dUstar=dUstar, dU=dU, z_d=z_d, phi_m=phi_m, phi_c=phi_c, n=n
                     )
                 )
 
                 # 80%ソースエリアの計算
                 x80: float = FluxFootprintAnalyzer._source_area_KM2001(
-                    ksi=ksi, mu=mu, dU=dU, sigmaV=sigmaV, Z_d=Z_d, max_ratio=0.8
+                    ksi=ksi, mu=mu, dU=dU, sigmaV=sigmaV, z_d=z_d, max_ratio=0.8
                 )
 
                 if not np.isnan(x80):
@@ -251,7 +387,7 @@ class FluxFootprintAnalyzer:
                         plot_count=plot_count,
                     )
                     x1_, y1_ = FluxFootprintAnalyzer._rotate_coordinates(
-                        x=x1, y=y1, radian=data_weekday["radian"].iloc[i]
+                        x=x1, y=y1, radian=data_weekday[self.COL_FFA_RADIAN].iloc[i]
                     )
 
                     x_list.extend(x1_)
@@ -265,7 +401,10 @@ class FluxFootprintAnalyzer:
         )
 
     def combine_all_data(
-        self, data_source: str | pd.DataFrame, source_type: str = "csv", **kwargs
+        self,
+        data_source: str | pd.DataFrame,
+        col_datetime: str = "Date",
+        source_type: Literal["csv", "monthly"] = "csv",
     ) -> pd.DataFrame:
         """
         CSVファイルまたはMonthlyConverterからのデータを統合します
@@ -274,41 +413,43 @@ class FluxFootprintAnalyzer:
         ------
             data_source : str | pd.DataFrame
                 CSVディレクトリパスまたはDataFrame
+            col_datetime :str
+                datetimeカラムのカラム名。デフォルトは"Date"。
             source_type : str
                 "csv" または "monthly"
-            **kwargs :
-                追加パラメータ
-                - sheet_names : list[str]
-                    Monthlyの場合のシート名
-                - start_date : str
-                    開始日
-                - end_date : str
-                    終了日
 
         Returns:
         ------
             pd.DataFrame
                 処理済みのデータフレーム
         """
+        col_weekday: str = self.COL_FFA_IS_WEEKDAY
         if source_type == "csv":
             # 既存のCSV処理ロジック
-            return self._combine_all_csv(data_source)
+            return self._combine_all_csv(
+                csv_dir_path=data_source, col_datetime=col_datetime
+            )
         elif source_type == "monthly":
             # MonthlyConverterからのデータを処理
             if not isinstance(data_source, pd.DataFrame):
                 raise ValueError("monthly形式の場合、DataFrameを直接渡す必要があります")
 
-            df = data_source.copy()
+            df: pd.DataFrame = data_source.copy()
 
             # required_columnsからDateを除外して欠損値チェックを行う
-            check_columns = [col for col in self._required_columns if col != "Date"]
+            check_columns: list[str] = [
+                col for col in self._required_columns if col != col_datetime
+            ]
 
             # インデックスがdatetimeであることを確認
-            if not isinstance(df.index, pd.DatetimeIndex) and "Date" not in df.columns:
-                raise ValueError("DatetimeIndexまたはDateカラムが必要です")
+            if (
+                not isinstance(df.index, pd.DatetimeIndex)
+                and col_datetime not in df.columns
+            ):
+                raise ValueError(f"DatetimeIndexまたは{col_datetime}カラムが必要です")
 
-            if "Date" in df.columns:
-                df.set_index("Date", inplace=True)
+            if col_datetime in df.columns:
+                df.set_index(col_datetime, inplace=True)
 
             # 必要なカラムの存在確認
             missing_columns = [
@@ -323,7 +464,7 @@ class FluxFootprintAnalyzer:
                 )
 
             # 平日/休日の判定用カラムを追加
-            df[self._col_weekday] = df.index.map(FluxFootprintAnalyzer.is_weekday)
+            df[col_weekday] = df.index.map(FluxFootprintAnalyzer.is_weekday)
 
             # Dateを除外したカラムで欠損値の処理
             df = df.dropna(subset=check_columns)
@@ -332,8 +473,6 @@ class FluxFootprintAnalyzer:
             df = df.loc[~df.index.duplicated(), :]
 
             return df
-        else:
-            raise ValueError("source_typeは'csv'または'monthly'である必要があります")
 
     def get_satellite_image_from_api(
         self,
@@ -401,7 +540,7 @@ class FluxFootprintAnalyzer:
             return image
         except requests.RequestException as e:
             self.logger.error(f"衛星画像の取得に失敗しました: {str(e)}")
-            raise
+            raise e
 
     def get_satellite_image_from_local(
         self,
@@ -437,7 +576,7 @@ class FluxFootprintAnalyzer:
             )
 
         # 画像を読み込む
-        image = Image.open(local_image_path)
+        image: ImageFile = Image.open(local_image_path)
 
         # 白黒変換が指定されている場合
         if grayscale:
@@ -474,7 +613,7 @@ class FluxFootprintAnalyzer:
         reduce_c_function: callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -514,7 +653,7 @@ class FluxFootprintAnalyzer:
                 経度方向の補正係数（デフォルトは1）。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -576,7 +715,7 @@ class FluxFootprintAnalyzer:
         legend_bbox_to_anchor: tuple[float, float] = (0.55, -0.01),
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -636,7 +775,7 @@ class FluxFootprintAnalyzer:
                 緯度方向の補正係数（デフォルトは1）。
             lon_correction : float, optional
                 経度方向の補正係数（デフォルトは1）。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -860,7 +999,7 @@ class FluxFootprintAnalyzer:
         if add_legend and hotspots and spot_handles:
             ax_data.legend(
                 handles=spot_handles,
-                loc="upper center",  # 位置を上部中央に
+                loc="upper center",
                 bbox_to_anchor=legend_bbox_to_anchor,  # 図の下に配置
                 ncol=len(spot_handles),  # ハンドルの数に応じて列数を設定
             )
@@ -901,7 +1040,7 @@ class FluxFootprintAnalyzer:
         reduce_c_function: callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | None = None,
+        output_dir: str | Path | None = None,
         output_filename: str = "footprint-scale_checker.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -949,7 +1088,7 @@ class FluxFootprintAnalyzer:
                 経度方向の補正係数（デフォルトは1）。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
-            output_dir : str | None, optional
+            output_dir : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -1046,7 +1185,9 @@ class FluxFootprintAnalyzer:
             xy_max=xy_max,
         )
 
-    def _combine_all_csv(self, csv_dir_path: str, suffix: str = ".csv") -> pd.DataFrame:
+    def _combine_all_csv(
+        self, csv_dir_path: str, col_datetime: str, suffix: str = ".csv"
+    ) -> pd.DataFrame:
         """
         指定されたディレクトリ内の全CSVファイルを読み込み、処理し、結合します。
         Monthlyシートを結合することを想定しています。
@@ -1055,6 +1196,8 @@ class FluxFootprintAnalyzer:
         ------
             csv_dir_path : str
                 CSVファイルが格納されているディレクトリのパス。
+            col_datetime : str
+                datetimeカラムのカラム名。
             suffix : str, optional
                 読み込むファイルの拡張子。デフォルトは".csv"。
 
@@ -1067,6 +1210,7 @@ class FluxFootprintAnalyzer:
         ------
             - ディレクトリ内に少なくとも1つのCSVファイルが必要です。
         """
+        col_weekday: str = self.COL_FFA_IS_WEEKDAY
         csv_files = [f for f in os.listdir(csv_dir_path) if f.endswith(suffix)]
         if not csv_files:
             raise ValueError("指定されたディレクトリにCSVファイルが見つかりません。")
@@ -1074,7 +1218,9 @@ class FluxFootprintAnalyzer:
         df_array: list[pd.DataFrame] = []
         for csv_file in csv_files:
             file_path: str = os.path.join(csv_dir_path, csv_file)
-            df: pd.DataFrame = self._prepare_csv(file_path)
+            df: pd.DataFrame = self._prepare_csv(
+                file_path=file_path, col_datetime=col_datetime
+            )
             df_array.append(df)
 
         # 結合
@@ -1082,13 +1228,13 @@ class FluxFootprintAnalyzer:
         df_combined = df_combined.loc[~df_combined.index.duplicated(), :]
 
         # 平日と休日の判定に使用するカラムを作成
-        df_combined[self._col_weekday] = df_combined.index.map(
+        df_combined[col_weekday] = df_combined.index.map(
             FluxFootprintAnalyzer.is_weekday
         )  # 共通の関数を使用
 
         return df_combined
 
-    def _prepare_csv(self, file_path: str) -> pd.DataFrame:
+    def _prepare_csv(self, file_path: str,col_datetime:str) -> pd.DataFrame:
         """
         フラックスデータを含むCSVファイルを読み込み、処理します。
 
@@ -1096,6 +1242,8 @@ class FluxFootprintAnalyzer:
         ------
             file_path : str
                 CSVファイルのパス。
+            col_datetime : str
+                datetimeカラムのカラム名。
 
         Returns:
         ------
@@ -1111,7 +1259,7 @@ class FluxFootprintAnalyzer:
             file_path,
             header=None,
             skiprows=2,
-            na_values=["#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NAME?", "NAN"],
+            na_values=self._na_values,
             low_memory=False,
         )
         # 取得したヘッダーをデータフレームに設定
@@ -1126,15 +1274,15 @@ class FluxFootprintAnalyzer:
                 f"必要なカラムが不足しています: {', '.join(missing_columns)}"
             )
 
-        # "Date"カラムをインデックスに設定して返却
-        df["Date"] = pd.to_datetime(df["Date"])
-        df = df.dropna(subset=["Date"])
-        df.set_index("Date", inplace=True)
+        # {col_datetime}カラムをインデックスに設定して返却
+        df[col_datetime] = pd.to_datetime(df[col_datetime])
+        df = df.dropna(subset=[col_datetime])
+        df.set_index(col_datetime, inplace=True)
         return df
 
     @staticmethod
     def _calculate_footprint_parameters(
-        dUstar: float, dU: float, Z_d: float, phi_m: float, phi_c: float, n: float
+        dUstar: float, dU: float, z_d: float, phi_m: float, phi_c: float, n: float
     ) -> tuple[float, float, float, float, float]:
         """
         フットプリントパラメータを計算します。
@@ -1145,7 +1293,7 @@ class FluxFootprintAnalyzer:
                 摩擦速度
             dU : float
                 風速
-            Z_d : float
+            z_d : float
                 地面修正後の測定高度
             phi_m : float
                 運動量の安定度関数
@@ -1166,12 +1314,12 @@ class FluxFootprintAnalyzer:
         KARMAN: float = 0.4  # フォン・カルマン定数
         # パラメータの計算
         m: float = dUstar / KARMAN * phi_m / dU
-        U: float = dU / pow(Z_d, m)
+        U: float = dU / pow(z_d, m)
         r: float = 2.0 + m - n
         mu: float = (1.0 + m) / r
-        kz: float = KARMAN * dUstar * Z_d / phi_c
-        k: float = kz / pow(Z_d, n)
-        ksi: float = U * pow(Z_d, r) / r / r / k
+        kz: float = KARMAN * dUstar * z_d / phi_c
+        k: float = kz / pow(z_d, n)
+        ksi: float = U * pow(z_d, r) / r / r / k
         return m, U, r, mu, ksi
 
     @staticmethod
@@ -1463,7 +1611,7 @@ class FluxFootprintAnalyzer:
         mu: float,
         dU: float,
         sigmaV: float,
-        Z_d: float,
+        z_d: float,
         max_ratio: float = 0.8,
     ) -> float:
         """
@@ -1482,7 +1630,7 @@ class FluxFootprintAnalyzer:
                 風速の変化率
             sigmaV : float
                 風速の標準偏差
-            Z_d : float
+            z_d : float
                 ゼロ面変位高度
             max_ratio : float, optional
                 寄与率の最大値。デフォルトは0.8。
@@ -1523,7 +1671,7 @@ class FluxFootprintAnalyzer:
 
             if dx > 1.0:
                 dx = 1.0  # 一気に、1 m 以上はインクリメントしない
-            if x1 > Z_d * 1000.0:
+            if x1 > z_d * 1000.0:
                 break  # ソースエリアが測定高度の1000倍以上となった場合、エラーとして止める
 
         x_dst: float = x1  # 寄与率が80%に達するまでの積算距離
