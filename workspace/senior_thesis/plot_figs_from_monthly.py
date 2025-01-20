@@ -62,7 +62,7 @@ output_dir = (
 plot_turbulences: bool = False
 plot_spectra: bool = False
 plot_spectra_two: bool = False
-plot_timeseries: bool = False
+plot_timeseries: bool = True
 plot_diurnals: bool = False
 diurnal_subplot_fontsize: float = 36
 plot_scatter: bool = False
@@ -177,12 +177,17 @@ if __name__ == "__main__":
             df=df_combined,
             output_dir=os.path.join(output_dir, "tests"),
             output_filename="timeseries-g2401_ultra-11.png",
-            col_g2401_flux="Fch4_picaro",
-            col_ultra_flux="Fch4_ultra",
-            y_lim=(10, 60),
+            cols_flux=["Fch4_picaro", "Fch4_ultra"],
+            labels=["G2401", "Ultra"],
+            colors=["blue", "red"],
+            # y_lim=(10, 60),
             start_date="2024-10-01",
             end_date="2024-11-30",
             show_ci=False,
+            apply_ma=False,
+            x_interval="10days",  # "month"または"10days"を指定
+            save_fig=True,
+            show_fig=False,
         )
         mfg.logger.info("'timeseries'を作成しました。")
 
@@ -554,11 +559,21 @@ if __name__ == "__main__":
             )
             mfg.logger.info("'sources'を作成しました。")
 
+        flux_data = {
+            "G2401": df_month["Fch4_picaro"],
+            "Ultra": df_month["Fch4_ultra"],
+        }
+        colors = {
+            "G2401": "blue",
+            "Ultra": "red",
+        }
         MonthlyFiguresGenerator.plot_flux_distributions(
-            g2401_flux=df_month["Fch4_picaro"],
-            ultra_flux=df_month["Fch4_ultra"],
+            flux_data=flux_data,
             month=month,
             output_dir=os.path.join(output_dir, "tests"),
+            colors=colors,
+            output_filename="flux_distribution_month_{month}.png",
+            show_fig=False,
         )
 
     # 2ヶ月毎
@@ -701,7 +716,7 @@ if __name__ == "__main__":
                 label_bio=source_mono_config["label_bio"],
                 label_gas=source_mono_config["label_gas"],
                 add_legend=(tag == "fall"),
-                print_summary=True,
+                print_summary=False,
             )
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_season,

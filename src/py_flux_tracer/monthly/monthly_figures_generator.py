@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from tqdm import tqdm
 from pathlib import Path
+from typing import Literal
 from scipy import linalg, stats
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
@@ -384,6 +385,8 @@ class MonthlyFiguresGenerator:
                 開始日（YYYY-MM-DD形式）
             end_date : str | None
                 終了日（YYYY-MM-DD形式）
+            figsize : tuple[float, float]
+                図のサイズ。デフォルトは(16, 6)。
         """
         # 出力ディレクトリの作成
         os.makedirs(output_dir, exist_ok=True)
@@ -397,21 +400,35 @@ class MonthlyFiguresGenerator:
 
         # 日付範囲の処理
         if start_date is not None:
-            start_dt = pd.to_datetime(start_date)
-            if start_dt < df.index.min():
+            start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
+            df_min_date = (
+                df.index.normalize().min().normalize()
+            )  # 日付のみの比較のため正規化
+
+            # データの最小日付が指定開始日より後の場合にのみ警告
+            if df_min_date.date() > start_dt.date():
                 self.logger.warning(
-                    f"指定された開始日{start_date}がデータの開始日{df.index.min():%Y-%m-%d}より前です。"
+                    f"指定された開始日{start_date}がデータの開始日{df_min_date.strftime('%Y-%m-%d')}より前です。"
                     f"データの開始日を使用します。"
                 )
-                start_dt = df.index.min()
+                start_dt = df_min_date
         else:
-            start_dt = df.index.min()
+            start_dt = df.index.normalize().min()
 
         if end_date is not None:
-            end_dt = pd.to_datetime(end_date)
-            if end_dt > df.index.max():
+            end_dt = (
+                pd.to_datetime(end_date).normalize()
+                + pd.Timedelta(days=1)
+                - pd.Timedelta(seconds=1)
+            )
+            df_max_date = (
+                df.index.normalize().max().normalize()
+            )  # 日付のみの比較のため正規化
+
+            # データの最大日付が指定終了日より前の場合にのみ警告
+            if df_max_date.date() < pd.to_datetime(end_date).date():
                 self.logger.warning(
-                    f"指定された終了日{end_date}がデータの終了日{df.index.max():%Y-%m-%d}より後です。"
+                    f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
                 )
                 end_dt = df.index.max()
@@ -500,8 +517,9 @@ class MonthlyFiguresGenerator:
         self,
         df: pd.DataFrame,
         output_dir: str,
-        col_g2401_flux: str,
-        col_ultra_flux: str,
+        cols_flux: list[str],
+        labels: list[str],
+        colors: list[str],
         output_filename: str = "ch4_flux_comparison.png",
         col_datetime: str = "Date",
         window_size: int = 24 * 7,  # 1週間の移動平均のデフォルト値
@@ -509,15 +527,17 @@ class MonthlyFiguresGenerator:
         subplot_label: str | None = None,
         subplot_fontsize: int = 20,
         show_ci: bool = True,
-        color_bio: str = "blue",
-        color_gas: str = "red",
         y_lim: tuple[float, float] | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         figsize: tuple[float, float] = (12, 6),
         legend_loc: str = "upper right",
+        apply_ma: bool = True,  # 移動平均を適用するかどうか
+        x_interval: Literal["month", "10days"] = "month",  # "month" または "10days"
+        save_fig: bool = True,
+        show_fig: bool = False,
     ) -> None:
-        """G2401とUltraによるCH4フラックスの時系列比較プロット
+        """複数のCH4フラックスの時系列比較プロット
 
         Parameters:
         ------
@@ -525,10 +545,12 @@ class MonthlyFiguresGenerator:
                 データフレーム
             output_dir : str
                 出力ディレクトリのパス
-            col_g2401_flux : str
-                G2401のCH4フラックスのカラム名
-            col_ultra_flux : str
-                UltraのCH4フラックスのカラム名
+            cols_flux : list[str]
+                比較するフラックスのカラム名リスト
+            labels : list[str]
+                凡例に表示する各フラックスのラベルリスト
+            colors : list[str]
+                各フラックスの色リスト
             output_filename : str
                 出力ファイル名
             col_datetime : str
@@ -553,6 +575,14 @@ class MonthlyFiguresGenerator:
                 図のサイズ
             legend_loc : str
                 凡例の位置
+            apply_ma : bool
+                移動平均を適用するかどうか
+            x_interval : Literal['month', '10days']
+                x軸の目盛り間隔。"month"（月初めのみ）または"10days"（10日刻み）
+            save_fig : bool
+                図を保存するかどうか
+            show_fig : bool
+                図を表示するかどうか
         """
         # 出力ディレクトリの作成
         os.makedirs(output_dir, exist_ok=True)
@@ -564,23 +594,37 @@ class MonthlyFiguresGenerator:
             df[col_datetime] = pd.to_datetime(df[col_datetime])
             df.set_index(col_datetime, inplace=True)
 
-        # 日付範囲の処理（既存のコードと同様）
+        # 日付範囲の処理
         if start_date is not None:
-            start_dt = pd.to_datetime(start_date)
-            if start_dt < df.index.min():
+            start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
+            df_min_date = (
+                df.index.normalize().min().normalize()
+            )  # 日付のみの比較のため正規化
+
+            # データの最小日付が指定開始日より後の場合にのみ警告
+            if df_min_date.date() > start_dt.date():
                 self.logger.warning(
-                    f"指定された開始日{start_date}がデータの開始日{df.index.min():%Y-%m-%d}より前です。"
+                    f"指定された開始日{start_date}がデータの開始日{df_min_date.strftime('%Y-%m-%d')}より前です。"
                     f"データの開始日を使用します。"
                 )
-                start_dt = df.index.min()
+                start_dt = df_min_date
         else:
-            start_dt = df.index.min()
+            start_dt = df.index.normalize().min()
 
         if end_date is not None:
-            end_dt = pd.to_datetime(end_date)
-            if end_dt > df.index.max():
+            end_dt = (
+                pd.to_datetime(end_date).normalize()
+                + pd.Timedelta(days=1)
+                - pd.Timedelta(seconds=1)
+            )
+            df_max_date = (
+                df.index.normalize().max().normalize()
+            )  # 日付のみの比較のため正規化
+
+            # データの最大日付が指定終了日より前の場合にのみ警告
+            if df_max_date.date() < pd.to_datetime(end_date).date():
                 self.logger.warning(
-                    f"指定された終了日{end_date}がデータの終了日{df.index.max():%Y-%m-%d}より後です。"
+                    f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
                 )
                 end_dt = df.index.max()
@@ -591,30 +635,22 @@ class MonthlyFiguresGenerator:
         mask = (df.index >= start_dt) & (df.index <= end_dt)
         df = df[mask]
 
-        # 移動平均の計算（既存の関数を使用）
-        g2401_mean, g2401_lower, g2401_upper = calculate_rolling_stats(
-            df[col_g2401_flux], window_size, confidence_interval
-        )
-        ultra_mean, ultra_lower, ultra_upper = calculate_rolling_stats(
-            df[col_ultra_flux], window_size, confidence_interval
-        )
-
         # プロットの作成
         fig, ax = plt.subplots(figsize=figsize)
 
-        # G2401データのプロット
-        ax.plot(df.index, g2401_mean, color_bio, label="G2401", alpha=0.7)
-        if show_ci:
-            ax.fill_between(
-                df.index, g2401_lower, g2401_upper, color=color_bio, alpha=0.2
-            )
-
-        # Ultraデータのプロット
-        ax.plot(df.index, ultra_mean, color_gas, label="Ultra", alpha=0.7)
-        if show_ci:
-            ax.fill_between(
-                df.index, ultra_lower, ultra_upper, color=color_gas, alpha=0.2
-            )
+        # 各フラックスのプロット
+        for flux_col, label, color in zip(cols_flux, labels, colors):
+            if apply_ma:
+                # 移動平均の計算
+                mean, lower, upper = calculate_rolling_stats(
+                    df[flux_col], window_size, confidence_interval
+                )
+                ax.plot(df.index, mean, color, label=label, alpha=0.7)
+                if show_ci:
+                    ax.fill_between(df.index, lower, upper, color=color, alpha=0.2)
+            else:
+                # 生データのプロット
+                ax.plot(df.index, df[flux_col], color, label=label, alpha=0.7)
 
         # プロットの設定
         if subplot_label:
@@ -638,19 +674,31 @@ class MonthlyFiguresGenerator:
 
         # x軸の設定
         ax.set_xlim(start_dt, end_dt)
-        ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
 
-        # カスタムフォーマッタの作成（数字を通常フォントで表示）
+        if x_interval == "month":
+            # 月初めにメジャー線のみ表示
+            ax.xaxis.set_major_locator(mdates.MonthLocator())
+            ax.xaxis.set_minor_locator(plt.NullLocator())  # マイナー線を非表示
+        elif x_interval == "10days":
+            # 10日刻みでメジャー線、日毎にマイナー線を表示
+            ax.xaxis.set_major_locator(mdates.DayLocator(bymonthday=[1, 11, 21]))
+            ax.xaxis.set_minor_locator(mdates.DayLocator())
+            ax.grid(True, which="minor", alpha=0.1)  # マイナー線の表示設定
+
+        # カスタムフォーマッタの作成（MMのみ表示）
         def date_formatter(x, p):
             date = mdates.num2date(x)
             return f"{date.strftime('%m')}"
 
         ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
-        ax.xaxis.set_minor_locator(mdates.MonthLocator())
-        plt.setp(ax.xaxis.get_majorticklabels(), ha="right")
+        plt.setp(ax.xaxis.get_majorticklabels(), ha="right", rotation=0)
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+
+        if save_fig:
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        if show_fig:
+            plt.show()
         plt.close(fig)
 
     def plot_c1c2_fluxes_diurnal_patterns(
@@ -2003,6 +2051,27 @@ class MonthlyFiguresGenerator:
 
                 # 都市ガス起源の統計
                 gas_flux = hourly_means["ch4_gas"]
+                bio_flux = hourly_means["ch4_bio"]
+
+                # 昼夜の時間帯を定義
+                daytime_range: list[int] = [6, 19]  # m~n時の場合、[m ,(n+1)]と定義
+                daytime_hours = range(daytime_range[0], daytime_range[1])
+                nighttime_hours = list(range(0, daytime_range[0])) + list(
+                    range(daytime_range[1], 24)
+                )
+
+                # 昼間の統計
+                daytime_gas = gas_flux[daytime_hours]
+                daytime_bio = bio_flux[daytime_hours]
+                daytime_total = daytime_gas + daytime_bio
+                daytime_ratio = (daytime_gas.sum() / daytime_total.sum()) * 100
+
+                # 夜間の統計
+                nighttime_gas = gas_flux[nighttime_hours]
+                nighttime_bio = bio_flux[nighttime_hours]
+                nighttime_total = nighttime_gas + nighttime_bio
+                nighttime_ratio = (nighttime_gas.sum() / nighttime_total.sum()) * 100
+
                 print("\n都市ガス起源:")
                 print(f"  平均値: {gas_flux.mean():.2f}")
                 print(f"  最小値: {gas_flux.min():.2f} (Hour: {gas_flux.idxmin()})")
@@ -2011,6 +2080,12 @@ class MonthlyFiguresGenerator:
                     print(f"  最大/最小比: {gas_flux.max() / gas_flux.min():.2f}")
                 print(
                     f"  全体に占める割合: {(gas_flux.sum() / (gas_flux.sum() + hourly_means['ch4_bio'].sum()) * 100):.1f}%"
+                )
+                print(
+                    f"  昼間（{daytime_range[0]}~{daytime_range[1] - 1}時）の割合: {daytime_ratio:.1f}%"
+                )
+                print(
+                    f"  夜間（{daytime_range[1] - 1}~{daytime_range[0]}時）の割合: {nighttime_ratio:.1f}%"
                 )
 
                 # 生物起源の統計
@@ -3004,78 +3079,92 @@ class MonthlyFiguresGenerator:
 
     @staticmethod
     def plot_flux_distributions(
-        g2401_flux: pd.Series,
-        ultra_flux: pd.Series,
+        flux_data: dict[str, pd.Series],
         month: int,
-        output_dir: str,
+        output_dir: str | Path | None = None,
+        output_filename: str = "flux_distribution.png",
+        colors: dict[str, str] | None = None,
         xlim: tuple[float, float] = (-50, 200),
-        bandwidth: float = 1.0,  # デフォルト値を1.0に設定
+        bandwidth: float = 1.0,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
-        """
-        両測器のCH4フラックス分布を可視化
+        """複数のフラックスデータの分布を可視化
 
         Parameters:
         ------
-            g2401_flux : pd.Series
-                G2401で測定されたフラックス値の配列
-            ultra_flux : pd.Series
-                Ultraで測定されたフラックス値の配列
+            flux_data : dict[str, pd.Series]
+                各測器のフラックスデータを格納した辞書
+                キー: 測器名, 値: フラックスデータ
             month : int
                 測定月
-            output_dir : str
-                出力ディレクトリ
+            output_dir : str | Path | None
+                出力ディレクトリ。指定しない場合はデフォルトのディレクトリに保存されます。
+            output_filename : str
+                出力ファイル名。デフォルトは"flux_distribution.png"です。
+            colors : dict[str, str] | None
+                各測器の色を指定する辞書。指定がない場合は自動で色を割り当てます。
             xlim : tuple[float, float]
-                x軸の範囲（タプル）
+                x軸の範囲。デフォルトは(-50, 200)です。
             bandwidth : float
-                カーネル密度推定のバンド幅調整係数（デフォルト: 1.0）
+                カーネル密度推定のバンド幅調整係数。デフォルトは1.0です。
+            save_fig : bool
+                図を保存するかどうか。デフォルトはTrueです。
+            show_fig : bool
+                図を表示するかどうか。デフォルトはTrueです。
         """
-        # nanを除去
-        g2401_flux = g2401_flux.dropna()
-        ultra_flux = ultra_flux.dropna()
+        # デフォルトの色を設定
+        default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        if colors is None:
+            colors = {
+                name: default_colors[i % len(default_colors)]
+                for i, name in enumerate(flux_data.keys())
+            }
 
-        plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 6))
 
-        # KDEプロット（確率密度推定）
-        sns.kdeplot(
-            data=g2401_flux,
-            label="G2401",
-            color="blue",
-            alpha=0.5,
-            bw_adjust=bandwidth,
-        )
-        sns.kdeplot(
-            data=ultra_flux, label="Ultra", color="red", alpha=0.5, bw_adjust=bandwidth
-        )
+        # 統計情報を格納する辞書
+        stats_info = {}
 
-        # 平均値と中央値のマーカー
-        plt.axvline(
-            g2401_flux.mean(),
-            color="blue",
-            linestyle="--",
-            alpha=0.5,
-            label="G2401 mean",
-        )
-        plt.axvline(
-            ultra_flux.mean(),
-            color="red",
-            linestyle="--",
-            alpha=0.5,
-            label="Ultra mean",
-        )
-        plt.axvline(
-            np.median(g2401_flux),
-            color="blue",
-            linestyle=":",
-            alpha=0.5,
-            label="G2401 median",
-        )
-        plt.axvline(
-            np.median(ultra_flux),
-            color="red",
-            linestyle=":",
-            alpha=0.5,
-            label="Ultra median",
-        )
+        # 各測器のデータをプロット
+        for i, (name, flux) in enumerate(flux_data.items()):
+            # nanを除去
+            flux = flux.dropna()
+            color = colors.get(name, default_colors[i % len(default_colors)])
+
+            # KDEプロット
+            sns.kdeplot(
+                data=flux,
+                label=name,
+                color=color,
+                alpha=0.5,
+                bw_adjust=bandwidth,
+            )
+
+            # 平均値と中央値のマーカー
+            mean_val = flux.mean()
+            median_val = np.median(flux)
+            plt.axvline(
+                mean_val,
+                color=color,
+                linestyle="--",
+                alpha=0.5,
+                label=f"{name} mean",
+            )
+            plt.axvline(
+                median_val,
+                color=color,
+                linestyle=":",
+                alpha=0.5,
+                label=f"{name} median",
+            )
+
+            # 統計情報を保存
+            stats_info[name] = {
+                "mean": mean_val,
+                "median": median_val,
+                "std": flux.std(),
+            }
 
         # 軸ラベルとタイトル
         plt.xlabel(r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
@@ -3088,21 +3177,21 @@ class MonthlyFiguresGenerator:
         # グリッド表示
         plt.grid(True, alpha=0.3)
 
-        # 統計情報
-        stats_text = (
-            f"G2401:\n"
-            f"  Mean: {g2401_flux.mean():.2f}\n"
-            f"  Median: {np.median(g2401_flux):.2f}\n"
-            f"  Std: {g2401_flux.std():.2f}\n"
-            f"Ultra:\n"
-            f"  Mean: {ultra_flux.mean():.2f}\n"
-            f"  Median: {np.median(ultra_flux):.2f}\n"
-            f"  Std: {ultra_flux.std():.2f}"
-        )
+        # 統計情報のテキスト作成
+        stats_text = ""
+        for name, stats_item in stats_info.items():
+            stats_text += (
+                f"{name}:\n"
+                f"  Mean: {stats_item['mean']:.2f}\n"
+                f"  Median: {stats_item['median']:.2f}\n"
+                f"  Std: {stats_item['std']:.2f}\n"
+            )
+
+        # 統計情報の表示
         plt.text(
             0.02,
             0.98,
-            stats_text,
+            stats_text.rstrip(),  # 最後の改行を削除
             transform=plt.gca().transAxes,
             verticalalignment="top",
             fontsize=10,
@@ -3111,13 +3200,21 @@ class MonthlyFiguresGenerator:
 
         # 凡例の表示
         plt.legend(loc="upper right")
+        plt.tight_layout()
 
         # グラフの保存
-        os.makedirs(output_dir, exist_ok=True)
-        plt.tight_layout()
-        plt.savefig(
-            os.path.join(output_dir, f"flux_distribution_month_{month}.png"),
-            dpi=300,
-            bbox_inches="tight",
-        )
-        plt.close()
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                )
+            os.makedirs(output_dir, exist_ok=True)
+            plt.savefig(
+                os.path.join(output_dir, f"{output_filename.format(month=month)}"),
+                dpi=300,
+                bbox_inches="tight",
+            )
+        if show_fig:
+            plt.show()
+        else:
+            plt.close(fig=fig)
