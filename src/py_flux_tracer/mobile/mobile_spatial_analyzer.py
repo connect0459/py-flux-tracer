@@ -165,6 +165,34 @@ class EmissionData:
 
 
 @dataclass
+class HotspotParameters:
+    """ホットスポット解析のパラメータ設定
+
+    Parameters
+    ----------
+    CH4_PPM : str
+        CH4濃度を示すカラム名
+    C2H6_PPB : str
+        C2H6濃度を示すカラム名
+    H2O_PPM : str
+        H2O濃度を示すカラム名
+    CH4_THRESHOLD : float
+        CH4の閾値
+    C2H6_THRESHOLD : float
+        C2H6の閾値
+    USE_QUANTILE : bool
+        5パーセンタイルを使用するかどうかのフラグ
+    """
+    
+    CH4_PPM: str = "ch4_ppm"
+    C2H6_PPB: str = "c2h6_ppb"
+    H2O_PPM: str = "h2o_ppm"
+    CH4_THRESHOLD: float = 0.05
+    C2H6_THRESHOLD: float = 0.0
+    USE_QUANTILE: bool = True
+
+
+@dataclass
 class MSAInputConfig:
     """入力ファイルの設定を保持するデータクラス
 
@@ -270,6 +298,7 @@ class MobileSpatialAnalyzer:
         ch4_enhance_threshold: float = 0.1,
         correlation_threshold: float = 0.7,
         hotspot_area_meter: float = 50,
+        hotspot_params: HotspotParameters | None = None,
         window_minutes: float = 5,
         column_mapping: dict[str, str] = {
             "Time Stamp": "timestamp",
@@ -302,6 +331,8 @@ class MobileSpatialAnalyzer:
                 相関係数の閾値。デフォルトは0.7。
             hotspot_area_meter : float
                 ホットスポットの検出に使用するエリアの半径（メートル）。デフォルトは50メートル。
+            hotspot_params : HotspotParameters | None, optional
+                ホットスポット解析のパラメータ設定
             window_minutes : float
                 移動窓の大きさ（分）。デフォルトは5分。
             column_mapping : dict[str, str]
@@ -331,7 +362,8 @@ class MobileSpatialAnalyzer:
         self._correlation_threshold: float = correlation_threshold
         self._hotspot_area_meter: float = hotspot_area_meter
         self._column_mapping: dict[str, str] = column_mapping
-        self._na_values:list[str] = na_values
+        self._na_values: list[str] = na_values
+        self._hotspot_params = hotspot_params or HotspotParameters()
         self._num_sections: int = num_sections
         # セクションの範囲
         section_size: float = 360 / num_sections
@@ -351,6 +383,16 @@ class MobileSpatialAnalyzer:
         self._data: dict[str, pd.DataFrame] = self._load_all_data(
             normalized_input_configs
         )
+
+    @property
+    def hotspot_params(self) -> HotspotParameters:
+        """ホットスポット解析のパラメータ設定を取得"""
+        return self._hotspot_params
+
+    @hotspot_params.setter
+    def hotspot_params(self, params: HotspotParameters) -> None:
+        """ホットスポット解析のパラメータ設定を更新"""
+        self._hotspot_params = params
 
     def analyze_delta_ch4_stats(self, hotspots: list[HotspotData]) -> None:
         """
@@ -389,7 +431,7 @@ class MobileSpatialAnalyzer:
 
     def analyze_hotspots(
         self,
-        duplicate_check_mode: str = "none",
+        duplicate_check_mode: Literal["none", "time_window", "time_all"] = "none",
         min_time_threshold_seconds: float = 300,
         max_time_threshold_hours: float = 12,
     ) -> list[HotspotData]:
@@ -398,7 +440,7 @@ class MobileSpatialAnalyzer:
 
         Parameters:
         ------
-            duplicate_check_mode : str
+            duplicate_check_mode : Literal["none", "time_window", "time_all"]
                 重複チェックのモード（"none","time_window","time_all"）。
                 - "none": 重複チェックを行わない。
                 - "time_window": 指定された時間窓内の重複のみを除外。
@@ -413,25 +455,26 @@ class MobileSpatialAnalyzer:
             list[HotspotData]
                 検出されたホットスポットのリスト。
         """
-        # 不正な入力値に対するエラーチェック
-        valid_modes = {"none", "time_window", "time_all"}
-        if duplicate_check_mode not in valid_modes:
-            raise ValueError(
-                f"無効な重複チェックモード: {duplicate_check_mode}. 有効な値は {valid_modes} です。"
-            )
-
         all_hotspots: list[HotspotData] = []
+        params: HotspotParameters = self._hotspot_params
 
         # 各データソースに対して解析を実行
         for _, df in self._data.items():
             # パラメータの計算
             df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
-                df, self._window_size
+                df=df,
+                window_size=self._window_size,
+                col_ch4_ppm=params.CH4_PPM,
+                col_c2h6_ppb=params.C2H6_PPB,
+                col_h2o_ppm=params.H2O_PPM,
+                ch4_threshold=params.CH4_THRESHOLD,
+                c2h6_threshold=params.C2H6_THRESHOLD,
+                use_quantile=params.USE_QUANTILE,
             )
 
             # ホットスポットの検出
             hotspots: list[HotspotData] = self._detect_hotspots(
-                df,
+                df=df,
                 ch4_enhance_threshold=self._ch4_enhance_threshold,
             )
             all_hotspots.extend(hotspots)
@@ -440,7 +483,7 @@ class MobileSpatialAnalyzer:
         if duplicate_check_mode != "none":
             unique_hotspots = MobileSpatialAnalyzer.remove_hotspots_duplicates(
                 all_hotspots,
-                check_time_all=duplicate_check_mode == "time_all",
+                check_time_all=(duplicate_check_mode == "time_all"),
                 min_time_threshold_seconds=min_time_threshold_seconds,
                 max_time_threshold_hours=max_time_threshold_hours,
                 hotspot_area_meter=self._hotspot_area_meter,
@@ -456,6 +499,8 @@ class MobileSpatialAnalyzer:
         self,
         print_individual_stats: bool = True,
         print_total_stats: bool = True,
+        col_latitude: str = "latitude",
+        col_longitude: str = "longitude",
     ) -> tuple[float, timedelta]:
         """
         各ファイルの測定時間と走行距離を計算し、合計を返します。
@@ -466,6 +511,10 @@ class MobileSpatialAnalyzer:
                 個別ファイルの統計を表示するかどうか。デフォルトはTrue。
             print_total_stats : bool
                 合計統計を表示するかどうか。デフォルトはTrue。
+            col_latitude : str
+                緯度情報が格納されているカラム名。デフォルトは"latitude"。
+            col_longitude : str
+                経度情報が格納されているカラム名。デフォルトは"longitude"。
 
         Returns:
         ------
@@ -486,8 +535,8 @@ class MobileSpatialAnalyzer:
             # 距離の計算
             distance_km = 0.0
             for i in range(len(df) - 1):
-                lat1, lon1 = df.iloc[i][["latitude", "longitude"]]
-                lat2, lon2 = df.iloc[i + 1][["latitude", "longitude"]]
+                lat1, lon1 = df.iloc[i][[col_latitude, col_longitude]]
+                lat2, lon2 = df.iloc[i + 1][[col_latitude, col_longitude]]
                 distance_km += (
                     MobileSpatialAnalyzer._calculate_distance(
                         lat1=lat1, lon1=lon1, lat2=lat2, lon2=lon2
@@ -537,6 +586,7 @@ class MobileSpatialAnalyzer:
         hotspots: list[HotspotData],
         output_dir: str | Path | None = None,
         output_filename: str = "hotspots_map.html",
+        center_marker_color: str = "green",
         center_marker_label: str = "Center",
         plot_center_marker: bool = True,
         radius_meters: float = 3000,
@@ -553,6 +603,8 @@ class MobileSpatialAnalyzer:
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"hotspots_map"。
+            center_marker_color : str
+                中心を示すマーカーのラベルカラー。デフォルトは"green"。
             center_marker_label : str
                 中心を示すマーカーのラベルテキスト。デフォルトは"Center"。
             plot_center_marker : bool
@@ -618,7 +670,7 @@ class MobileSpatialAnalyzer:
             folium.Marker(
                 [self._center_lat, self._center_lon],
                 popup=center_marker_label,
-                icon=folium.Icon(color="green", icon="info-sign"),
+                icon=folium.Icon(color=center_marker_color, icon="info-sign"),
             ).add_to(m)
 
         # 区画の境界線を描画
@@ -708,8 +760,9 @@ class MobileSpatialAnalyzer:
             raise ValueError(
                 "output_dirが指定されていません。有効なディレクトリパスを指定してください。"
             )
+        os.makedirs(output_dir, exist_ok=True)
         output_path: str = os.path.join(output_dir, output_filename)
-        df = pd.DataFrame(records)
+        df: pd.DataFrame = pd.DataFrame(records)
         df.to_csv(output_path, index=False)
         self.logger.info(
             f"ホットスポット情報をCSVファイルに出力しました: {output_path}"
@@ -739,9 +792,9 @@ class MobileSpatialAnalyzer:
             'Pico100121_241017_092120+'
         """
         # Pathオブジェクトに変換
-        path_obj = Path(path)
+        path_obj: Path = Path(path)
         # stem属性で拡張子なしのファイル名を取得
-        source_name = path_obj.stem
+        source_name: str = path_obj.stem
         return source_name
 
     def get_preprocessed_data(
@@ -757,12 +810,20 @@ class MobileSpatialAnalyzer:
                 前処理済みの結合されたDataFrame
         """
         processed_dfs: list[pd.DataFrame] = []
+        params: HotspotParameters = self._hotspot_params
 
         # 各データソースに対して解析を実行
         for source_name, df in self._data.items():
             # パラメータの計算
             processed_df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
-                df, self._window_size
+                df=df,
+                window_size=self._window_size,
+                col_ch4_ppm=params.CH4_PPM,
+                col_c2h6_ppb=params.C2H6_PPB,
+                col_h2o_ppm=params.H2O_PPM,
+                ch4_threshold=params.CH4_THRESHOLD,
+                c2h6_threshold=params.C2H6_THRESHOLD,
+                use_quantile=params.USE_QUANTILE,
             )
             # ソース名を列として追加
             processed_df["source"] = source_name
@@ -772,7 +833,7 @@ class MobileSpatialAnalyzer:
         if not processed_dfs:
             raise ValueError("処理対象のデータが存在しません。")
 
-        combined_df = pd.concat(processed_dfs, axis=0)
+        combined_df: pd.DataFrame = pd.concat(processed_dfs, axis=0)
         return combined_df
 
     def get_section_size(self) -> float:
@@ -1627,12 +1688,12 @@ class MobileSpatialAnalyzer:
     def _calculate_hotspots_parameters(
         df: pd.DataFrame,
         window_size: int,
-        col_ch4_ppm: str = "ch4_ppm",
-        col_c2h6_ppb: str = "c2h6_ppb",
-        col_h2o_ppm: str = "h2o_ppm",
-        ch4_threshold: float = 0.05,
-        c2h6_threshold: float = 0.0,
-        use_quantile: bool = True,
+        col_ch4_ppm: str,
+        col_c2h6_ppb: str,
+        col_h2o_ppm: str,
+        ch4_threshold: float,
+        c2h6_threshold: float,
+        use_quantile: bool,
     ) -> pd.DataFrame:
         """
         ホットスポットのパラメータを計算します。

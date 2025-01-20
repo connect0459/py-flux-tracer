@@ -6,6 +6,7 @@ from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
 from .mobile.correcting_utils import CorrectingUtils, CORRECTION_TYPES_PATTERN
 from .mobile.mobile_spatial_analyzer import (
     EmissionData,
+    HotspotParameters,
     MobileSpatialAnalyzer,
     MSAInputConfig,
 )
@@ -48,6 +49,7 @@ __all__ = [
     "CorrectingUtils",
     "CORRECTION_TYPES_PATTERN",
     "EmissionData",
+    "HotspotParameters",
     "MobileSpatialAnalyzer",
     "MSAInputConfig",
     "MonthlyConverter",
