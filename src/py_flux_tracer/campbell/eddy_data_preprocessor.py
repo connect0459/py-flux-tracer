@@ -49,12 +49,12 @@ class EddyDataPreprocessor:
         各成分のキーは`edp_wind_u`、`edp_wind_v`、`edp_wind_w`である。
 
         Parameters
-        -----
+        ------
             df : pd.DataFrame
                 風速データを含むDataFrame
 
         Returns
-        -----
+        ------
             pd.DataFrame
                 水平風速u、v、鉛直風速wの列を追加したDataFrame
         """
@@ -118,14 +118,14 @@ class EddyDataPreprocessor:
         plot_range_tuple: tuple = (-50, 200),
         print_results: bool = True,
         skiprows: list[int] = [0, 2, 3],
-        use_resampling: bool = True,
+        resample_in_processing: bool = False,
     ) -> dict[str, float]:
         """
         遅れ時間（ラグ）の統計分析を行い、指定されたディレクトリ内のデータファイルを処理します。
         解析結果とメタデータはCSVファイルとして出力されます。
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             input_dir : str
                 入力データファイルが格納されているディレクトリのパス。
             figsize : tuple[float, float]
@@ -152,13 +152,13 @@ class EddyDataPreprocessor:
                 結果をコンソールに表示するかどうか。
             skiprows : list[int]
                 スキップする行番号のリスト。
-            use_resampling : bool
-                データをリサンプリングするかどうか。
+            resample_in_processing : bool
+                データを遅れ時間の計算中にリサンプリングするかどうか。
                 inputするファイルが既にリサンプリング済みの場合はFalseでよい。
-                デフォルトはTrue。
+                デフォルトはFalse。
 
-        Returns:
-        -----
+        Returns
+        ----------
             dict[str, float]
                 各変数の遅れ時間（平均値を採用）を含む辞書。
         """
@@ -181,7 +181,7 @@ class EddyDataPreprocessor:
 
         for file in tqdm(csv_files, desc="Calculating"):
             path: str = os.path.join(input_dir, file)
-            if use_resampling:
+            if resample_in_processing:
                 df, _ = self.get_resampled_df(
                     filepath=path, metadata_rows=metadata_rows, skiprows=skiprows
                 )
@@ -273,12 +273,12 @@ class EddyDataPreprocessor:
         クラス内部で生成されるカラム名を取得する。
 
         Parameters
-        -------
+        ----------
             print : bool
                 print()で表示するか。デフォルトはTrue。
 
         Returns
-        -------
+        ----------
             list[str]
                 生成されるカラム名のリスト。
         """
@@ -334,8 +334,8 @@ class EddyDataPreprocessor:
         6. 欠損値(NaN)を前後の値から線形補間する
         7. DateTimeインデックスを削除する
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             filepath : str
                 読み込むCSVファイルのパス
             index_column : str, optional
@@ -354,8 +354,8 @@ class EddyDataPreprocessor:
             is_already_resampled : bool
                 既にリサンプリング&欠損補間されているか。Trueの場合はfloat変換などの処理のみ適用する。
 
-        Returns:
-        -----
+        Returns
+        ----------
             tuple[pd.DataFrame, list[str]]
                 前処理済みのデータフレームとメタデータのリスト。
         """
@@ -460,8 +460,8 @@ class EddyDataPreprocessor:
         相関係数やC2H6/CH4比を計算してDataFrameに保存します。
         リサンプリングと欠損値補完は`get_resampled_df`と同様のロジックを使用します。
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             input_dir : str
                 入力CSVファイルが格納されているディレクトリのパス。
             resampled_dir : str
@@ -495,8 +495,8 @@ class EddyDataPreprocessor:
             skiprows : list[int]
                 読み飛ばす行のインデックスリスト。デフォルトは[0, 2, 3]。
 
-        Raises:
-        -----
+        Raises
+        ----------
             OSError
                 ディレクトリの作成に失敗した場合。
             FileNotFoundError
@@ -619,8 +619,8 @@ class EddyDataPreprocessor:
         指定された基準変数（col1）と比較変数のリスト（col2_list）の間の遅れ時間（ディレイ）を計算する。
         周波数が10Hzでcol1がcol2より10.0秒遅れている場合は、+100がインデックスとして取得される
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             df : pd.DataFrame
                 遅れ時間の計算に使用するデータフレーム
             col1 : str
@@ -628,8 +628,8 @@ class EddyDataPreprocessor:
             col2_list : list[str]
                 比較変数の列名のリスト
 
-        Returns:
-        -----
+        Returns
+        ----------
             list[int]
                 各比較変数に対する遅れ時間（ディレイ）のリスト
         """
@@ -660,8 +660,8 @@ class EddyDataPreprocessor:
         """
         指定されたディレクトリ内のファイルを、ファイル名に含まれる数字に基づいてソートして返す。
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             directory : str
                 ファイルが格納されているディレクトリのパス
             pattern : str
@@ -669,8 +669,8 @@ class EddyDataPreprocessor:
             suffix : str
                 ファイルの拡張子
 
-        Returns:
-        -----
+        Returns
+        ----------
             list[str]
                 ソートされたファイル名のリスト
         """
@@ -690,8 +690,8 @@ class EddyDataPreprocessor:
         """
         風速のu成分とv成分を計算する関数
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             x_array : numpy.ndarray
                 x方向の風速成分の配列
             y_array : numpy.ndarray
@@ -699,8 +699,8 @@ class EddyDataPreprocessor:
             wind_dir : float
                 水平成分の風向（ラジアン）
 
-        Returns:
-        -----
+        Returns
+        ----------
             tuple[numpy.ndarray, numpy.ndarray]
                 u成分とv成分のタプル
         """
@@ -731,15 +731,15 @@ class EddyDataPreprocessor:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
-        -----
+        Returns
+        ----------
             Logger
                 設定されたロガーオブジェクト。
         """
@@ -766,14 +766,14 @@ class EddyDataPreprocessor:
         """
         鉛直方向の座標回転を行い、u, wを求める関数
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             u_array (numpy.ndarray): u方向の風速
             w_array (numpy.ndarray): w方向の風速
             wind_inc (float): 平均風向に対する迎角（ラジアン）
 
-        Returns:
-        -----
+        Returns
+        ----------
             tuple[numpy.ndarray, numpy.ndarray]: 回転後のu, w
         """
         # 迎角を用いて鉛直方向に座標回転
@@ -788,14 +788,14 @@ class EddyDataPreprocessor:
         """
         水平方向の平均風向を計算する関数
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             x_array (numpy.ndarray): 西方向の風速成分
             y_array (numpy.ndarray): 南北方向の風速成分
             correction_angle (float): 風向補正角度（ラジアン）。デフォルトは0.0。CSAT3の場合は0.0を指定。
 
-        Returns:
-        -----
+        Returns
+        ----------
             wind_direction (float): 風向 (radians)
         """
         wind_direction: float = np.arctan2(np.mean(y_array), np.mean(x_array))
@@ -808,13 +808,13 @@ class EddyDataPreprocessor:
         """
         平均風向に対する迎角を計算する関数
 
-        Parameters:
-        -----
+        Parameters
+        ----------
             u_array (numpy.ndarray): u方向の瞬間風速
             w_array (numpy.ndarray): w方向の瞬間風速
 
-        Returns:
-        -----
+        Returns
+        ----------
             wind_inc (float): 平均風向に対する迎角（ラジアン）
         """
         wind_inc: float = np.arctan2(np.mean(w_array), np.mean(u_array))

@@ -15,7 +15,7 @@ if __name__ == "__main__":
     edp.analyze_lag_times(
         input_dir=input_dir,
         input_files_suffix=".csv",
-        use_resampling=False,
+        resample_in_processing=False,
         col1="edp_wind_w",
         col2_list=["Tv", "Ultra_CH4_ppm_C", "Ultra_C2H6_ppb"],
         output_dir=output_dir,

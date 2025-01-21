@@ -10,8 +10,8 @@ class HotspotData:
     """
     ホットスポットの情報を保持するデータクラス
 
-    Parameters:
-    ------
+    Parameters
+    ----------
         source : str
             データソース
         angle : float

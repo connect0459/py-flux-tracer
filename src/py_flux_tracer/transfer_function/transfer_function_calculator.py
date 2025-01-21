@@ -24,8 +24,8 @@ class TransferFunctionCalculator:
         """
         TransferFunctionCalculatorクラスのコンストラクタ。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_path : str
                 分析対象のCSVファイルのパス。
             col_freq : str
@@ -46,15 +46,15 @@ class TransferFunctionCalculator:
         """
         伝達関数の係数を計算する。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col_reference : str
                 参照データのカラム名。
             col_target : str
                 ターゲットデータのカラム名。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[float, float, pandas.DataFrame]
                 伝達関数の係数aとその標準誤差、および計算に用いたDataFrame。
         """
@@ -98,8 +98,8 @@ class TransferFunctionCalculator:
         """
         2種類のコスペクトルをプロットする。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col1 : str
                 1つ目のコスペクトルデータのカラム名。
             col2 : str
@@ -190,8 +190,8 @@ class TransferFunctionCalculator:
         """
         ターゲットと参照の比率をプロットする。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df_processed : pd.DataFrame
                 処理されたデータフレーム。
             reference_name : str
@@ -252,8 +252,8 @@ class TransferFunctionCalculator:
         各ガスのデータをCSVファイルから読み込み、指定された設定に基づいてプロットを生成します。
         プロットはオプションで保存することも可能です。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_path : str
                 伝達関数の係数が格納されたCSVファイルのパス。
             gas_configs : list[tuple[str, str, str, str]]
@@ -397,8 +397,8 @@ class TransferFunctionCalculator:
         """
         伝達関数とそのフィットをプロットする。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             a : float
                 伝達関数の係数。
             df_processed : pd.DataFrame
@@ -456,15 +456,15 @@ class TransferFunctionCalculator:
         """
         指定されたキーに基づいてデータを処理する。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col_reference : str
                 参照データのカラム名。
             col_target : str
                 ターゲットデータのカラム名。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 処理されたデータフレーム。
         """
@@ -503,13 +503,13 @@ class TransferFunctionCalculator:
         """
         カットオフ周波数に基づいてDataFrameを加工するメソッド
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 加工対象のデータフレーム。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 カットオフ周波数に基づいて加工されたデータフレーム。
         """
@@ -523,15 +523,15 @@ class TransferFunctionCalculator:
         """
         伝達関数を計算する。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x : np.ndarray
                 周波数の配列。
             a : float
                 伝達関数の係数。
 
-        Returns:
-        ------
+        Returns
+        ----------
             np.ndarray
                 伝達関数の値。
         """
@@ -542,13 +542,13 @@ class TransferFunctionCalculator:
         """
         CSVファイルからデータを読み込む。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_path : str
                 csvファイルのパス。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 読み込まれたデータフレーム。
         """

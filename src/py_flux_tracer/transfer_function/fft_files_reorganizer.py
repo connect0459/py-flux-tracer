@@ -41,8 +41,8 @@ class FftFileReorganizer:
         """
         FftFileReorganizerクラスを初期化します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             input_dir : str
                 入力ファイルが格納されているディレクトリのパス
             output_dir : str
@@ -107,8 +107,8 @@ class FftFileReorganizer:
         有効なファイルを適切な出力ディレクトリにコピーします。
         フラグファイルの時間と完全に一致するファイルのみを処理します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             valid_files : list
                 コピーする有効なファイル名のリスト
         """
@@ -146,12 +146,12 @@ class FftFileReorganizer:
         """
         入力ディレクトリから有効なファイルのリストを取得します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
         なし
 
-        Returns:
-        ------
+        Returns
+        ----------
             valid_files : list
                 日時でソートされた有効なファイル名のリスト
         """
@@ -169,18 +169,18 @@ class FftFileReorganizer:
         """
         ファイル名から日時情報を抽出します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             filename : str
                 解析対象のファイル名
 
-        Returns:
-        ------
+        Returns
+        ----------
             datetime : datetime
                 抽出された日時情報
 
-        Raises:
-        ------
+        Raises
+        ----------
             ValueError
                 ファイル名から日時情報を抽出できない場合
         """
@@ -248,15 +248,15 @@ class FftFileReorganizer:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
-        ------
+        Returns
+        ----------
             Logger
                 設定されたロガーオブジェクト。
         """

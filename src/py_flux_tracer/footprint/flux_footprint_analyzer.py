@@ -74,8 +74,8 @@ class FluxFootprintAnalyzer:
         """
         衛星画像を用いて FluxFootprintAnalyzer を初期化します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             z_m : float
                 測定の高さ（メートル単位）。
             na_values : list[str]
@@ -178,7 +178,7 @@ class FluxFootprintAnalyzer:
                 日時カラム名（指定された場合はチェックから除外）
 
         Returns
-        -------
+        ----------
             bool
                 すべての必須カラムが存在する場合True
         """
@@ -209,15 +209,15 @@ class FluxFootprintAnalyzer:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
-        ------
+        Returns
+        ----------
             Logger
                 設定されたロガーオブジェクト。
         """
@@ -246,8 +246,8 @@ class FluxFootprintAnalyzer:
         """
         フラックスフットプリントを計算し、指定された時間帯のデータを基に可視化します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 分析対象のデータフレーム。フラックスデータを含む。
             col_flux : str
@@ -259,15 +259,15 @@ class FluxFootprintAnalyzer:
             end_time : str, optional
                 フットプリント計算に使用する終了時間。デフォルトは"16:00"。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[list[float], list[float], list[float]]:
                 x座標 (メートル): タワーを原点とした東西方向の距離
                 y座標 (メートル): タワーを原点とした南北方向の距離
                 対象スカラー量の値: 各地点でのフラックス値
 
-        Notes:
-        ------
+        Notes
+        ----------
             - 返却される座標は測定タワーを原点(0,0)とした相対位置です
             - すべての距離はメートル単位で表されます
             - 正のx値は東方向、正のy値は北方向を示します
@@ -409,8 +409,8 @@ class FluxFootprintAnalyzer:
         """
         CSVファイルまたはMonthlyConverterからのデータを統合します
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             data_source : str | pd.DataFrame
                 CSVディレクトリパスまたはDataFrame
             col_datetime :str
@@ -418,8 +418,8 @@ class FluxFootprintAnalyzer:
             source_type : str
                 "csv" または "monthly"
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 処理済みのデータフレーム
         """
@@ -487,8 +487,8 @@ class FluxFootprintAnalyzer:
         """
         Google Maps Static APIを使用して衛星画像を取得します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             api_key : str
                 Google Maps Static APIのキー。
             center_lat : float
@@ -504,13 +504,13 @@ class FluxFootprintAnalyzer:
             zoom : int, optional
                 ズームレベル（0-21）。デフォルトは13。
 
-        Returns:
-        ------
+        Returns
+        ----------
             ImageFile
                 取得した衛星画像
 
-        Raises:
-        ------
+        Raises
+        ----------
             requests.RequestException
                 API呼び出しに失敗した場合
         """
@@ -551,8 +551,8 @@ class FluxFootprintAnalyzer:
         """
         ローカルファイルから衛星画像を読み込みます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             local_image_path : str
                 ローカル画像のパス
             alpha : float, optional
@@ -560,13 +560,13 @@ class FluxFootprintAnalyzer:
             grayscale : bool, optional
                 Trueの場合、画像を白黒に変換します。デフォルトはFalse。
 
-        Returns:
-        ------
+        Returns
+        ----------
             ImageFile
                 読み込んだ衛星画像（透過設定済み）
 
-        Raises:
-        ------
+        Raises
+        ----------
             FileNotFoundError
                 指定されたパスにファイルが存在しない場合
         """
@@ -625,8 +625,8 @@ class FluxFootprintAnalyzer:
 
         このメソッドは、指定されたフットプリントデータのみを可視化します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x_list : list[float]
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
@@ -728,8 +728,8 @@ class FluxFootprintAnalyzer:
         このメソッドは、指定されたフットプリントデータとホットスポットを可視化します。
         ホットスポットが指定されない場合は、フットプリントのみ作図します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x_list : list[float]
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
@@ -1053,8 +1053,8 @@ class FluxFootprintAnalyzer:
         このメソッドは、指定されたフットプリントデータとホットスポットを可視化します。
         ホットスポットが指定されない場合は、フットプリントのみ作図します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x_list : list[float]
                 フットプリントのx座標リスト（メートル単位）。
             y_list : list[float]
@@ -1192,8 +1192,8 @@ class FluxFootprintAnalyzer:
         指定されたディレクトリ内の全CSVファイルを読み込み、処理し、結合します。
         Monthlyシートを結合することを想定しています。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             csv_dir_path : str
                 CSVファイルが格納されているディレクトリのパス。
             col_datetime : str
@@ -1201,13 +1201,13 @@ class FluxFootprintAnalyzer:
             suffix : str, optional
                 読み込むファイルの拡張子。デフォルトは".csv"。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pandas.DataFrame
                 結合および処理済みのデータフレーム。
 
-        Notes:
-        ------
+        Notes
+        ----------
             - ディレクトリ内に少なくとも1つのCSVファイルが必要です。
         """
         col_weekday: str = self.COL_FFA_IS_WEEKDAY
@@ -1238,15 +1238,15 @@ class FluxFootprintAnalyzer:
         """
         フラックスデータを含むCSVファイルを読み込み、処理します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_path : str
                 CSVファイルのパス。
             col_datetime : str
                 datetimeカラムのカラム名。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pandas.DataFrame
                 処理済みのデータフレーム。
         """
@@ -1287,8 +1287,8 @@ class FluxFootprintAnalyzer:
         """
         フットプリントパラメータを計算します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             dUstar : float
                 摩擦速度
             dU : float
@@ -1302,8 +1302,8 @@ class FluxFootprintAnalyzer:
             n : float
                 安定度パラメータ
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[float, float, float, float, float]
                 m (べき指数),
                 U (基準高度での風速),
@@ -1339,8 +1339,8 @@ class FluxFootprintAnalyzer:
         3. 平均変位高さを計算
         4. 地面修正量を返す
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             z_m : float
                 観測地点の高度
             wind_speed : np.ndarray
@@ -1350,8 +1350,8 @@ class FluxFootprintAnalyzer:
             stability_parameter : np.ndarray
                 安定度パラメータ配列 (z/L)
 
-        Returns:
-        ------
+        Returns
+        ----------
             float
                 計算された地面修正量
         """
@@ -1381,13 +1381,13 @@ class FluxFootprintAnalyzer:
         安定性パラメータを計算します。
         大気安定度に基づいて、運動量とスカラーの安定度関数、および安定度パラメータを計算します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             dzL : float
                 無次元高度 (z/L)、ここで z は測定高度、L はモニン・オブコフ長
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[float, float, float]
                 phi_m : float
                     運動量の安定度関数
@@ -1422,8 +1422,8 @@ class FluxFootprintAnalyzer:
         """
         指定された期間や月でデータをフィルタリングするメソッド。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 フィルタリングするデータフレーム
             start_date : str | None
@@ -1433,13 +1433,13 @@ class FluxFootprintAnalyzer:
             months : list[int] | None
                 フィルタリングする月のリスト（例：[1, 2, 12]）。デフォルトはNone。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 フィルタリングされたデータフレーム
 
-        Raises:
-        ------
+        Raises
+        ----------
             ValueError
                 インデックスがDatetimeIndexでない場合、または日付の形式が不正な場合
         """
@@ -1485,13 +1485,13 @@ class FluxFootprintAnalyzer:
         """
         指定された日付が平日であるかどうかを判定します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             date : datetime
                 判定する日付。
 
-        Returns:
-        ------
+        Returns
+        ----------
             int
                 平日であれば1、そうでなければ0。
         """
@@ -1512,8 +1512,8 @@ class FluxFootprintAnalyzer:
         """
         フットプリントのプロットデータを準備します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x80 : float
                 80%寄与距離
             ksi : float
@@ -1533,8 +1533,8 @@ class FluxFootprintAnalyzer:
             plot_count : int
                 生成するプロット数
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[np.ndarray, np.ndarray, np.ndarray]
                 x座標、y座標、フラックス値の配列のタプル
         """
@@ -1586,8 +1586,8 @@ class FluxFootprintAnalyzer:
         この関数は、与えられたx座標とy座標を、指定された角度（ラジアン）で回転させます。
         回転は原点を中心に反時計回りに行われます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             x : np.ndarray
                 回転させるx座標の配列
             y : np.ndarray
@@ -1595,8 +1595,8 @@ class FluxFootprintAnalyzer:
             radian : float
                 回転角度（ラジアン）
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[np.ndarray, np.ndarray]
                 回転後の(x_, y_)座標の組
         """
@@ -1620,8 +1620,8 @@ class FluxFootprintAnalyzer:
         このメソッドは、与えられたパラメータを使用して、フラックスの寄与距離を計算します。
         計算は反復的に行われ、寄与率が'max_ratio'に達するまで、または最大反復回数に達するまで続けられます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             ksi : float
                 フラックス長さスケール
             mu : float
@@ -1635,13 +1635,13 @@ class FluxFootprintAnalyzer:
             max_ratio : float, optional
                 寄与率の最大値。デフォルトは0.8。
 
-        Returns:
-        ------
+        Returns
+        ----------
             float
                 80%寄与距離（メートル単位）。計算が収束しない場合はnp.nan。
 
-        Notes:
-        ------
+        Notes
+        ----------
             - 計算が収束しない場合（最大反復回数に達した場合）、結果はnp.nanとなります。
         """
         if max_ratio > 1:

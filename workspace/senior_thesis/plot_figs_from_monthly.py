@@ -144,7 +144,7 @@ if __name__ == "__main__":
     # CH4_ultraをppb単位に直したカラムを作成
     df_combined["CH4_ultra_cal_ppb"] = df_combined["CH4_ultra_cal"] * 1000
 
-    # print("------")
+    # print("----------")
     # print(df_combined.head(10))  # DataFrameの先頭10行を表示
 
     mfg = MonthlyFiguresGenerator()

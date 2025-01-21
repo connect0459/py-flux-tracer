@@ -23,8 +23,8 @@ class EmissionData:
     """
     ホットスポットの排出量データを格納するクラス。
 
-    Parameters:
-    ------
+    Parameters
+    ----------
         source : str
             データソース（日時）
         type : HotspotType
@@ -65,8 +65,8 @@ class EmissionData:
         """
         Initialize時のバリデーションを行います。
 
-        Raises:
-        ------
+        Raises
+        ----------
             ValueError: 入力値が不正な場合
         """
         # sourceのバリデーション
@@ -145,8 +145,8 @@ class EmissionData:
         """
         データクラスの内容を辞書形式に変換します。
 
-        Returns:
-        ------
+        Returns
+        ----------
             dict: データクラスの属性と値を含む辞書
         """
         return {
@@ -165,7 +165,7 @@ class EmissionData:
 
 
 @dataclass
-class HotspotParameters:
+class HotspotParams:
     """ホットスポット解析のパラメータ設定
 
     Parameters
@@ -196,8 +196,8 @@ class HotspotParameters:
 class MSAInputConfig:
     """入力ファイルの設定を保持するデータクラス
 
-    Parameters:
-    ------
+    Parameters
+    ----------
         fs : float
             サンプリング周波数（Hz）
         lag : float
@@ -253,8 +253,8 @@ class MSAInputConfig:
         指定された遅延時間、サンプリング周波数、およびファイルパスが有効であることを確認し、
         有効な場合に新しいMSAInputConfigオブジェクトを返します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             fs : float
                 サンプリング周波数。正のfloatである必要があります。
             lag : float
@@ -266,8 +266,8 @@ class MSAInputConfig:
             h2o_correction : H2OCorrectionConfig | None
                 水蒸気補正の設定。None（または未定義）の場合は補正を実施しない。
 
-        Returns:
-        ------
+        Returns
+        ----------
             MSAInputConfig
                 検証された入力設定を持つMSAInputConfigオブジェクト。
         """
@@ -296,7 +296,7 @@ class MobileSpatialAnalyzer:
         ch4_enhance_threshold: float = 0.1,
         correlation_threshold: float = 0.7,
         hotspot_area_meter: float = 50,
-        hotspot_params: HotspotParameters | None = None,
+        hotspot_params: HotspotParams | None = None,
         window_minutes: float = 5,
         column_mapping: dict[str, str] = {
             "Time Stamp": "timestamp",
@@ -313,8 +313,8 @@ class MobileSpatialAnalyzer:
         """
         測定データ解析クラスの初期化
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             center_lat : float
                 中心緯度
             center_lon : float
@@ -329,7 +329,7 @@ class MobileSpatialAnalyzer:
                 相関係数の閾値。デフォルトは0.7。
             hotspot_area_meter : float
                 ホットスポットの検出に使用するエリアの半径（メートル）。デフォルトは50メートル。
-            hotspot_params : HotspotParameters | None, optional
+            hotspot_params : HotspotParams | None, optional
                 ホットスポット解析のパラメータ設定
             window_minutes : float
                 移動窓の大きさ（分）。デフォルトは5分。
@@ -351,8 +351,8 @@ class MobileSpatialAnalyzer:
             logging_debug : bool
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
 
-        Returns:
-        ------
+        Returns
+        ----------
             None
                 初期化処理が完了したことを示します。
         """
@@ -369,7 +369,7 @@ class MobileSpatialAnalyzer:
         self._hotspot_area_meter: float = hotspot_area_meter
         self._column_mapping: dict[str, str] = column_mapping
         self._na_values: list[str] = na_values
-        self._hotspot_params = hotspot_params or HotspotParameters()
+        self._hotspot_params = hotspot_params or HotspotParams()
         self._num_sections: int = num_sections
         # セクションの範囲
         section_size: float = 360 / num_sections
@@ -391,12 +391,12 @@ class MobileSpatialAnalyzer:
         )
 
     @property
-    def hotspot_params(self) -> HotspotParameters:
+    def hotspot_params(self) -> HotspotParams:
         """ホットスポット解析のパラメータ設定を取得"""
         return self._hotspot_params
 
     @hotspot_params.setter
-    def hotspot_params(self, params: HotspotParameters) -> None:
+    def hotspot_params(self, params: HotspotParams) -> None:
         """ホットスポット解析のパラメータ設定を更新"""
         self._hotspot_params = params
 
@@ -404,13 +404,13 @@ class MobileSpatialAnalyzer:
         """
         各タイプのホットスポットについてΔCH4の統計情報を計算し、結果を表示します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 分析対象のホットスポットリスト
 
-        Returns:
-        ------
+        Returns
+        ----------
             None
                 統計情報の表示が完了したことを示します。
         """
@@ -444,8 +444,8 @@ class MobileSpatialAnalyzer:
         """
         ホットスポットを検出して分析します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             duplicate_check_mode : Literal["none", "time_window", "time_all"]
                 重複チェックのモード。
                 - "none": 重複チェックを行わない。
@@ -456,13 +456,13 @@ class MobileSpatialAnalyzer:
             max_time_threshold_hours : float
                 重複チェックを一時的に無視する最大時間の閾値（時間）。デフォルトは12時間。
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[HotspotData]
                 検出されたホットスポットのリスト。
         """
         all_hotspots: list[HotspotData] = []
-        params: HotspotParameters = self._hotspot_params
+        params: HotspotParams = self._hotspot_params
 
         # 各データソースに対して解析を実行
         for _, df in self._data.items():
@@ -511,8 +511,8 @@ class MobileSpatialAnalyzer:
         """
         各ファイルの測定時間と走行距離を計算し、合計を返します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             print_individual_stats : bool
                 個別ファイルの統計を表示するかどうか。デフォルトはTrue。
             print_total_stats : bool
@@ -522,8 +522,8 @@ class MobileSpatialAnalyzer:
             col_longitude : str
                 経度情報が格納されているカラム名。デフォルトは"longitude"。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[float, timedelta]
                 総距離(km)と総時間のタプル
         """
@@ -601,8 +601,8 @@ class MobileSpatialAnalyzer:
         """
         ホットスポットの分布を地図上にプロットして保存
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
             output_dir : str | Path
@@ -732,8 +732,8 @@ class MobileSpatialAnalyzer:
         """
         ホットスポットの情報をCSVファイルに出力します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 出力するホットスポットのリスト
             output_dir : str | Path | None
@@ -779,20 +779,20 @@ class MobileSpatialAnalyzer:
         """
         ファイルパスからソース名（拡張子なしのファイル名）を抽出します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             path : str | Path
                 ソース名を抽出するファイルパス
                 例: "/path/to/Pico100121_241017_092120+.txt"
 
-        Returns:
-        ------
+        Returns
+        ----------
             str
                 抽出されたソース名
                 例: "Pico100121_241017_092120+"
 
         Examples:
-        ------
+        ----------
             >>> path = "/path/to/data/Pico100121_241017_092120+.txt"
             >>> MobileSpatialAnalyzer.extract_source_from_path(path)
             'Pico100121_241017_092120+'
@@ -810,13 +810,13 @@ class MobileSpatialAnalyzer:
         データ前処理を行い、CH4とC2H6の相関解析に必要な形式に整えます。
         コンストラクタで読み込んだすべてのデータを前処理し、結合したDataFrameを返します。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 前処理済みの結合されたDataFrame
         """
         processed_dfs: list[pd.DataFrame] = []
-        params: HotspotParameters = self._hotspot_params
+        params: HotspotParams = self._hotspot_params
 
         # 各データソースに対して解析を実行
         for source_name, df in self._data.items():
@@ -848,8 +848,8 @@ class MobileSpatialAnalyzer:
         このメソッドは、解析対象のデータを区画に分割する際の
         各区画の角度範囲を示すサイズを返します。
 
-        Returns:
-        ------
+        Returns
+        ----------
             float
                 1セクションのサイズ（度単位）
         """
@@ -865,12 +865,12 @@ class MobileSpatialAnalyzer:
             すべてのデータソース名を表示するかどうかを指定します。デフォルトはFalseです。
 
         Returns
-        -------
+        ----------
         list[str]
             データソース名のリスト
 
         Raises
-        ------
+        ----------
         ValueError
             データが読み込まれていない場合に発生します。
         """
@@ -908,8 +908,8 @@ class MobileSpatialAnalyzer:
         """
         CH4の増加量（ΔCH4）の積み上げヒストグラムをプロットします。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
             output_dir : str | Path | None
@@ -1069,8 +1069,8 @@ class MobileSpatialAnalyzer:
         """
         Plotlyを使用してMapbox上にデータをプロットします。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 プロットするデータを含むDataFrame
             col_conc : str
@@ -1234,8 +1234,8 @@ class MobileSpatialAnalyzer:
         """
         検出されたホットスポットのΔC2H6とΔCH4の散布図をプロットします。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
             output_dir : str | Path | None
@@ -1370,8 +1370,8 @@ class MobileSpatialAnalyzer:
         """
         時系列データをプロットします。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             dpi : int
                 図の解像度を指定します。デフォルトは200です。
             source_name : str | None
@@ -1485,15 +1485,15 @@ class MobileSpatialAnalyzer:
         """
         シンプル化したホットスポット検出
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 入力データフレーム
             ch4_enhance_threshold : float
                 CH4増加の閾値
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[HotspotData]
                 検出されたホットスポットのリスト
         """
@@ -1552,13 +1552,13 @@ class MobileSpatialAnalyzer:
         """
         角度に基づいて所属する区画を特定します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             angle : float
                 計算された角度
 
-        Returns:
-        ------
+        Returns
+        ----------
             int
                 区画番号（0-based-index）
         """
@@ -1577,13 +1577,13 @@ class MobileSpatialAnalyzer:
         このメソッドは、指定された入力設定に基づいてすべてのデータファイルを読み込み、
         各ファイルのデータをデータフレームとして格納した辞書を生成します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             input_configs : list[MSAInputConfig]
                 読み込むファイルの設定リスト。
 
-        Returns:
-        ------
+        Returns
+        ----------
             dict[str, pd.DataFrame]
                 読み込まれたデータフレームの辞書。キーはファイル名、値はデータフレーム。
         """
@@ -1604,8 +1604,8 @@ class MobileSpatialAnalyzer:
         """
         測定データを読み込み、前処理を行うメソッド。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             config : MSAInputConfig
                 入力ファイルの設定を含むオブジェクト。ファイルパス、遅れ時間、サンプリング周波数、補正タイプなどの情報を持つ。
             columns_to_shift : list[str], optional
@@ -1617,8 +1617,8 @@ class MobileSpatialAnalyzer:
             col_longitude : str, optional
                 経度のカラム名。デフォルトは"longitude"。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[pd.DataFrame, str]
                 読み込まれたデータフレームとそのソース名を含むタプル。データフレームは前処理が施されており、ソース名はファイル名から抽出されたもの。
         """
@@ -1685,8 +1685,8 @@ class MobileSpatialAnalyzer:
         """
         中心からの角度を計算
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             lat : float
                 対象地点の緯度
             lon : float
@@ -1696,8 +1696,8 @@ class MobileSpatialAnalyzer:
             center_lon : float
                 中心の経度
 
-        Returns:
-        ------
+        Returns
+        ----------
             float
                 真北を0°として時計回りの角度（-180°から180°）
         """
@@ -1716,8 +1716,8 @@ class MobileSpatialAnalyzer:
         """
         2点間の距離をメートル単位で計算（Haversine formula）
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             lat1 : float
                 地点1の緯度
             lon1 : float
@@ -1727,8 +1727,8 @@ class MobileSpatialAnalyzer:
             lon2 : float
                 地点2の経度
 
-        Returns:
-        ------
+        Returns
+        ----------
             float
                 2地点間の距離（メートル）
         """
@@ -1769,8 +1769,8 @@ class MobileSpatialAnalyzer:
         このメソッドは、指定されたデータフレームに対して移動平均（または5パーセンタイル）や相関を計算し、
         各種のデルタ値や比率を追加します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 入力データフレーム
             window_size : int
@@ -1788,8 +1788,8 @@ class MobileSpatialAnalyzer:
             use_quantile : bool
                 Trueの場合は5パーセンタイルを使用、Falseの場合は移動平均を使用
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 計算されたパラメータを含むデータフレーム
         """
@@ -1854,13 +1854,13 @@ class MobileSpatialAnalyzer:
         """
         時間窓からデータポイント数を計算
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             window_minutes : float
                 時間窓の大きさ（分）
 
-        Returns:
-        ------
+        Returns
+        ----------
             int
                 データポイント数
         """
@@ -1873,15 +1873,15 @@ class MobileSpatialAnalyzer:
         """
         指定された区画数と区画サイズに基づいて、区画の範囲を初期化します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             num_sections : int
                 初期化する区画の数。
             section_size : float
                 各区画の角度範囲のサイズ。
 
-        Returns:
-        ------
+        Returns
+        ----------
             dict[int, tuple[float, float]]
                 区画番号（0-based-index）とその範囲の辞書。各区画は-180度から180度の範囲に分割されます。
         """
@@ -1907,8 +1907,8 @@ class MobileSpatialAnalyzer:
         """
         与えられた地点が既存の地点と重複しているかを判定します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             current_lat : float
                 判定する地点の緯度
             current_lon : float
@@ -1926,8 +1926,8 @@ class MobileSpatialAnalyzer:
             hotspot_area_meter : float
                 重複とみなす距離の閾値（m）
 
-        Returns:
-        ------
+        Returns
+        ----------
             bool
                 重複している場合はTrue、そうでない場合はFalse
         """
@@ -1967,13 +1967,13 @@ class MobileSpatialAnalyzer:
         """
         入力設定を標準化
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             inputs : list[MSAInputConfig] | list[tuple[float, float, str | Path]]
                 入力設定のリスト
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[MSAInputConfig]
                 標準化された入力設定のリスト
         """
@@ -2002,8 +2002,8 @@ class MobileSpatialAnalyzer:
         """
         メタン濃度の増加が閾値を超えた地点から、重複を除外してユニークなホットスポットを抽出する関数。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pandas.DataFrame
                 入力データフレーム。必須カラム:
                 - ch4_ppm: メタン濃度（ppm）
@@ -2020,8 +2020,8 @@ class MobileSpatialAnalyzer:
             hotspot_area_meter : float, optional
                 重複とみなす距離の閾値（メートル）。デフォルトは50メートル。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pandas.DataFrame
                 ユニークなホットスポットのデータフレーム。
         """
@@ -2094,8 +2094,8 @@ class MobileSpatialAnalyzer:
         一意のホットスポットのみを返します。重複の判定は、指定された
         時間および距離の閾値に基づいて行われます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 重複を除外する対象のホットスポットのリスト。
             check_time_all : bool
@@ -2107,8 +2107,8 @@ class MobileSpatialAnalyzer:
             hotspot_area_meter : float
                 重複とみなす距離の閾値（メートル）。
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[HotspotData]
                 重複を除去したホットスポットのリスト。
         """
@@ -2157,15 +2157,15 @@ class MobileSpatialAnalyzer:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
-        ------
+        Returns
+        ----------
             Logger
                 設定されたロガーオブジェクト。
         """
@@ -2193,8 +2193,8 @@ class MobileSpatialAnalyzer:
         """
         検出されたホットスポットのCH4漏出量を計算・解析し、統計情報を生成します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             hotspots : list[HotspotData]
                 分析対象のホットスポットのリスト
             method : Literal["weller", "weitzel", "joo", "umezawa"]
@@ -2206,8 +2206,8 @@ class MobileSpatialAnalyzer:
                 例: {"custom_method": {"a": 1.0, "b": 1.0}}
                 Noneの場合はデフォルトの計算式を使用。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple[list[EmissionData], dict[str, dict[str, float]]]
                 - 各ホットスポットの排出量データを含むリスト
                 - タイプ別の統計情報を含む辞書
@@ -2359,8 +2359,8 @@ class MobileSpatialAnalyzer:
         """
         排出量分析のプロットを作成する静的メソッド。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             emission_data_list : list[EmissionData]
                 EmissionDataオブジェクトのリスト。
             output_dir : str | Path | None

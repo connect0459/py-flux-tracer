@@ -9,14 +9,14 @@
 - 説明は4スペースのインデントで記述。
 - 戻り値の型はReturnsセクションで詳細に記述。
 例↓
-Parameters:
-------
+Parameters
+----------
     hoge : str
         hogehoge...
     fuga : int
         fugafuga...
 
-Returns:
-------
+Returns
+----------
     ...
 ```

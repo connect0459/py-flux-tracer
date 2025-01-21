@@ -33,8 +33,8 @@ class MonthlyConverter:
         """
         MonthlyConverterクラスのコンストラクタ
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             directory : str | Path
                 Excelファイルが格納されているディレクトリのパス
             file_pattern : str
@@ -73,15 +73,15 @@ class MonthlyConverter:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
-        ------
+        Returns
+        ----------
             Logger
                 設定されたロガーオブジェクト。
         """
@@ -111,8 +111,8 @@ class MonthlyConverter:
         """
         利用可能なファイルの日付一覧を返却します。
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[str]
                 'yyyy.MM'形式の日付リスト
         """
@@ -129,13 +129,13 @@ class MonthlyConverter:
         """
         指定されたファイルで利用可能なシート名の一覧を返却する
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_name : str
                 Excelファイル名
 
-        Returns:
-        ------
+        Returns
+        ----------
             list[str]
                 シート名のリスト
         """
@@ -163,8 +163,8 @@ class MonthlyConverter:
         デフォルトでは2行目（単位の行）はスキップされます。
         重複するカラム名がある場合は、より先に指定されたシートに存在するカラムの値を保持します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             sheet_names : str | list[str]
                 読み込むシート名。文字列または文字列のリストを指定できます。
             columns : list[str] | None
@@ -184,8 +184,8 @@ class MonthlyConverter:
             sort_by_date : bool
                 ファイルの日付でソートするかどうか。デフォルトはTrueです。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 読み込まれたデータを結合したDataFrameを返します。
         """
@@ -278,13 +278,13 @@ class MonthlyConverter:
         """
         ファイル名から日付を抽出する
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             file_name : str
                 "SA.Ultra.yyyy.MM.xlsx"または"SA.Picaro.yyyy.MM.xlsx"形式のファイル名
 
-        Returns:
-        ------
+        Returns
+        ----------
             datetime
                 抽出された日付
         """
@@ -298,8 +298,8 @@ class MonthlyConverter:
         """
         指定された日付範囲のExcelファイルを読み込む
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             start_date : str | None
                 開始日 ('yyyy-MM-dd'形式)
             end_date : str | None
@@ -347,8 +347,8 @@ class MonthlyConverter:
         """
         指定された月と期間のデータを抽出します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 入力データフレーム。
             target_months : list[int]
@@ -360,8 +360,8 @@ class MonthlyConverter:
             datetime_column : str, optional
                 日付を含む列の名前。デフォルトは"Date"。
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 指定された期間のデータのみを含むデータフレーム。
         """
@@ -402,8 +402,8 @@ class MonthlyConverter:
         """
         2つのDataFrameを結合します。重複するカラムは元の名前とサフィックス付きの両方を保持します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df1 : pd.DataFrame
                 ベースとなるDataFrame
             df2 : pd.DataFrame
@@ -411,8 +411,8 @@ class MonthlyConverter:
             date_column : str
                 日付カラムの名前。デフォルトは"Date"
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 結合されたDataFrame
         """

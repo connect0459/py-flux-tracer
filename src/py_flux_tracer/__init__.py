@@ -10,7 +10,7 @@ from .mobile.correcting_utils import (
 )
 from .mobile.mobile_spatial_analyzer import (
     EmissionData,
-    HotspotParameters,
+    HotspotParams,
     MobileSpatialAnalyzer,
     MSAInputConfig,
 )
@@ -54,7 +54,7 @@ __all__ = [
     "H2OCorrectionConfig",
     "BiasRemovalConfig",
     "EmissionData",
-    "HotspotParameters",
+    "HotspotParams",
     "MobileSpatialAnalyzer",
     "MSAInputConfig",
     "MonthlyConverter",

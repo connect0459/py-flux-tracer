@@ -14,8 +14,8 @@ class FigureUtils:
         """
         matplotlibのプロットパラメータを設定します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             font_family : list[str]
                 使用するフォントファミリーのリスト。
             font_size : float

@@ -25,7 +25,7 @@ def plot_stacked_fluxes(
         figsize (tuple[float, float], optional): 図のサイズ。デフォルトは(20, 13)
         ylim (float | None, optional): y軸の上限。Noneの場合は自動設定
 
-    Raises:
+    Raises
         ValueError: concentration_unitが'nano'または'micro'以外の場合
     """
     flux_unit: str = "nmol m$^{-2}$ s$^{-1}$"

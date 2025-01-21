@@ -16,8 +16,8 @@ class SpectrumCalculator:
         """
         データロガーから取得したデータファイルを用いて計算を行うクラス。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 pandasのデータフレーム。解析対象のデータを含む。
             fs : float
@@ -51,8 +51,8 @@ class SpectrumCalculator:
         """
         指定されたcol1とcol2のコスペクトルをDataFrameから計算するためのメソッド。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col1 : str
                 データの列名1。
             col2 : str
@@ -74,8 +74,8 @@ class SpectrumCalculator:
             lag_second : float | None, optional
                 col1からcol2が遅れている時間（秒）。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple
                 (freqs, co_spectrum, corr_coef)
                 - freqs : np.ndarray
@@ -115,8 +115,8 @@ class SpectrumCalculator:
         """
         指定されたcol1とcol2のクロススペクトルをDataFrameから計算するためのメソッド。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col1 : str
                 データの列名1。
             col2 : str
@@ -138,8 +138,8 @@ class SpectrumCalculator:
             lag_second : float | None, optional
                 col1からcol2が遅れている時間（秒）。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple
                 (freqs, co_spectrum, corr_coef)
                 - freqs : np.ndarray
@@ -252,8 +252,8 @@ class SpectrumCalculator:
         指定されたcolに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
         scipy.signal.welchを使用してパワースペクトルを計算します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             col : str
                 データの列名
             dimensionless : bool, optional
@@ -269,8 +269,8 @@ class SpectrumCalculator:
             detrend_2nd : bool, optional
                 2次トレンドを除去するかどうか。デフォルトはFalse。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple
                 - freqs (np.ndarray): 周波数軸（対数スケールの場合は対数変換済み）
                 - power_spectrum (np.ndarray): パワースペクトル（対数スケールの場合は対数変換済み）
@@ -336,8 +336,8 @@ class SpectrumCalculator:
         """
         相互相関関数を用いて遅れ時間を補正する。クロススペクトルの計算に使用。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             data1 : np.ndarray
                 基準データ
             data2 : np.ndarray
@@ -347,8 +347,8 @@ class SpectrumCalculator:
             lag_second : float
                 data1からdata2が遅れている時間（秒）。負の値は許可されない。
 
-        Returns:
-        ------
+        Returns
+        ----------
             tuple
                 - data1 : np.ndarray
                     基準データ（シフトなし）
@@ -382,8 +382,8 @@ class SpectrumCalculator:
         """
         データから一次トレンドおよび二次トレンドを除去します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             data : np.ndarray
                 入力データ
             first : bool, optional
@@ -391,13 +391,13 @@ class SpectrumCalculator:
             second : bool, optional
                 二次トレンドを除去するかどうか. デフォルトはFalse.
 
-        Returns:
-        ------
+        Returns
+        ----------
             np.ndarray
                 トレンド除去後のデータ
 
-        Raises:
-        ------
+        Raises
+        ----------
             ValueError
                 first と second の両方がFalseの場合
         """
@@ -430,20 +430,20 @@ class SpectrumCalculator:
         """
         指定された種類の窓関数を適用する
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             type : Literal['hanning', 'hamming', 'blackman']
                 窓関数の種類 ('hanning', 'hamming', 'blackman')
             data_length : int
                 データ長
 
-        Returns:
-        ------
+        Returns
+        ----------
             np.ndarray
                 適用された窓関数
 
-        Notes:
-        ------
+        Notes
+        ----------
             - 指定された種類の窓関数を適用し、numpy配列として返す
             - 無効な種類が指定された場合、警告を表示しHann窓を適用する
         """
@@ -461,8 +461,8 @@ class SpectrumCalculator:
         高周波数領域に対して3点移動平均を適用する処理を行う。
         この処理により、高周波数成分のノイズを低減し、スペクトルの滑らかさを向上させる。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             spectrum : np.ndarray
                 スペクトルデータ
             frequencies : np.ndarray
@@ -470,8 +470,8 @@ class SpectrumCalculator:
             freq_threshold : float
                 高周波数の閾値
 
-        Returns:
-        ------
+        Returns
+        ----------
             np.ndarray
                 スムーズ化されたスペクトルデータ
         """

@@ -20,14 +20,14 @@ from ..campbell.spectrum_calculator import SpectrumCalculator
 def calculate_rolling_stats(data: pd.Series, window: int, confidence_interval) -> tuple:
     """移動平均と信頼区間を計算する。
 
-    Parameters:
+    Parameters
     ------
         data : pd.Series
             入力データ系列
         window : int
             移動平均の窓サイズ
 
-    Returns:
+    Returns
     ------
         tuple
             (移動平均, 下側信頼区間, 上側信頼区間)
@@ -69,7 +69,7 @@ class MonthlyFiguresGenerator:
         """
         クラスのコンストラクタ
 
-        Parameters:
+        Parameters
         ------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
@@ -94,7 +94,7 @@ class MonthlyFiguresGenerator:
         """
         月別のフラックスデータを時系列プロットとして出力する
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 月別データを含むDataFrame
@@ -160,7 +160,7 @@ class MonthlyFiguresGenerator:
         """
         CH4とC2H6の濃度とフラックスの時系列プロットを作成する
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 月別データを含むDataFrame
@@ -351,7 +351,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4とC2H6フラックスの時系列変動をプロット
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -543,7 +543,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """複数のCH4フラックスの時系列比較プロット
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -758,7 +758,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4とC2H6の日変化パターンを1つの図に並べてプロットする
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 入力データフレーム。
@@ -937,7 +937,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4とC2H6の日変化パターンを日付分類して1つの図に並べてプロットする
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 入力データフレーム。
@@ -1242,7 +1242,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4とC2H6の濃度の日内変動を描画する
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 濃度データを含むDataFrame
@@ -1424,7 +1424,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4とC2H6フラックスの日変化パターンをプロットする
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -1580,7 +1580,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """散布図を作成し、TLS回帰直線を描画します。
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 プロットに使用するデータフレーム
@@ -1755,7 +1755,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の日変化を積み上げグラフとして表示
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -1922,7 +1922,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の日変化を平日・休日別に表示
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -2170,7 +2170,7 @@ class MonthlyFiguresGenerator:
         データファイルを指定されたディレクトリから読み込み、パワースペクトル密度を計算し、
         結果を指定された出力ディレクトリにプロットして保存します。
 
-        Parameters:
+        Parameters
         ------
             fs : float
                 サンプリング周波数。
@@ -2446,7 +2446,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """時系列データのプロットを作成する
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 プロットするデータを含むDataFrame
@@ -2554,7 +2554,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の風配図を作成する関数
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 風配図を作成するためのデータフレーム
@@ -2775,7 +2775,7 @@ class MonthlyFiguresGenerator:
     ) -> pd.DataFrame:
         """方位の範囲を定義
 
-        Parameters:
+        Parameters
         ------
             num_directions : int
                 方位の数（デフォルトは8）
@@ -2783,7 +2783,7 @@ class MonthlyFiguresGenerator:
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
                 Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
 
-        Returns:
+        Returns
         ------
         pd.DataFrame
             方位の定義を含むDataFrame
@@ -2844,7 +2844,7 @@ class MonthlyFiguresGenerator:
     ) -> pd.DataFrame:
         """方位ごとのフラックスデータを集計
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 ソース分離済みのデータフレーム
@@ -2853,7 +2853,7 @@ class MonthlyFiguresGenerator:
             direction_ranges : pd.DataFrame
                 方位の定義
 
-        Returns:
+        Returns
         ------
             pd.DataFrame
                 方位ごとの集計データ
@@ -2892,7 +2892,7 @@ class MonthlyFiguresGenerator:
         CH4フラックスの都市ガス起源と生物起源の寄与を計算する。
         このロジックでは、燃焼起源のCH4フラックスは考慮せず計算している。
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 入力データフレーム
@@ -2905,7 +2905,7 @@ class MonthlyFiguresGenerator:
             col_datetime : str
                 日時カラムの名前
 
-        Returns:
+        Returns
         ------
             pd.DataFrame
                 起源別のフラックス値を含むデータフレーム
@@ -2944,7 +2944,7 @@ class MonthlyFiguresGenerator:
         """
         日変化パターンの計算に必要なデータを準備する。
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 入力データフレーム
@@ -2953,7 +2953,7 @@ class MonthlyFiguresGenerator:
             include_date_types : bool
                 日付タイプ（平日/休日など）の分類を含めるかどうか
 
-        Returns:
+        Returns
         ------
             tuple[dict[str, pd.DataFrame], pd.DatetimeIndex]
                 - 時間帯ごとの平均値を含むDataFrameの辞書
@@ -3011,7 +3011,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """日変化プロットの軸の設定を行う
 
-        Parameters:
+        Parameters
         ------
             ax : plt.Axes
                 設定対象の軸
@@ -3056,7 +3056,7 @@ class MonthlyFiguresGenerator:
         """
         指定された列の有効なデータ（NaNを除いた）を取得します。
 
-        Parameters:
+        Parameters
         ------
             df : pd.DataFrame
                 データフレーム
@@ -3065,7 +3065,7 @@ class MonthlyFiguresGenerator:
             y_col : str
                 Y軸の列名
 
-        Returns:
+        Returns
         ------
             pd.DataFrame
                 有効なデータのみを含むDataFrame
@@ -3084,14 +3084,14 @@ class MonthlyFiguresGenerator:
         ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
         引数で指定されたlog_levelに基づいて設定されます。
 
-        Parameters:
+        Parameters
         ------
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             log_level : int
                 ロガーのログレベル。デフォルトはINFO。
 
-        Returns:
+        Returns
         ------
             Logger
                 設定されたロガーオブジェクト。
@@ -3124,7 +3124,7 @@ class MonthlyFiguresGenerator:
     ) -> None:
         """複数のフラックスデータの分布を可視化
 
-        Parameters:
+        Parameters
         ------
             flux_data : dict[str, pd.Series]
                 各測器のフラックスデータを格納した辞書

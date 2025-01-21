@@ -58,14 +58,14 @@ class CorrectingUtils:
         水蒸気干渉を補正するためのメソッドです。
         CH4濃度に対する水蒸気の影響を2次関数を用いて補正します。
 
-        References:
-        ------
+        References
+        ----------
             - Commane et al. (2023): Intercomparison of commercial analyzers for atmospheric ethane and methane observations
                 https://amt.copernicus.org/articles/16/1431/2023/,
                 https://amt.copernicus.org/articles/16/1431/2023/amt-16-1431-2023.pdf
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 補正対象のデータフレーム
             coef_a : float
@@ -81,8 +81,8 @@ class CorrectingUtils:
             h2o_ppm_threshold : float | None
                 水蒸気濃度の下限値（この値未満のデータは除外）
 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 水蒸気干渉が補正されたデータフレーム
         """
@@ -118,8 +118,8 @@ class CorrectingUtils:
         """
         データフレームからバイアスを除去します。
 
-        Parameters:
-        ------
+        Parameters
+        ----------
             df : pd.DataFrame
                 バイアスを除去する対象のデータフレーム。
             col_ch4_ppm : str
@@ -133,8 +133,8 @@ class CorrectingUtils:
             percentile : float
                 下位何パーセンタイルの値を最小値として補正を行うか。
                 
-        Returns:
-        ------
+        Returns
+        ----------
             pd.DataFrame
                 バイアスが除去されたデータフレーム。
         """
