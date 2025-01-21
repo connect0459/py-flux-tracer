@@ -279,14 +279,14 @@ class FluxFootprintAnalyzer:
                 - z/L: 安定度パラメータ (無次元)
         """
         col_weekday: str = self.COL_FFA_IS_WEEKDAY
-        df_internal: pd.DataFrame = df.copy()
+        df_copied: pd.DataFrame = df.copy()
 
         # インデックスがdatetimeであることを確認し、必要に応じて変換
-        if not isinstance(df_internal.index, pd.DatetimeIndex):
-            df_internal.index = pd.to_datetime(df_internal.index)
+        if not isinstance(df_copied.index, pd.DatetimeIndex):
+            df_copied.index = pd.to_datetime(df_copied.index)
 
         # DatetimeIndexから直接dateプロパティにアクセス
-        datelist: np.ndarray = np.array(df_internal.index.date)
+        datelist: np.ndarray = np.array(df_copied.index.date)
 
         # 各日付が平日かどうかを判定し、リストに格納
         numbers: list[int] = [
@@ -294,10 +294,10 @@ class FluxFootprintAnalyzer:
         ]
 
         # col_weekdayに基づいてデータフレームに平日情報を追加
-        df_internal.loc[:, col_weekday] = numbers  # .locを使用して値を設定
+        df_copied.loc[:, col_weekday] = numbers  # .locを使用して値を設定
 
         # 値が1のもの(平日)をコピーする
-        data_weekday: pd.DataFrame = df_internal[df_internal[col_weekday] == 1].copy()
+        data_weekday: pd.DataFrame = df_copied[df_copied[col_weekday] == 1].copy()
         # 特定の時間帯を抽出
         data_weekday = data_weekday.between_time(
             start_time, end_time
@@ -1449,7 +1449,7 @@ class FluxFootprintAnalyzer:
                 "DataFrameのインデックスはDatetimeIndexである必要があります"
             )
 
-        filtered_df: pd.DataFrame = df.copy()
+        df_copied: pd.DataFrame = df.copy()
 
         # 日付形式の検証と変換
         try:
@@ -1464,7 +1464,7 @@ class FluxFootprintAnalyzer:
 
         # 期間でフィルタリング
         if start_date is not None or end_date is not None:
-            filtered_df = filtered_df.loc[start_date:end_date]
+            df_copied = df_copied.loc[start_date:end_date]
 
         # 月のバリデーション
         if months is not None:
@@ -1472,13 +1472,13 @@ class FluxFootprintAnalyzer:
                 raise ValueError(
                     "monthsは1から12までの整数のリストである必要があります"
                 )
-            filtered_df = filtered_df[filtered_df.index.month.isin(months)]
+            df_copied = df_copied[df_copied.index.month.isin(months)]
 
         # フィルタリング後のデータが空でないことを確認
-        if filtered_df.empty:
+        if df_copied.empty:
             raise ValueError("フィルタリング後のデータが空になりました")
 
-        return filtered_df
+        return df_copied
 
     @staticmethod
     def is_weekday(date: datetime) -> int:

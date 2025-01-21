@@ -379,11 +379,11 @@ class MonthlyConverter:
             raise ValueError("start_dayはend_day以下である必要があります")
 
         # datetime_column をDatetime型に変換
-        df = df.copy()
-        df[datetime_column] = pd.to_datetime(df[datetime_column])
+        df_copied = df.copy()
+        df_copied[datetime_column] = pd.to_datetime(df_copied[datetime_column])
 
         # 月でフィルタリング
-        monthly_data = df[df[datetime_column].dt.month.isin(target_months)]
+        monthly_data = df_copied[df_copied[datetime_column].dt.month.isin(target_months)]
 
         # 日付範囲でフィルタリング
         if start_day is not None:

@@ -393,16 +393,16 @@ class MonthlyFiguresGenerator:
         output_path: str = os.path.join(output_dir, output_filename)
 
         # データの準備
-        df = df.copy()
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df[col_datetime] = pd.to_datetime(df[col_datetime])
-            df.set_index(col_datetime, inplace=True)
+        df_copied = df.copy()
+        if not isinstance(df_copied.index, pd.DatetimeIndex):
+            df_copied[col_datetime] = pd.to_datetime(df_copied[col_datetime])
+            df_copied.set_index(col_datetime, inplace=True)
 
         # 日付範囲の処理
         if start_date is not None:
             start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
             df_min_date = (
-                df.index.normalize().min().normalize()
+                df_copied.index.normalize().min().normalize()
             )  # 日付のみの比較のため正規化
 
             # データの最小日付が指定開始日より後の場合にのみ警告
@@ -413,7 +413,7 @@ class MonthlyFiguresGenerator:
                 )
                 start_dt = df_min_date
         else:
-            start_dt = df.index.normalize().min()
+            start_dt = df_copied.index.normalize().min()
 
         if end_date is not None:
             end_dt = (
@@ -422,7 +422,7 @@ class MonthlyFiguresGenerator:
                 - pd.Timedelta(seconds=1)
             )
             df_max_date = (
-                df.index.normalize().max().normalize()
+                df_copied.index.normalize().max().normalize()
             )  # 日付のみの比較のため正規化
 
             # データの最大日付が指定終了日より前の場合にのみ警告
@@ -431,29 +431,29 @@ class MonthlyFiguresGenerator:
                     f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
                 )
-                end_dt = df.index.max()
+                end_dt = df_copied.index.max()
         else:
-            end_dt = df.index.max()
+            end_dt = df_copied.index.max()
 
         # 指定された期間のデータを抽出
-        mask = (df.index >= start_dt) & (df.index <= end_dt)
-        df = df[mask]
+        mask = (df_copied.index >= start_dt) & (df_copied.index <= end_dt)
+        df_copied = df_copied[mask]
 
         # CH4とC2H6の移動平均と信頼区間を計算
         ch4_mean, ch4_lower, ch4_upper = calculate_rolling_stats(
-            df[col_ch4_flux], window_size, confidence_interval
+            df_copied[col_ch4_flux], window_size, confidence_interval
         )
         c2h6_mean, c2h6_lower, c2h6_upper = calculate_rolling_stats(
-            df[col_c2h6_flux], window_size, confidence_interval
+            df_copied[col_c2h6_flux], window_size, confidence_interval
         )
 
         # プロットの作成
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # CH4プロット
-        ax1.plot(df.index, ch4_mean, "red", label="CH$_4$")
+        ax1.plot(df_copied.index, ch4_mean, "red", label="CH$_4$")
         if show_ci:
-            ax1.fill_between(df.index, ch4_lower, ch4_upper, color="red", alpha=0.2)
+            ax1.fill_between(df_copied.index, ch4_lower, ch4_upper, color="red", alpha=0.2)
         if subplot_label_ch4:
             ax1.text(
                 0.02,
@@ -469,10 +469,10 @@ class MonthlyFiguresGenerator:
         ax1.grid(True, alpha=0.3)
 
         # C2H6プロット
-        ax2.plot(df.index, c2h6_mean, "orange", label="C$_2$H$_6$")
+        ax2.plot(df_copied.index, c2h6_mean, "orange", label="C$_2$H$_6$")
         if show_ci:
             ax2.fill_between(
-                df.index, c2h6_lower, c2h6_upper, color="orange", alpha=0.2
+                df_copied.index, c2h6_lower, c2h6_upper, color="orange", alpha=0.2
             )
         if subplot_label_c2h6:
             ax2.text(
@@ -2910,30 +2910,30 @@ class MonthlyFiguresGenerator:
             pd.DataFrame
                 起源別のフラックス値を含むデータフレーム
         """
-        df_processed = df.copy()
+        df_copied = df.copy()
 
         # 日時インデックスの処理
-        if not isinstance(df_processed.index, pd.DatetimeIndex):
-            df_processed[col_datetime] = pd.to_datetime(df_processed[col_datetime])
-            df_processed.set_index(col_datetime, inplace=True)
+        if not isinstance(df_copied.index, pd.DatetimeIndex):
+            df_copied[col_datetime] = pd.to_datetime(df_copied[col_datetime])
+            df_copied.set_index(col_datetime, inplace=True)
 
         # C2H6/CH4比の計算
-        df_processed["c2c1_ratio"] = (
-            df_processed[col_c2h6_flux] / df_processed[col_ch4_flux]
+        df_copied["c2c1_ratio"] = (
+            df_copied[col_c2h6_flux] / df_copied[col_ch4_flux]
         )
 
         # 都市ガスの標準組成に基づく都市ガス比率の計算
-        df_processed["gas_ratio"] = df_processed["c2c1_ratio"] / gas_ratio_c1c2 * 100
+        df_copied["gas_ratio"] = df_copied["c2c1_ratio"] / gas_ratio_c1c2 * 100
 
         # gas_ratioに基づいて都市ガス起源と生物起源の寄与を比例配分
-        df_processed["ch4_gas"] = df_processed[col_ch4_flux] * np.clip(
-            df_processed["gas_ratio"] / 100, 0, 1
+        df_copied["ch4_gas"] = df_copied[col_ch4_flux] * np.clip(
+            df_copied["gas_ratio"] / 100, 0, 1
         )
-        df_processed["ch4_bio"] = df_processed[col_ch4_flux] * (
-            1 - np.clip(df_processed["gas_ratio"] / 100, 0, 1)
+        df_copied["ch4_bio"] = df_copied[col_ch4_flux] * (
+            1 - np.clip(df_copied["gas_ratio"] / 100, 0, 1)
         )
 
-        return df_processed
+        return df_copied
 
     def _prepare_diurnal_data(
         self,

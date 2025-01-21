@@ -163,6 +163,7 @@ class EmissionData:
             "annual_emission": self.annual_emission,
         }
 
+RollingMethod = Literal["quantile", "mean"]
 
 @dataclass
 class HotspotParams:
@@ -176,21 +177,41 @@ class HotspotParams:
         C2H6濃度を示すカラム名
     H2O_PPM : str
         H2O濃度を示すカラム名
-    CH4_THRESHOLD : float
+    CH4_PPM_DELTA_THRESHOLD : float
         CH4の閾値
-    C2H6_THRESHOLD : float
+    C2H6_PPB_DELTA_THRESHOLD : float
         C2H6の閾値
     USE_QUANTILE : bool
         5パーセンタイルを使用するかどうかのフラグ
+    ROLLING_METHOD : RollingMethod
+        移動計算の方法
+        - "quantile"は下位{QUANTILE_VALUE}%の値を使用する。
+        - "mean"は移動平均を行う。
+    QUANTILE_VALUE : float
+        下位何パーセントの値を使用するか。デフォルトは5。
     """
 
     CH4_PPM: str = "ch4_ppm"
     C2H6_PPB: str = "c2h6_ppb"
     H2O_PPM: str = "h2o_ppm"
-    CH4_THRESHOLD: float = 0.05
-    C2H6_THRESHOLD: float = 0.0
-    USE_QUANTILE: bool = True
+    CH4_PPM_DELTA_THRESHOLD: float = 0.05
+    C2H6_PPB_DELTA_THRESHOLD: float = 0.0
+    H2O_PPM_THRESHOLD: float = 2000
+    ROLLING_METHOD: RollingMethod = "quantile"
+    QUANTILE_VALUE: float = 5
 
+    def __post_init__(self) -> None:
+        """パラメータの検証を行います。
+
+        Raises
+        ----------
+            ValueError: QUANTILE_VALUEが0以上100以下でない場合
+        """
+        # QUANTILE_VALUEの値域チェック
+        if not 0 <= self.QUANTILE_VALUE <= 100:
+            raise ValueError(
+                f"QUANTILE_VALUE must be between 0 and 100, got {self.QUANTILE_VALUE}"
+            )
 
 @dataclass
 class MSAInputConfig:
@@ -473,9 +494,11 @@ class MobileSpatialAnalyzer:
                 col_ch4_ppm=params.CH4_PPM,
                 col_c2h6_ppb=params.C2H6_PPB,
                 col_h2o_ppm=params.H2O_PPM,
-                ch4_threshold=params.CH4_THRESHOLD,
-                c2h6_threshold=params.C2H6_THRESHOLD,
-                use_quantile=params.USE_QUANTILE,
+                ch4_ppm_delta_threshold=params.CH4_PPM_DELTA_THRESHOLD,
+                c2h6_ppb_delta_threshold=params.C2H6_PPB_DELTA_THRESHOLD,
+                h2o_ppm_threshold=params.H2O_PPM_THRESHOLD,
+                rolling_method=params.ROLLING_METHOD,
+                quantile_value=params.QUANTILE_VALUE,
             )
 
             # ホットスポットの検出
@@ -827,9 +850,11 @@ class MobileSpatialAnalyzer:
                 col_ch4_ppm=params.CH4_PPM,
                 col_c2h6_ppb=params.C2H6_PPB,
                 col_h2o_ppm=params.H2O_PPM,
-                ch4_threshold=params.CH4_THRESHOLD,
-                c2h6_threshold=params.C2H6_THRESHOLD,
-                use_quantile=params.USE_QUANTILE,
+                ch4_ppm_delta_threshold=params.CH4_PPM_DELTA_THRESHOLD,
+                c2h6_ppb_delta_threshold=params.C2H6_PPB_DELTA_THRESHOLD,
+                h2o_ppm_threshold=params.H2O_PPM_THRESHOLD,
+                rolling_method=params.ROLLING_METHOD,
+                quantile_value=params.QUANTILE_VALUE,
             )
             # ソース名を列として追加
             processed_df["source"] = source_name
@@ -1514,7 +1539,7 @@ class MobileSpatialAnalyzer:
                 if pd.notna(ratios.iloc[i]):
                     current_lat = lat.iloc[i]
                     current_lon = lon.iloc[i]
-                    correlation = df["ch4_c2h6_correlation"].iloc[i]
+                    correlation = df["c1c2_correlation"].iloc[i]
 
                     # 比率に基づいてタイプを決定
                     spot_type: HotspotType = "bio"
@@ -1672,8 +1697,8 @@ class MobileSpatialAnalyzer:
             df = CorrectingUtils.remove_bias(
                 df=df,
                 percentile=bias_removal.percentile,
-                bottom_ch4_ppm=bias_removal.bottom_ch4_ppm,
-                bottom_c2h6_ppb=bias_removal.bottom_c2h6_ppb,
+                base_ch4_ppm=bias_removal.base_ch4_ppm,
+                base_c2h6_ppb=bias_removal.base_c2h6_ppb,
             )
 
         return df, source_name
@@ -1752,7 +1777,7 @@ class MobileSpatialAnalyzer:
         c: float = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return R * c  # メートル単位での距離
-
+    
     @staticmethod
     def _calculate_hotspots_parameters(
         df: pd.DataFrame,
@@ -1760,13 +1785,15 @@ class MobileSpatialAnalyzer:
         col_ch4_ppm: str,
         col_c2h6_ppb: str,
         col_h2o_ppm: str,
-        ch4_threshold: float,
-        c2h6_threshold: float,
-        use_quantile: bool,
+        ch4_ppm_delta_threshold: float = 0.05,
+        c2h6_ppb_delta_threshold: float = 0.0,
+        h2o_ppm_threshold: float = 2000,
+        rolling_method: RollingMethod = "quantile",
+        quantile_value: float = 5,
     ) -> pd.DataFrame:
         """
         ホットスポットのパラメータを計算します。
-        このメソッドは、指定されたデータフレームに対して移動平均（または5パーセンタイル）や相関を計算し、
+        このメソッドは、指定されたデータフレームに対して移動平均（または指定されたパーセンタイル）や相関を計算し、
         各種のデルタ値や比率を追加します。
 
         Parameters
@@ -1781,73 +1808,89 @@ class MobileSpatialAnalyzer:
                 C2H6濃度を示すカラム名
             col_h2o_ppm : str
                 H2O濃度を示すカラム名
-            ch4_threshold : float
+            ch4_ppm_delta_threshold : float
                 CH4の閾値
-            c2h6_threshold : float
+            c2h6_ppb_delta_threshold : float
                 C2H6の閾値
-            use_quantile : bool
-                Trueの場合は5パーセンタイルを使用、Falseの場合は移動平均を使用
+            h2o_ppm_threshold : float
+                H2Oの閾値
+            rolling_method : RollingMethod
+                バックグラウンド値の移動計算に使用する方法を指定します。
+                - 'quantile'はパーセンタイルを使用します。
+                - 'mean'は平均を使用します。
+            quantile_value : float
+                使用するパーセンタイルの値（デフォルトは5）
 
         Returns
         ----------
             pd.DataFrame
                 計算されたパラメータを含むデータフレーム
+                
+        Raises
+        ----------
+            ValueError
+                quantile_value が0未満または100を超える場合に発生します。
         """
+        # 引数のバリデーション
+        if quantile_value < 0 or quantile_value > 100:
+            raise ValueError("quantile_value は0以上100以下の float で指定する必要があります。")
+        quantile_value_decimal: float = quantile_value / 100  # パーセントから小数に変換
+        
         # データのコピーを作成
-        df = df.copy()
+        df_copied: pd.DataFrame = df.copy()
 
         # 移動相関の計算
-        df["ch4_c2h6_correlation"] = (
-            df[col_ch4_ppm].rolling(window=window_size).corr(df[col_c2h6_ppb])
+        df_copied["c1c2_correlation"] = (
+            df_copied[col_ch4_ppm].rolling(window=window_size).corr(df_copied[col_c2h6_ppb])
         )
 
-        # バックグラウンド値の計算（5パーセンタイルまたは移動平均）
-        if use_quantile:
-            df["ch4_ppm_mv"] = (
-                df[col_ch4_ppm]
+        # バックグラウンド値の計算（指定されたパーセンタイルまたは移動平均）
+        if rolling_method == "quantile":
+            df_copied["ch4_ppm_bg"] = (
+                df_copied[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
-                .quantile(0.05)
+                .quantile(quantile_value_decimal)
             )
-            df["c2h6_ppb_mv"] = (
-                df[col_c2h6_ppb]
+            df_copied["c2h6_ppb_bg"] = (
+                df_copied[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
-                .quantile(0.05)
+                .quantile(quantile_value_decimal)
             )
-        else:
-            df["ch4_ppm_mv"] = (
-                df[col_ch4_ppm]
+        elif rolling_method == "mean":
+            df_copied["ch4_ppm_bg"] = (
+                df_copied[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
-            df["c2h6_ppb_mv"] = (
-                df[col_c2h6_ppb]
+            df_copied["c2h6_ppb_bg"] = (
+                df_copied[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
 
         # デルタ値の計算
-        df["ch4_ppm_delta"] = df[col_ch4_ppm] - df["ch4_ppm_mv"]
-        df["c2h6_ppb_delta"] = df[col_c2h6_ppb] - df["c2h6_ppb_mv"]
+        df_copied["ch4_ppm_delta"] = df_copied[col_ch4_ppm] - df_copied["ch4_ppm_bg"]
+        df_copied["c2h6_ppb_delta"] = df_copied[col_c2h6_ppb] - df_copied["c2h6_ppb_bg"]
 
         # C2H6/CH4の比率計算
-        df["c2c1_ratio"] = df[col_c2h6_ppb] / df[col_ch4_ppm]
-
+        df_copied["c2c1_ratio"] = df_copied[col_c2h6_ppb] / df_copied[col_ch4_ppm]
         # デルタ値に基づく比の計算とフィルタリング
-        df["c2c1_ratio_delta"] = df["c2h6_ppb_delta"] / df["ch4_ppm_delta"]
+        df_copied["c2c1_ratio_delta"] = df_copied["c2h6_ppb_delta"] / df_copied["ch4_ppm_delta"]
 
         # フィルタリング条件の適用
-        df.loc[df["ch4_ppm_delta"] < ch4_threshold, "c2c1_ratio_delta"] = np.nan
-        df.loc[df["c2h6_ppb_delta"] < -10.0, "c2h6_ppb_delta"] = np.nan
-        df.loc[df["c2h6_ppb_delta"] > 1000.0, "c2h6_ppb_delta"] = np.nan
-        df.loc[df["c2h6_ppb_delta"] < c2h6_threshold, "c2c1_ratio_delta"] = 0.0
+        df_copied.loc[df_copied["ch4_ppm_delta"] < ch4_ppm_delta_threshold, "c2c1_ratio_delta"] = np.nan
+        df_copied.loc[df_copied["c2h6_ppb_delta"] < -10.0, "c2h6_ppb_delta"] = np.nan
+        df_copied.loc[df_copied["c2h6_ppb_delta"] > 1000.0, "c2h6_ppb_delta"] = np.nan
+        # ホットスポットの定義上0未満の値もカウントされるので0未満は一律0とする
+        df_copied.loc[df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_threshold, "c2c1_ratio_delta"] = 0.0
 
         # 水蒸気濃度によるフィルタリング
-        df.loc[df[col_h2o_ppm] < 2000, [col_ch4_ppm, col_c2h6_ppb]] = np.nan
+        df_copied.loc[df_copied[col_h2o_ppm] < h2o_ppm_threshold, [col_ch4_ppm, col_c2h6_ppb]] = np.nan
 
         # 欠損値の除去
-        df = df.dropna(subset=[col_ch4_ppm])
+        df_copied = df_copied.dropna(subset=[col_ch4_ppm, col_c2h6_ppb])
 
-        return df
+        return df_copied
 
     @staticmethod
     def _calculate_window_size(window_minutes: float) -> int:
@@ -1996,7 +2039,7 @@ class MobileSpatialAnalyzer:
         check_time_all: bool = True,  # 時間閾値を超えた場合の重複チェックを継続するかどうか
         hotspot_area_meter: float = 50.0,  # 重複とみなす距離の閾値（メートル）
         col_ch4_ppm: str = "ch4_ppm",
-        col_ch4_ppm_mv: str = "ch4_ppm_mv",
+        col_ch4_ppm_bg: str = "ch4_ppm_bg",
         col_ch4_ppm_delta: str = "ch4_ppm_delta",
     ):
         """
@@ -2007,7 +2050,7 @@ class MobileSpatialAnalyzer:
             df : pandas.DataFrame
                 入力データフレーム。必須カラム:
                 - ch4_ppm: メタン濃度（ppm）
-                - ch4_ppm_mv: メタン濃度の移動平均（ppm）
+                - ch4_ppm_bg: メタン濃度の移動平均（ppm）
                 - ch4_ppm_delta: メタン濃度の増加量（ppm）
                 - latitude: 緯度
                 - longitude: 経度
@@ -2028,7 +2071,7 @@ class MobileSpatialAnalyzer:
         df_data: pd.DataFrame = df.copy()
         # メタン濃度の増加が閾値を超えた点を抽出
         mask = (
-            df_data[col_ch4_ppm] - df_data[col_ch4_ppm_mv] > self._ch4_enhance_threshold
+            df_data[col_ch4_ppm] - df_data[col_ch4_ppm_bg] > self._ch4_enhance_threshold
         )
         hotspot_candidates = df_data[mask].copy()
 

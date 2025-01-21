@@ -125,10 +125,10 @@ class TransferFunctionCalculator:
             window_size : int, optional
                 移動平均の窓サイズ。デフォルトは5。
         """
-        df: pd.DataFrame = self._df.copy()
+        df_copied: pd.DataFrame = self._df.copy()
         # データの取得と移動平均の適用
-        data1 = df[df[col1] > 0].groupby(self._col_freq)[col1].median()
-        data2 = df[df[col2] > 0].groupby(self._col_freq)[col2].median()
+        data1 = df_copied[df_copied[col1] > 0].groupby(self._col_freq)[col1].median()
+        data2 = df_copied[df_copied[col2] > 0].groupby(self._col_freq)[col2].median()
 
         data1 = data1.rolling(window=window_size, center=True, min_periods=1).mean()
         data2 = data2.rolling(window=window_size, center=True, min_periods=1).mean()
@@ -468,19 +468,19 @@ class TransferFunctionCalculator:
             pd.DataFrame
                 処理されたデータフレーム。
         """
-        df: pd.DataFrame = self._df.copy()
+        df_copied: pd.DataFrame = self._df.copy()
         col_freq: str = self._col_freq
 
         # データ型の確認と変換
-        df[col_freq] = pd.to_numeric(df[col_freq], errors="coerce")
-        df[col_reference] = pd.to_numeric(df[col_reference], errors="coerce")
-        df[col_target] = pd.to_numeric(df[col_target], errors="coerce")
+        df_copied[col_freq] = pd.to_numeric(df_copied[col_freq], errors="coerce")
+        df_copied[col_reference] = pd.to_numeric(df_copied[col_reference], errors="coerce")
+        df_copied[col_target] = pd.to_numeric(df_copied[col_target], errors="coerce")
 
         # NaNを含む行を削除
-        df = df.dropna(subset=[col_freq, col_reference, col_target])
+        df_copied = df_copied.dropna(subset=[col_freq, col_reference, col_target])
 
         # グループ化と中央値の計算
-        grouped = df.groupby(col_freq)
+        grouped = df_copied.groupby(col_freq)
         reference_data = grouped[col_reference].median()
         target_data = grouped[col_target].median()
 

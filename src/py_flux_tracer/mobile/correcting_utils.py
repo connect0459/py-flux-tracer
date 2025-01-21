@@ -32,15 +32,15 @@ class BiasRemovalConfig:
     ----------
     percentile : float
         バイアス除去に使用するパーセンタイル値
-    bottom_ch4_ppm : float
-        補正前の値から最小値を引いた後に足すCH4濃度の下限値。
-    bottom_c2h6_ppb : float
-        補正前の値から最小値を引いた後に足すC2H6濃度の下限値。
+    base_ch4_ppm : float
+        補正前の値から最小値を引いた後に足すCH4濃度の基準値。
+    base_c2h6_ppb : float
+        補正前の値から最小値を引いた後に足すC2H6濃度の基準値。
     """
 
     percentile: float = 5.0
-    bottom_ch4_ppm: float = 2.0
-    bottom_c2h6_ppb: float = 0
+    base_ch4_ppm: float = 2.0
+    base_c2h6_ppb: float = 0
 
 
 class CorrectingUtils:
@@ -111,8 +111,8 @@ class CorrectingUtils:
         df: pd.DataFrame,
         col_ch4_ppm: str = "ch4_ppm",
         col_c2h6_ppb: str = "c2h6_ppb",
-        bottom_ch4_ppm: float = 2.0,
-        bottom_c2h6_ppb: float = 0,
+        base_ch4_ppm: float = 2.0,
+        base_c2h6_ppb: float = 0,
         percentile: float = 5,
     ) -> pd.DataFrame:
         """
@@ -126,9 +126,9 @@ class CorrectingUtils:
                 CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
             col_c2h6_ppb : str
                 C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
-            bottom_ch4_ppm : float
+            base_ch4_ppm : float
                 補正前の値から最小値を引いた後に足すCH4濃度。
-            bottom_c2h6_ppb : float
+            base_c2h6_ppb : float
                 補正前の値から最小値を引いた後に足すC2H6濃度。
             percentile : float
                 下位何パーセンタイルの値を最小値として補正を行うか。
@@ -138,9 +138,9 @@ class CorrectingUtils:
             pd.DataFrame
                 バイアスが除去されたデータフレーム。
         """
-        df_processed: pd.DataFrame = df.copy()
-        c2h6_min = np.percentile(df_processed[col_c2h6_ppb], percentile)
-        df_processed[col_c2h6_ppb] = df_processed[col_c2h6_ppb] - c2h6_min + bottom_c2h6_ppb
-        ch4_min = np.percentile(df_processed[col_ch4_ppm], percentile)
-        df_processed[col_ch4_ppm] = df_processed[col_ch4_ppm] - ch4_min + bottom_ch4_ppm
-        return df_processed
+        df_copied: pd.DataFrame = df.copy()
+        c2h6_min = np.percentile(df_copied[col_c2h6_ppb], percentile)
+        df_copied[col_c2h6_ppb] = df_copied[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
+        ch4_min = np.percentile(df_copied[col_ch4_ppm], percentile)
+        df_copied[col_ch4_ppm] = df_copied[col_ch4_ppm] - ch4_min + base_ch4_ppm
+        return df_copied

@@ -64,11 +64,11 @@ class EddyDataPreprocessor:
             if column not in df.columns:
                 raise ValueError(f"必要な列 '{column}' がDataFrameに存在しません。")
 
-        processed_df: pd.DataFrame = df.copy()
+        df_copied: pd.DataFrame = df.copy()
         # pandasの.valuesを使用してnumpy配列を取得し、その型をnp.ndarrayに明示的にキャストする
-        wind_x_array: np.ndarray = np.array(processed_df["Ux"].values)
-        wind_y_array: np.ndarray = np.array(processed_df["Uy"].values)
-        wind_z_array: np.ndarray = np.array(processed_df["Uz"].values)
+        wind_x_array: np.ndarray = np.array(df_copied["Ux"].values)
+        wind_y_array: np.ndarray = np.array(df_copied["Uy"].values)
+        wind_z_array: np.ndarray = np.array(df_copied["Uz"].values)
 
         # 平均風向を計算
         wind_direction: float = EddyDataPreprocessor._wind_direction(
@@ -93,15 +93,15 @@ class EddyDataPreprocessor:
             )
         )
 
-        processed_df[self.WIND_U] = wind_u_array_rotated
-        processed_df[self.WIND_V] = wind_v_array
-        processed_df[self.WIND_W] = wind_w_array_rotated
-        processed_df[self.RAD_WIND_DIR] = wind_direction
-        processed_df[self.RAD_WIND_INC] = wind_inclination
-        processed_df[self.DEGREE_WIND_DIR] = np.degrees(wind_direction)
-        processed_df[self.DEGREE_WIND_INC] = np.degrees(wind_inclination)
+        df_copied[self.WIND_U] = wind_u_array_rotated
+        df_copied[self.WIND_V] = wind_v_array
+        df_copied[self.WIND_W] = wind_w_array_rotated
+        df_copied[self.RAD_WIND_DIR] = wind_direction
+        df_copied[self.RAD_WIND_INC] = wind_inclination
+        df_copied[self.DEGREE_WIND_DIR] = np.degrees(wind_direction)
+        df_copied[self.DEGREE_WIND_INC] = np.degrees(wind_inclination)
 
-        return processed_df
+        return df_copied
 
     def analyze_lag_times(
         self,
