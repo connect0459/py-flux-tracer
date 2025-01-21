@@ -7,7 +7,7 @@ if __name__ == "__main__":
         "/mnt/c/Users/nakao/workspace/sac/ultra/data/2025.01.10/Ultra_Eddy"
     )
     input_dir: str = os.path.join(target_home, "eddy_csv-resampled")
-    output_dir: str = os.path.join(target_home, "lag_time")
+    output_dir: str = os.path.join(target_home, "lags-py")
 
     # メイン処理
     edp = EddyDataPreprocessor(fs=10)
