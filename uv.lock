@@ -1198,7 +1198,7 @@ wheels = [
 
 [[package]]
 name = "py-flux-tracer"
-version = "0.0.2.dev8"
+version = "0.1.2.dev17"
 source = { editable = "." }
 dependencies = [
     { name = "folium" },
