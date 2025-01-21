@@ -268,8 +268,21 @@ class EddyDataPreprocessor:
 
         return results
 
-    def get_generated_columns_names(self) -> list[str]:
-        return [
+    def get_generated_columns_names(self, print: bool = True) -> list[str]:
+        """
+        クラス内部で生成されるカラム名を取得する。
+
+        Parameters
+        -------
+            print : bool
+                print()で表示するか。デフォルトはTrue。
+
+        Returns
+        -------
+            list[str]
+                生成されるカラム名のリスト。
+        """
+        list_cols: list[str] = [
             self.WIND_U,
             self.WIND_V,
             self.WIND_W,
@@ -278,6 +291,9 @@ class EddyDataPreprocessor:
             self.DEGREE_WIND_DIR,
             self.DEGREE_WIND_INC,
         ]
+        if print:
+            print(list_cols)
+        return list_cols
 
     def get_resampled_df(
         self,

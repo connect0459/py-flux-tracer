@@ -1,12 +1,13 @@
+import os
 from py_flux_tracer import EddyDataPreprocessor
 
 
 if __name__ == "__main__":
-    root_path: str = "/mnt/c/users/nakao/workspace/sac/ultra/data/2025.01.21/Ultra_Eddy"
+    root_path: str = "/mnt/c/Users/nakao/workspace/sac/ultra/data/2025.01.21/Ultra_Eddy"
 
-    input_dir: str = f"{root_path}/eddy_csv"
-    resampled_dir: str = f"{root_path}/eddy_csv-resampled"
-    c2c1_ratio_dir: str = f"{root_path}/calc-py"
+    input_dir: str = os.path.join(root_path, "eddy_csv")
+    resampled_dir: str = os.path.join(root_path, "eddy_csv-resampled")
+    c2c1_ratio_dir: str = os.path.join(root_path, "calc-py")
 
     try:
         edp = EddyDataPreprocessor(fs=10)
