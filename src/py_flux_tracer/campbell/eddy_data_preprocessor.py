@@ -299,8 +299,10 @@ class EddyDataPreprocessor:
             plt.hist(data, bins=20, range=plot_range_tuple)
             if add_title:
                 plt.title(f"Delays of {column}")
-            plt.xlabel(xlabel)
-            plt.ylabel(ylabel)
+            if xlabel is None:
+                plt.xlabel(xlabel)
+            if ylabel is None:
+                plt.ylabel(ylabel)
             plt.xlim(plot_range_tuple)
 
             # ファイルとして保存するか
