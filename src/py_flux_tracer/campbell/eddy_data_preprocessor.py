@@ -46,7 +46,7 @@ class EddyDataPreprocessor:
     def add_uvw_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         DataFrameに水平風速u、v、鉛直風速wの列を追加する関数。
-        各成分のキーは`wind_u`、`wind_v`、`wind_w`である。
+        各成分のキーは`edp_wind_u`、`edp_wind_v`、`edp_wind_w`である。
 
         Parameters
         -----

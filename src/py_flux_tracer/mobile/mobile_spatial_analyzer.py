@@ -447,7 +447,7 @@ class MobileSpatialAnalyzer:
         Parameters:
         ------
             duplicate_check_mode : Literal["none", "time_window", "time_all"]
-                重複チェックのモード（"none","time_window","time_all"）。
+                重複チェックのモード。
                 - "none": 重複チェックを行わない。
                 - "time_window": 指定された時間窓内の重複のみを除外。
                 - "time_all": すべての時間範囲で重複チェックを行う。
