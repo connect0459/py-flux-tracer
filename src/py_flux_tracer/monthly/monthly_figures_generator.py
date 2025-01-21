@@ -2230,7 +2230,7 @@ class MonthlyFiguresGenerator:
         file_list = glob.glob(os.path.join(input_dir, file_pattern))
         for filepath in tqdm(file_list, desc="Processing files"):
             df, _ = edp.get_resampled_df(
-                filepath=filepath, is_already_resampled=are_inputs_resampled
+                filepath=filepath, resample_in_processing=are_inputs_resampled
             )
 
             # 風速成分の計算を追加

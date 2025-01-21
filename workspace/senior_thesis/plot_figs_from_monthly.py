@@ -212,7 +212,7 @@ if __name__ == "__main__":
                 # データの読み込みと処理
                 edp = EddyDataPreprocessor(10)
                 df_for_turb, _ = edp.get_resampled_df(
-                    filepath=filepath, is_already_resampled=True
+                    filepath=filepath, resample_in_processing=True
                 )
                 df_for_turb = edp.add_uvw_columns(df_for_turb)
 

@@ -43,32 +43,54 @@ class EddyDataPreprocessor:
             log_level = DEBUG
         self.logger: Logger = EddyDataPreprocessor.setup_logger(logger, log_level)
 
-    def add_uvw_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+    def add_uvw_columns(
+        self, 
+        df: pd.DataFrame,
+        column_mapping: dict[str, str] = {
+            "u_m": "Ux",
+            "v_m": "Uy",
+            "w_m": "Uz"
+        },
+    ) -> pd.DataFrame:
         """
         DataFrameに水平風速u、v、鉛直風速wの列を追加する関数。
         各成分のキーは`edp_wind_u`、`edp_wind_v`、`edp_wind_w`である。
 
         Parameters
-        ------
+        ----------
             df : pd.DataFrame
                 風速データを含むDataFrame
+            column_mapping : dict[str, str]
+                入力データのカラム名マッピング。
+                キーは"u_m", "v_m", "w_m"で、値は対応する入力データのカラム名。
+                デフォルトは{"u_m": "Ux", "v_m": "Uy", "w_m": "Uz"}。
 
         Returns
-        ------
+        ----------
             pd.DataFrame
                 水平風速u、v、鉛直風速wの列を追加したDataFrame
+
+        Raises
+        ----------
+            ValueError
+                必要なカラムが存在しない場合、またはマッピングに必要なキーが不足している場合
         """
-        required_columns: list[str] = ["Ux", "Uy", "Uz"]
+        required_keys = ["u_m", "v_m", "w_m"]
+        # マッピングに必要なキーが存在するか確認
+        for key in required_keys:
+            if key not in column_mapping:
+                raise ValueError(f"column_mappingに必要なキー '{key}' が存在しません。")
+
         # 必要な列がDataFrameに存在するか確認
-        for column in required_columns:
+        for key, column in column_mapping.items():
             if column not in df.columns:
-                raise ValueError(f"必要な列 '{column}' がDataFrameに存在しません。")
+                raise ValueError(f"必要な列 '{column}' (mapped from '{key}') がDataFrameに存在しません。")
 
         df_copied: pd.DataFrame = df.copy()
         # pandasの.valuesを使用してnumpy配列を取得し、その型をnp.ndarrayに明示的にキャストする
-        wind_x_array: np.ndarray = np.array(df_copied["Ux"].values)
-        wind_y_array: np.ndarray = np.array(df_copied["Uy"].values)
-        wind_z_array: np.ndarray = np.array(df_copied["Uz"].values)
+        wind_x_array: np.ndarray = np.array(df_copied[column_mapping["u_m"]].values)
+        wind_y_array: np.ndarray = np.array(df_copied[column_mapping["v_m"]].values)
+        wind_z_array: np.ndarray = np.array(df_copied[column_mapping["w_m"]].values)
 
         # 平均風向を計算
         wind_direction: float = EddyDataPreprocessor._wind_direction(
@@ -112,13 +134,39 @@ class EddyDataPreprocessor:
         col1: str = "edp_wind_w",
         col2_list: list[str] = ["Tv"],
         median_range: float = 20,
-        metadata_rows: int = 4,
         output_dir: str | Path | None = None,
         output_tag: str = "",
         plot_range_tuple: tuple = (-50, 200),
         print_results: bool = True,
-        skiprows: list[int] = [0, 2, 3],
+        index_column: str = "TIMESTAMP",
+        index_format: str = "%Y-%m-%d %H:%M:%S.%f",
         resample_in_processing: bool = False,
+        interpolate: bool = True,
+        numeric_columns: list[str] = [
+            "Ux",
+            "Uy",
+            "Uz",
+            "Tv",
+            "diag_sonic",
+            "CO2_new",
+            "H2O",
+            "diag_irga",
+            "cell_tmpr",
+            "cell_press",
+            "Ultra_CH4_ppm",
+            "Ultra_C2H6_ppb",
+            "Ultra_H2O_ppm",
+            "Ultra_CH4_ppm_C",
+            "Ultra_C2H6_ppb_C",
+        ],
+        metadata_rows: int = 4,
+        skiprows: list[int] = [0, 2, 3],
+        add_uvw_columns: bool = True,
+        uvw_column_mapping: dict[str, str] = {
+            "u_m": "Ux",
+            "v_m": "Uy",
+            "w_m": "Uz"
+        },
     ) -> dict[str, float]:
         """
         遅れ時間（ラグ）の統計分析を行い、指定されたディレクトリ内のデータファイルを処理します。
@@ -156,6 +204,19 @@ class EddyDataPreprocessor:
                 データを遅れ時間の計算中にリサンプリングするかどうか。
                 inputするファイルが既にリサンプリング済みの場合はFalseでよい。
                 デフォルトはFalse。
+            interpolate : bool
+                欠損値の補完を適用するフラグ。デフォルトはTrue。
+            numeric_columns : list[str]
+                数値型に変換する列名のリスト。デフォルトは特定の列名のリスト。
+            add_uvw_columns : bool
+                u, v, wの列を追加するかどうか。デフォルトはTrue。
+            uvw_column_mapping : dict[str, str]
+                u, v, wの列名をマッピングする辞書。デフォルトは以下の通り。
+                {
+                    "u_m": "Ux",
+                    "v_m": "Uy",
+                    "w_m": "Uz"
+                }
 
         Returns
         ----------
@@ -183,15 +244,23 @@ class EddyDataPreprocessor:
             path: str = os.path.join(input_dir, file)
             if resample_in_processing:
                 df, _ = self.get_resampled_df(
-                    filepath=path, metadata_rows=metadata_rows, skiprows=skiprows
+                    filepath=path,
+                    metadata_rows=metadata_rows,
+                    skiprows=skiprows,
+                    index_column=index_column,
+                    index_format=index_format,
+                    numeric_columns=numeric_columns,
+                    resample_in_processing=(not resample_in_processing),
+                    interpolate=interpolate,
                 )
             else:
                 df = pd.read_csv(path, skiprows=skiprows)
-            df = self.add_uvw_columns(df)
+            if add_uvw_columns:
+                df = self.add_uvw_columns(df=df, column_mapping=uvw_column_mapping)
             lags_list = EddyDataPreprocessor._calculate_lag_time(
-                df,
-                col1,
-                col2_list,
+                df=df,
+                col1=col1,
+                col2_list=col2_list,
             )
             all_lags_indices.append(lags_list)
         self.logger.info("すべてのCSVファイルにおける遅れ時間が計算されました。")
@@ -320,7 +389,7 @@ class EddyDataPreprocessor:
         ],
         metadata_rows: int = 4,
         skiprows: list[int] = [0, 2, 3],
-        is_already_resampled: bool = False,
+        resample_in_processing: bool = True,
     ) -> tuple[pd.DataFrame, list[str]]:
         """
         CSVファイルを読み込み、前処理を行う
@@ -351,8 +420,8 @@ class EddyDataPreprocessor:
                 メタデータとして読み込む行数。デフォルトは4。
             skiprows : list[int], optional
                 スキップする行インデックスのリスト。デフォルトは[0, 2, 3]のため、1, 3, 4行目がスキップされる。
-            is_already_resampled : bool
-                既にリサンプリング&欠損補間されているか。Trueの場合はfloat変換などの処理のみ適用する。
+            resample_in_processing : bool
+                メソッド内でリサンプリング&欠損補間をするか。Falseの場合はfloat変換などの処理のみ適用する。
 
         Returns
         ----------
@@ -374,7 +443,7 @@ class EddyDataPreprocessor:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
-        if not is_already_resampled:
+        if not resample_in_processing:
             # μ秒がない場合は".0"を追加する
             df[index_column] = df[index_column].apply(
                 lambda x: f"{x}.0" if "." not in x else x
