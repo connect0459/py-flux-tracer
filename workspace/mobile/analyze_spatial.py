@@ -14,7 +14,7 @@ pico_h2o_correction = H2OCorrectionConfig(
     coef_c=-1.8683e-10,  # 2次の係数
 )
 pico_bias_removal = BiasRemovalConfig(
-    percentile=5.0,
+    quantile_value=0.05,
 )
 
 # MSAInputConfigによる詳細指定

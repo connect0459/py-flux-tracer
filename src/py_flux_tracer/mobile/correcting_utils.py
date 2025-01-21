@@ -24,23 +24,36 @@ class H2OCorrectionConfig:
     coef_c: float | None = None
     h2o_ppm_threshold: float | None = 2000
 
+
 @dataclass
 class BiasRemovalConfig:
     """バイアス除去の設定を保持するデータクラス
 
     Parameters
     ----------
-    percentile : float
-        バイアス除去に使用するパーセンタイル値
+    quantile_value : float
+        バイアス除去に使用するクォンタイル値
     base_ch4_ppm : float
         補正前の値から最小値を引いた後に足すCH4濃度の基準値。
     base_c2h6_ppb : float
         補正前の値から最小値を引いた後に足すC2H6濃度の基準値。
     """
 
-    percentile: float = 5.0
+    quantile_value: float = 0.05
     base_ch4_ppm: float = 2.0
     base_c2h6_ppb: float = 0
+
+    def __post_init__(self) -> None:
+        """パラメータの検証を行います。
+
+        Raises
+        ----------
+            ValueError: quantile_valueが0以上1未満でない場合
+        """
+        if not 0 <= self.quantile_value < 1:
+            raise ValueError(
+                f"QUANTILE_VALUE must be between 0 and 1, got {self.quantile_value}"
+            )
 
 
 class CorrectingUtils:
@@ -101,7 +114,9 @@ class CorrectingUtils:
 
         # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
         if h2o_ppm_threshold is not None:
-            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = np.nan
+            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = (
+                np.nan
+            )
             df_h2o_corrected = df_h2o_corrected.dropna(subset=[col_ch4_ppm])
 
         return df_h2o_corrected
@@ -113,7 +128,7 @@ class CorrectingUtils:
         col_c2h6_ppb: str = "c2h6_ppb",
         base_ch4_ppm: float = 2.0,
         base_c2h6_ppb: float = 0,
-        percentile: float = 5,
+        quantile_value: float = 0.05,
     ) -> pd.DataFrame:
         """
         データフレームからバイアスを除去します。
@@ -130,17 +145,19 @@ class CorrectingUtils:
                 補正前の値から最小値を引いた後に足すCH4濃度。
             base_c2h6_ppb : float
                 補正前の値から最小値を引いた後に足すC2H6濃度。
-            percentile : float
-                下位何パーセンタイルの値を最小値として補正を行うか。
-                
+            quantile_value : float
+                下位何クォンタイルの値を最小値として補正を行うか。
+
         Returns
         ----------
             pd.DataFrame
                 バイアスが除去されたデータフレーム。
         """
         df_copied: pd.DataFrame = df.copy()
-        c2h6_min = np.percentile(df_copied[col_c2h6_ppb], percentile)
-        df_copied[col_c2h6_ppb] = df_copied[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
-        ch4_min = np.percentile(df_copied[col_ch4_ppm], percentile)
+        # CH4
+        ch4_min = df_copied[col_ch4_ppm].quantile(quantile_value)
         df_copied[col_ch4_ppm] = df_copied[col_ch4_ppm] - ch4_min + base_ch4_ppm
+        # C2H6
+        c2h6_min = df_copied[col_c2h6_ppb].quantile(quantile_value)
+        df_copied[col_c2h6_ppb] = df_copied[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
         return df_copied

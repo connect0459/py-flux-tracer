@@ -163,7 +163,9 @@ class EmissionData:
             "annual_emission": self.annual_emission,
         }
 
+
 RollingMethod = Literal["quantile", "mean"]
+
 
 @dataclass
 class HotspotParams:
@@ -178,11 +180,11 @@ class HotspotParams:
     H2O_PPM : str
         H2O濃度を示すカラム名
     CH4_PPM_DELTA_THRESHOLD : float
-        CH4の閾値
+        CH4濃度変化量の閾値
     C2H6_PPB_DELTA_THRESHOLD : float
-        C2H6の閾値
-    USE_QUANTILE : bool
-        5パーセンタイルを使用するかどうかのフラグ
+        C2H6濃度変化量の閾値
+    H2O_PPM_THRESHOLD : float
+        H2O濃度の閾値
     ROLLING_METHOD : RollingMethod
         移動計算の方法
         - "quantile"は下位{QUANTILE_VALUE}%の値を使用する。
@@ -198,20 +200,21 @@ class HotspotParams:
     C2H6_PPB_DELTA_THRESHOLD: float = 0.0
     H2O_PPM_THRESHOLD: float = 2000
     ROLLING_METHOD: RollingMethod = "quantile"
-    QUANTILE_VALUE: float = 5
+    QUANTILE_VALUE: float = 0.05
 
     def __post_init__(self) -> None:
         """パラメータの検証を行います。
 
         Raises
         ----------
-            ValueError: QUANTILE_VALUEが0以上100以下でない場合
+            ValueError: QUANTILE_VALUEが0以上1以下でない場合
         """
         # QUANTILE_VALUEの値域チェック
-        if not 0 <= self.QUANTILE_VALUE <= 100:
+        if not 0 <= self.QUANTILE_VALUE <= 1:
             raise ValueError(
-                f"QUANTILE_VALUE must be between 0 and 100, got {self.QUANTILE_VALUE}"
+                f"QUANTILE_VALUE must be between 0 and 1, got {self.QUANTILE_VALUE}"
             )
+
 
 @dataclass
 class MSAInputConfig:
@@ -1696,7 +1699,7 @@ class MobileSpatialAnalyzer:
         if bias_removal is not None:
             df = CorrectingUtils.remove_bias(
                 df=df,
-                percentile=bias_removal.percentile,
+                quantile_value=bias_removal.quantile_value,
                 base_ch4_ppm=bias_removal.base_ch4_ppm,
                 base_c2h6_ppb=bias_removal.base_c2h6_ppb,
             )
@@ -1777,7 +1780,7 @@ class MobileSpatialAnalyzer:
         c: float = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return R * c  # メートル単位での距離
-    
+
     @staticmethod
     def _calculate_hotspots_parameters(
         df: pd.DataFrame,
@@ -1789,11 +1792,11 @@ class MobileSpatialAnalyzer:
         c2h6_ppb_delta_threshold: float = 0.0,
         h2o_ppm_threshold: float = 2000,
         rolling_method: RollingMethod = "quantile",
-        quantile_value: float = 5,
+        quantile_value: float = 0.05,
     ) -> pd.DataFrame:
         """
         ホットスポットのパラメータを計算します。
-        このメソッドは、指定されたデータフレームに対して移動平均（または指定されたパーセンタイル）や相関を計算し、
+        このメソッドは、指定されたデータフレームに対して移動平均（または指定されたquantile）や相関を計算し、
         各種のデルタ値や比率を追加します。
 
         Parameters
@@ -1816,32 +1819,35 @@ class MobileSpatialAnalyzer:
                 H2Oの閾値
             rolling_method : RollingMethod
                 バックグラウンド値の移動計算に使用する方法を指定します。
-                - 'quantile'はパーセンタイルを使用します。
+                - 'quantile'はquantileを使用します。
                 - 'mean'は平均を使用します。
             quantile_value : float
-                使用するパーセンタイルの値（デフォルトは5）
+                使用するquantileの値（デフォルトは0.05）
 
         Returns
         ----------
             pd.DataFrame
                 計算されたパラメータを含むデータフレーム
-                
+
         Raises
         ----------
             ValueError
                 quantile_value が0未満または100を超える場合に発生します。
         """
         # 引数のバリデーション
-        if quantile_value < 0 or quantile_value > 100:
-            raise ValueError("quantile_value は0以上100以下の float で指定する必要があります。")
-        quantile_value_decimal: float = quantile_value / 100  # パーセントから小数に変換
-        
+        if quantile_value < 0 or quantile_value > 1:
+            raise ValueError(
+                "quantile_value は0以上1以下の float で指定する必要があります。"
+            )
+
         # データのコピーを作成
         df_copied: pd.DataFrame = df.copy()
 
         # 移動相関の計算
         df_copied["c1c2_correlation"] = (
-            df_copied[col_ch4_ppm].rolling(window=window_size).corr(df_copied[col_c2h6_ppb])
+            df_copied[col_ch4_ppm]
+            .rolling(window=window_size)
+            .corr(df_copied[col_c2h6_ppb])
         )
 
         # バックグラウンド値の計算（指定されたパーセンタイルまたは移動平均）
@@ -1849,12 +1855,12 @@ class MobileSpatialAnalyzer:
             df_copied["ch4_ppm_bg"] = (
                 df_copied[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
-                .quantile(quantile_value_decimal)
+                .quantile(quantile_value)
             )
             df_copied["c2h6_ppb_bg"] = (
                 df_copied[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
-                .quantile(quantile_value_decimal)
+                .quantile(quantile_value)
             )
         elif rolling_method == "mean":
             df_copied["ch4_ppm_bg"] = (
@@ -1875,17 +1881,25 @@ class MobileSpatialAnalyzer:
         # C2H6/CH4の比率計算
         df_copied["c2c1_ratio"] = df_copied[col_c2h6_ppb] / df_copied[col_ch4_ppm]
         # デルタ値に基づく比の計算とフィルタリング
-        df_copied["c2c1_ratio_delta"] = df_copied["c2h6_ppb_delta"] / df_copied["ch4_ppm_delta"]
+        df_copied["c2c1_ratio_delta"] = (
+            df_copied["c2h6_ppb_delta"] / df_copied["ch4_ppm_delta"]
+        )
 
         # フィルタリング条件の適用
-        df_copied.loc[df_copied["ch4_ppm_delta"] < ch4_ppm_delta_threshold, "c2c1_ratio_delta"] = np.nan
+        df_copied.loc[
+            df_copied["ch4_ppm_delta"] < ch4_ppm_delta_threshold, "c2c1_ratio_delta"
+        ] = np.nan
         df_copied.loc[df_copied["c2h6_ppb_delta"] < -10.0, "c2h6_ppb_delta"] = np.nan
         df_copied.loc[df_copied["c2h6_ppb_delta"] > 1000.0, "c2h6_ppb_delta"] = np.nan
         # ホットスポットの定義上0未満の値もカウントされるので0未満は一律0とする
-        df_copied.loc[df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_threshold, "c2c1_ratio_delta"] = 0.0
+        df_copied.loc[
+            df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_threshold, "c2c1_ratio_delta"
+        ] = 0.0
 
         # 水蒸気濃度によるフィルタリング
-        df_copied.loc[df_copied[col_h2o_ppm] < h2o_ppm_threshold, [col_ch4_ppm, col_c2h6_ppb]] = np.nan
+        df_copied.loc[
+            df_copied[col_h2o_ppm] < h2o_ppm_threshold, [col_ch4_ppm, col_c2h6_ppb]
+        ] = np.nan
 
         # 欠損値の除去
         df_copied = df_copied.dropna(subset=[col_ch4_ppm, col_c2h6_ppb])

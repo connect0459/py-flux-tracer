@@ -197,14 +197,16 @@ class MonthlyFiguresGenerator:
                 valid_data = df[col].dropna()
 
                 if len(valid_data) > 0:
-                    percentile_5 = np.nanpercentile(valid_data, 5)
-                    percentile_95 = np.nanpercentile(valid_data, 95)
+                    # quantileで計算（0-1の範囲）
+                    quantile_05 = valid_data.quantile(0.05)
+                    quantile_95 = valid_data.quantile(0.95)
                     mean_value = np.nanmean(valid_data)
                     positive_ratio = (valid_data > 0).mean() * 100
 
                     print(f"\n{name}:")
+                    # パーセンタイルで表示（0-100の範囲）
                     print(
-                        f"90パーセンタイルレンジ: {percentile_5:.2f} - {percentile_95:.2f}"
+                        f"90パーセンタイルレンジ: {quantile_05:.2f} - {quantile_95:.2f}"
                     )
                     print(f"平均値: {mean_value:.2f}")
                     print(f"正の値の割合: {positive_ratio:.1f}%")

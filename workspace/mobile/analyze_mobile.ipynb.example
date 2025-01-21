@@ -67,7 +67,7 @@
     "    coef_c=-1.8683e-10,  # 2次の係数\n",
     ")\n",
     "pico_bias_removal = BiasRemovalConfig(\n",
-    "    percentile=5.0,\n",
+    "    quantile_value=0.05,\n",
     ")\n",
     "\n",
     "# MSAInputConfigによる詳細指定\n",
