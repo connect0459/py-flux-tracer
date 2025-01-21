@@ -127,7 +127,7 @@ class EddyDataPreprocessor:
 
     def analyze_lag_times(
         self,
-        input_dir: str,
+        input_dir: str | Path,
         figsize: tuple[float, float] = (10, 8),
         input_files_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
@@ -137,6 +137,9 @@ class EddyDataPreprocessor:
         output_dir: str | Path | None = None,
         output_tag: str = "",
         plot_range_tuple: tuple = (-50, 200),
+        add_title: bool = True,
+        xlabel: str | None = "Seconds",
+        ylabel: str | None = "Frequency",
         print_results: bool = True,
         index_column: str = "TIMESTAMP",
         index_format: str = "%Y-%m-%d %H:%M:%S.%f",
@@ -174,7 +177,7 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            input_dir : str
+            input_dir : str | Path
                 入力データファイルが格納されているディレクトリのパス。
             figsize : tuple[float, float]
                 プロットのサイズ（幅、高さ）。
@@ -188,18 +191,20 @@ class EddyDataPreprocessor:
                 比較変数の列名のリスト。
             median_range : float
                 中央値を中心とした範囲。
-            metadata_rows : int
-                メタデータの行数。
             output_dir : str | Path | None
                 出力ディレクトリのパス。Noneの場合は保存しない。
             output_tag : str
                 出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。
             plot_range_tuple : tuple
                 ヒストグラムの表示範囲。
+            add_title : bool
+                プロットにタイトルを追加するかどうか。デフォルトはTrue。
+            xlabel : str | None
+                x軸のラベル。デフォルトは"Seconds"。
+            ylabel : str | None
+                y軸のラベル。デフォルトは"Frequency"。
             print_results : bool
                 結果をコンソールに表示するかどうか。
-            skiprows : list[int]
-                スキップする行番号のリスト。
             resample_in_processing : bool
                 データを遅れ時間の計算中にリサンプリングするかどうか。
                 inputするファイルが既にリサンプリング済みの場合はFalseでよい。
@@ -208,6 +213,10 @@ class EddyDataPreprocessor:
                 欠損値の補完を適用するフラグ。デフォルトはTrue。
             numeric_columns : list[str]
                 数値型に変換する列名のリスト。デフォルトは特定の列名のリスト。
+            metadata_rows : int
+                メタデータの行数。
+            skiprows : list[int]
+                スキップする行番号のリスト。
             add_uvw_columns : bool
                 u, v, wの列を追加するかどうか。デフォルトはTrue。
             uvw_column_mapping : dict[str, str]
@@ -242,6 +251,7 @@ class EddyDataPreprocessor:
 
         for file in tqdm(csv_files, desc="Calculating"):
             path: str = os.path.join(input_dir, file)
+            df: pd.DataFrame = {} # 未定義エラーを防止
             if resample_in_processing:
                 df, _ = self.get_resampled_df(
                     filepath=path,
@@ -250,8 +260,8 @@ class EddyDataPreprocessor:
                     index_column=index_column,
                     index_format=index_format,
                     numeric_columns=numeric_columns,
-                    resample_in_processing=(not resample_in_processing),
                     interpolate=interpolate,
+                    resample=resample_in_processing,
                 )
             else:
                 df = pd.read_csv(path, skiprows=skiprows)
@@ -285,11 +295,12 @@ class EddyDataPreprocessor:
             data: pd.Series = lags_indices_df[column]
 
             # ヒストグラムの作成
-            plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=figsize)
             plt.hist(data, bins=20, range=plot_range_tuple)
-            plt.title(f"Delays of {column}")
-            plt.xlabel("Seconds")
-            plt.ylabel("Frequency")
+            if add_title:
+                plt.title(f"Delays of {column}")
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
             plt.xlim(plot_range_tuple)
 
             # ファイルとして保存するか
@@ -298,7 +309,7 @@ class EddyDataPreprocessor:
                 filename: str = f"lags_histogram-{column}{output_tag}.png"
                 filepath: str = os.path.join(output_dir, filename)
                 plt.savefig(filepath, dpi=300, bbox_inches="tight")
-                plt.close()
+                plt.close(fig=fig)
 
             # 中央値を計算し、その周辺のデータのみを使用
             median_value = np.median(data)
@@ -369,7 +380,6 @@ class EddyDataPreprocessor:
         filepath: str,
         index_column: str = "TIMESTAMP",
         index_format: str = "%Y-%m-%d %H:%M:%S.%f",
-        interpolate: bool = True,
         numeric_columns: list[str] = [
             "Ux",
             "Uy",
@@ -389,7 +399,8 @@ class EddyDataPreprocessor:
         ],
         metadata_rows: int = 4,
         skiprows: list[int] = [0, 2, 3],
-        resample_in_processing: bool = True,
+        resample: bool = True,
+        interpolate: bool = True,
     ) -> tuple[pd.DataFrame, list[str]]:
         """
         CSVファイルを読み込み、前処理を行う
@@ -411,8 +422,6 @@ class EddyDataPreprocessor:
                 インデックスに使用する列名。デフォルトは'TIMESTAMP'。
             index_format : str, optional
                 インデックスの日付形式。デフォルトは'%Y-%m-%d %H:%M:%S.%f'。
-            interpolate : bool, optional
-                欠損値の補完を適用するフラグ。デフォルトはTrue。
             numeric_columns : list[str], optional
                 数値型に変換する列名のリスト。
                 デフォルトは["Ux", "Uy", "Uz", "Tv", "diag_sonic", "CO2_new", "H2O", "diag_irga", "cell_tmpr", "cell_press", "Ultra_CH4_ppm", "Ultra_C2H6_ppb", "Ultra_H2O_ppm", "Ultra_CH4_ppm_C", "Ultra_C2H6_ppb_C"]。
@@ -420,8 +429,10 @@ class EddyDataPreprocessor:
                 メタデータとして読み込む行数。デフォルトは4。
             skiprows : list[int], optional
                 スキップする行インデックスのリスト。デフォルトは[0, 2, 3]のため、1, 3, 4行目がスキップされる。
-            resample_in_processing : bool
+            resample : bool
                 メソッド内でリサンプリング&欠損補間をするか。Falseの場合はfloat変換などの処理のみ適用する。
+            interpolate : bool, optional
+                欠損値の補完を適用するフラグ。デフォルトはTrue。
 
         Returns
         ----------
@@ -443,7 +454,7 @@ class EddyDataPreprocessor:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
-        if not resample_in_processing:
+        if not resample:
             # μ秒がない場合は".0"を追加する
             df[index_column] = df[index_column].apply(
                 lambda x: f"{x}.0" if "." not in x else x
@@ -500,6 +511,7 @@ class EddyDataPreprocessor:
         c2c1_ratio_csv_prefix: str = "SAC.Ultra",
         index_column: str = "TIMESTAMP",
         index_format: str = "%Y-%m-%d %H:%M:%S.%f",
+        resample: bool = True,
         interpolate: bool = True,
         numeric_columns: list[str] = [
             "Ux",
@@ -555,6 +567,8 @@ class EddyDataPreprocessor:
                 日時情報を含む列名。デフォルトは'TIMESTAMP'。
             index_format : str, optional
                 インデックスの日付形式。デフォルトは'%Y-%m-%d %H:%M:%S.%f'。
+            resample : bool
+                リサンプリングを行うかどうか。デフォルトはTrue。
             interpolate : bool
                 欠損値補間を行うかどうか。デフォルトはTrue。
             numeric_columns : list[str]
@@ -605,6 +619,7 @@ class EddyDataPreprocessor:
                 index_column=index_column,
                 index_format=index_format,
                 interpolate=interpolate,
+                resample=resample,
                 numeric_columns=numeric_columns,
                 metadata_rows=metadata_rows,
                 skiprows=skiprows,
