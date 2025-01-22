@@ -1027,25 +1027,15 @@ class FluxFootprintAnalyzer:
 
         # 14. ホットスポットの凡例追加
         if add_legend and hotspots and spot_handles:
-            # 列数を決定
+            # 列数を決定（指定がない場合はホットスポットの数を使用）
             ncol = legend_ncol if legend_ncol is not None else len(spot_handles)
-            
-            legend = ax_data.legend(
+            ax_data.legend(
                 handles=spot_handles,
-                loc=legend_loc,
-                bbox_to_anchor=(0.5, -0.15),
-                ncol=ncol,
-                mode="expand",
-                borderaxespad=0.,
-                frameon=True,
-                edgecolor='white',
-                facecolor='white',  # 背景色を白に設定
+                loc=legend_loc,  # 凡例の基準位置を指定
+                bbox_to_anchor=legend_bbox_to_anchor,  # アンカーポイントを指定
+                ncol=ncol,  # 列数を指定
+                framealpha=legend_alpha,  # 完全に不透過に設定（0.0は完全透過）
             )
-            
-            # 凡例の背景の透過度を設定
-            legend.get_frame().set_alpha(1.0)  # 完全に不透過に設定
-            
-            plt.subplots_adjust(bottom=0.2)
 
         # 15. 画像の保存
         if save_fig:
