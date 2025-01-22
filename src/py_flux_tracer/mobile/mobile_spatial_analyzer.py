@@ -1852,31 +1852,31 @@ class MobileSpatialAnalyzer:
 
         # バックグラウンド値の計算（指定されたパーセンタイルまたは移動平均）
         if rolling_method == "quantile":
-            df_copied["ch4_ppm_bg"] = (
+            df_copied["ch4_ppm_mv"] = (
                 df_copied[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .quantile(quantile_value)
             )
-            df_copied["c2h6_ppb_bg"] = (
+            df_copied["c2h6_ppb_mv"] = (
                 df_copied[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .quantile(quantile_value)
             )
         elif rolling_method == "mean":
-            df_copied["ch4_ppm_bg"] = (
+            df_copied["ch4_ppm_mv"] = (
                 df_copied[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
-            df_copied["c2h6_ppb_bg"] = (
+            df_copied["c2h6_ppb_mv"] = (
                 df_copied[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
 
         # デルタ値の計算
-        df_copied["ch4_ppm_delta"] = df_copied[col_ch4_ppm] - df_copied["ch4_ppm_bg"]
-        df_copied["c2h6_ppb_delta"] = df_copied[col_c2h6_ppb] - df_copied["c2h6_ppb_bg"]
+        df_copied["ch4_ppm_delta"] = df_copied[col_ch4_ppm] - df_copied["ch4_ppm_mv"]
+        df_copied["c2h6_ppb_delta"] = df_copied[col_c2h6_ppb] - df_copied["c2h6_ppb_mv"]
 
         # C2H6/CH4の比率計算
         df_copied["c2c1_ratio"] = df_copied[col_c2h6_ppb] / df_copied[col_ch4_ppm]
@@ -2053,7 +2053,7 @@ class MobileSpatialAnalyzer:
         check_time_all: bool = True,  # 時間閾値を超えた場合の重複チェックを継続するかどうか
         hotspot_area_meter: float = 50.0,  # 重複とみなす距離の閾値（メートル）
         col_ch4_ppm: str = "ch4_ppm",
-        col_ch4_ppm_bg: str = "ch4_ppm_bg",
+        col_ch4_ppm_mv: str = "ch4_ppm_mv",
         col_ch4_ppm_delta: str = "ch4_ppm_delta",
     ):
         """
@@ -2064,7 +2064,7 @@ class MobileSpatialAnalyzer:
             df : pandas.DataFrame
                 入力データフレーム。必須カラム:
                 - ch4_ppm: メタン濃度（ppm）
-                - ch4_ppm_bg: メタン濃度の移動平均（ppm）
+                - ch4_ppm_mv: メタン濃度の移動平均（ppm）
                 - ch4_ppm_delta: メタン濃度の増加量（ppm）
                 - latitude: 緯度
                 - longitude: 経度
@@ -2085,7 +2085,7 @@ class MobileSpatialAnalyzer:
         df_data: pd.DataFrame = df.copy()
         # メタン濃度の増加が閾値を超えた点を抽出
         mask = (
-            df_data[col_ch4_ppm] - df_data[col_ch4_ppm_bg] > self._ch4_enhance_threshold
+            df_data[col_ch4_ppm] - df_data[col_ch4_ppm_mv] > self._ch4_enhance_threshold
         )
         hotspot_candidates = df_data[mask].copy()
 
