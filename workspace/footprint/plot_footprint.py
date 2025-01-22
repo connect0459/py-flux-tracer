@@ -171,7 +171,7 @@ if __name__ == "__main__":
 
     # 航空写真の取得
     local_image_path: str = (
-        "/home/connect0459/labo/py-flux-tracer/storage/assets/SAC-zoom_13.png"
+        "/home/connect0459/labo/py-flux-tracer/storage/assets/SAC_2025-zoom_13.png"
     )
     image = ffa.get_satellite_image_from_local(
         local_image_path=local_image_path
@@ -274,6 +274,7 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ratio{date_tag}.png",
+                show_fig=False,
             )
 
             FigureUtils.setup_plot_params(font_family=["Arial", "MS Gothic"])
@@ -287,6 +288,7 @@ if __name__ == "__main__":
                 x_list=x_list,  # メートル単位のx座標
                 y_list=y_list,  # メートル単位のy座標
                 c_list=None,
+                figsize=(8,8),
                 hotspots=hotspots,
                 hotspots_alpha=0.5,
                 hotspot_labels={
@@ -297,7 +299,9 @@ if __name__ == "__main__":
                 # hotspot_colors={"bio": "blue", "gas": "red", "comb": "green"},
                 hotspot_colors={"bio": "gray", "gas": "gray", "comb": "green"},
                 hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
-                legend_bbox_to_anchor=(0.50, -0.01),
+                legend_loc="upper right",
+                legend_bbox_to_anchor=(0.95, 0.95),
+                legend_ncol=1,
                 center_lat=center_lan,
                 center_lon=center_lon,
                 satellite_image=image_for_mono,
@@ -305,12 +309,13 @@ if __name__ == "__main__":
                 vmin=0,
                 vmax=100,
                 xy_max=5000,
-                add_legend=True,
+                add_legend=False,
                 add_cbar=False,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename="footprint_mono.png",
+                show_fig=(i == 0),
             )
             del x_list, y_list, c_list
 

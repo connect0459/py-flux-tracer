@@ -2244,7 +2244,7 @@ class MobileSpatialAnalyzer:
     def calculate_emission_rates(
         hotspots: list[HotspotData],
         method: Literal["weller", "weitzel", "joo", "umezawa"] = "weller",
-        print_summary: bool = True,
+        print_summary: bool = False,
         custom_formulas: dict[str, dict[str, float]] | None = None,
     ) -> tuple[list[EmissionData], dict[str, dict[str, float]]]:
         """
@@ -2408,7 +2408,7 @@ class MobileSpatialAnalyzer:
         scatter_xlim: tuple[float, float] | None = None,
         scatter_ylim: tuple[float, float] | None = None,
         hist_bin_width: float = 0.5,
-        print_summary: bool = True,
+        print_summary: bool = False,
         save_fig: bool = False,
         show_fig: bool = True,
         show_scatter: bool = True,  # 散布図の表示を制御するオプションを追加

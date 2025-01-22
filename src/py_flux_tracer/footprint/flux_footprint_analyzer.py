@@ -350,11 +350,12 @@ class FluxFootprintAnalyzer:
 
         # tqdmを使用してプログレスバーを表示
         for i in tqdm(range(len(data_weekday)), desc="Calculating footprint"):
-            dUstar: float = data_weekday[self._cols[self._default_cols.FRICTION_VELOCITY]].iloc[i]
+            dUstar: float = data_weekday[
+                self._cols[self._default_cols.FRICTION_VELOCITY]
+            ].iloc[i]
             dU: float = data_weekday[self._cols[self._default_cols.WIND_SPEED]].iloc[i]
             sigmaV: float = data_weekday[self._cols[self._default_cols.SIGMA_V]].iloc[i]
             dzL: float = data_weekday[self._cols[self._default_cols.STABILITY]].iloc[i]
-
 
             if pd.isna(dUstar) or pd.isna(dU) or pd.isna(sigmaV) or pd.isna(dzL):
                 self.logger.warning(f"NaN fields are exist.: i = {i}")
@@ -707,12 +708,18 @@ class FluxFootprintAnalyzer:
         cbar_labelpad: int = 20,
         cmap: str = "jet",
         reduce_c_function: callable = np.mean,
+        dpi: float = 300,
+        figsize: tuple[float, float] = (8, 8),
+        constrained_layout: bool = False,
         hotspots: list[HotspotData] | None = None,
         hotspots_alpha: float = 0.7,
         hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_labels: dict[HotspotType, str] | None = None,
         hotspot_markers: dict[HotspotType, str] | None = None,
+        legend_alpha: float = 1.0,
         legend_bbox_to_anchor: tuple[float, float] = (0.55, -0.01),
+        legend_loc: str = "upper center",
+        legend_ncol: int | None = None,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | Path | None = None,
@@ -720,6 +727,7 @@ class FluxFootprintAnalyzer:
         save_fig: bool = True,
         show_fig: bool = True,
         satellite_image: ImageFile | None = None,
+        satellite_image_aspect: str = "auto",
         xy_max: float = 5000,
     ) -> None:
         """
@@ -756,6 +764,12 @@ class FluxFootprintAnalyzer:
                 使用するカラーマップの名前。
             reduce_c_function : callable
                 フットプリントの集約関数（デフォルトはnp.mean）。
+            dpi : float, optional
+                出力画像の解像度（デフォルトは300）。
+            figsize : tuple[float, float], optional
+                出力画像のサイズ（デフォルトは(8, 8)）。
+            constrained_layout : bool, optional
+                図のレイアウトを自動調整するかどうか（デフォルトはFalse）。
             hotspots : list[HotspotData] | None, optional
                 ホットスポットデータのリスト。デフォルトはNone。
             hotspots_alpha : float, optional
@@ -769,8 +783,18 @@ class FluxFootprintAnalyzer:
             hotspot_markers : dict[HotspotType, str] | None, optional
                 ホットスポットの形状を指定する辞書。
                 例: {'bio': '^', 'gas': 'o', 'comb': 's'}
-            legend_bbox_to_anchor : tuple[float, flaot], optional
-                ホットスポットの凡例の位置。デフォルトは (0.55, -0.01) 。
+            legend_alpha : float
+                凡例の透過率（デフォルトは1.0）。
+            legend_bbox_to_anchor : tuple[float, float], optional
+                凡例の位置を微調整するためのアンカーポイント。デフォルトは(0.55, -0.01)。
+            legend_loc : str, optional
+                凡例の基準位置。以下のいずれかを指定:
+                'upper right', 'upper left', 'lower left', 'lower right',
+                'upper center', 'lower center', 'center left', 'center right'
+                デフォルトは'upper center'。
+            legend_ncol : int | None, optional
+                凡例の列数（横方向）。Noneの場合、ホットスポットの数に応じて自動設定。
+                デフォルトはNone。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
             lon_correction : float, optional
@@ -785,6 +809,8 @@ class FluxFootprintAnalyzer:
                 図の表示を許可するフラグ。デフォルトはTrue。
             satellite_image : ImageFile | None, optional
                 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
+            satellite_image_aspect : str
+                衛星画像のアスペクト比を指定します。デフォルトは'auto'。
             xy_max : float, optional
                 表示範囲の最大値（デフォルトは5000）。
         """
@@ -843,7 +869,11 @@ class FluxFootprintAnalyzer:
 
         # 8. プロットの作成
         plt.rcParams["axes.edgecolor"] = "None"
-        fig: plt.Figure = plt.figure(figsize=(10, 8), dpi=300)
+
+        # 従来のロジック
+        fig: plt.Figure = plt.figure(
+            figsize=figsize, dpi=dpi, constrained_layout=constrained_layout
+        )
         ax_data: plt.Axes = fig.add_axes([0.05, 0.1, 0.8, 0.8])
 
         # 9. フットプリントの描画
@@ -973,7 +1003,7 @@ class FluxFootprintAnalyzer:
         ax_img.imshow(
             satellite_image,
             extent=[left_lon, right_lon, bottom_lat, top_lat],
-            aspect="equal",
+            aspect=satellite_image_aspect,
         )
 
         # 12. 軸の設定
@@ -997,12 +1027,25 @@ class FluxFootprintAnalyzer:
 
         # 14. ホットスポットの凡例追加
         if add_legend and hotspots and spot_handles:
-            ax_data.legend(
+            # 列数を決定
+            ncol = legend_ncol if legend_ncol is not None else len(spot_handles)
+            
+            legend = ax_data.legend(
                 handles=spot_handles,
-                loc="upper center",
-                bbox_to_anchor=legend_bbox_to_anchor,  # 図の下に配置
-                ncol=len(spot_handles),  # ハンドルの数に応じて列数を設定
+                loc=legend_loc,
+                bbox_to_anchor=(0.5, -0.15),
+                ncol=ncol,
+                mode="expand",
+                borderaxespad=0.,
+                frameon=True,
+                edgecolor='white',
+                facecolor='white',  # 背景色を白に設定
             )
+            
+            # 凡例の背景の透過度を設定
+            legend.get_frame().set_alpha(1.0)  # 完全に不透過に設定
+            
+            plt.subplots_adjust(bottom=0.2)
 
         # 15. 画像の保存
         if save_fig:
@@ -1234,7 +1277,7 @@ class FluxFootprintAnalyzer:
 
         return df_combined
 
-    def _prepare_csv(self, file_path: str,col_datetime:str) -> pd.DataFrame:
+    def _prepare_csv(self, file_path: str, col_datetime: str) -> pd.DataFrame:
         """
         フラックスデータを含むCSVファイルを読み込み、処理します。
 
