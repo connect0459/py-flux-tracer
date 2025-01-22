@@ -122,16 +122,16 @@ if __name__ == "__main__":
     # msa.calculate_measurement_stats()
 
     # ホットスポット検出
-    all_hotspots: list[HotspotData] = msa.analyze_hotspots()
-    hotspots: list[HotspotData] = msa.analyze_hotspots(
+    # all_hotspots: list[HotspotData] = msa.analyze_hotspots()
+    unique_hotspots: list[HotspotData] = msa.analyze_hotspots(
         # duplicate_check_mode="time_window",
         duplicate_check_mode="time_all",
     )
 
     # 結果の表示
-    bio_spots = [h for h in hotspots if h.type == "bio"]
-    gas_spots = [h for h in hotspots if h.type == "gas"]
-    comb_spots = [h for h in hotspots if h.type == "comb"]
+    bio_spots = [h for h in unique_hotspots if h.type == "bio"]
+    gas_spots = [h for h in unique_hotspots if h.type == "gas"]
+    comb_spots = [h for h in unique_hotspots if h.type == "comb"]
 
     if print_summary:
         print("\nResults:")
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         section_counts = {
             i: {"bio": 0, "gas": 0, "comb": 0} for i in range(num_sections)
         }
-        for spot in hotspots:
+        for spot in unique_hotspots:
             section_counts[spot.section][spot.type] += 1
 
         # 区画ごとの結果を表示
@@ -160,14 +160,14 @@ if __name__ == "__main__":
     # hotspots = [h for h in hotspots if h.section in west_sections_list]
 
     # 地図の作成と保存
-    msa.create_hotspots_map(hotspots, output_dir=output_dir)
+    msa.create_hotspots_map(unique_hotspots, output_dir=output_dir)
 
     # ホットスポットを散布図で表示
-    msa.plot_scatter_c2c1(hotspots, output_dir=output_dir, show_fig=False)
+    msa.plot_scatter_c2c1(unique_hotspots, output_dir=output_dir, show_fig=False)
 
     # ヒストグラムを作図
     msa.plot_ch4_delta_histogram(
-        hotspots=hotspots,
+        hotspots=unique_hotspots,
         output_dir=output_dir,
         figsize=(10, 6),
         xlim=(0, 1.4),
@@ -177,9 +177,9 @@ if __name__ == "__main__":
     )
 
     # 統計情報を表示
-    msa.analyze_delta_ch4_stats(hotspots=hotspots)
+    msa.analyze_delta_ch4_stats(hotspots=unique_hotspots)
     # csvに出力
-    msa.export_hotspots_to_csv(hotspots=hotspots, output_dir=output_dir)
+    msa.export_hotspots_to_csv(hotspots=unique_hotspots, output_dir=output_dir)
 
     # Emissionの分析
     # [method, rate_lim]
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         msa.logger.info(f"{method}のemission解析を開始します。")
         # 排出量の計算と基本統計
         emission_data_list, _ = MobileSpatialAnalyzer.calculate_emission_rates(
-            hotspots, method=method, print_summary=True
+            unique_hotspots, method=method, print_summary=True
         )
 
         # 分布の可視化
