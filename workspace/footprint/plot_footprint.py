@@ -116,8 +116,8 @@ for path in font_paths:
 center_lan: float = 34.573904320329724  # 観測地点の緯度
 center_lon: float = 135.4829511120712  # 観測地点の経度
 num_sections: int = 4  # セクション数
-plot_count: int = 10000
-# plot_count: int = 50000
+# plot_count: int = 10000
+plot_count: int = 50000
 
 # スケールチェック用の仮地点の要素（緯度、経度、ラベル）
 check_points_for_scale_checker: list[tuple[float, float, str]] = [
@@ -134,7 +134,7 @@ start_end_dates_list: list[list[str]] = [
     ["2024-06-01", "2024-08-31"],
     ["2024-09-01", "2024-11-30"],
 ]
-plot_ch4: bool = False
+plot_ch4: bool = True
 plot_c2h6: bool = False
 plot_ratio: bool = True
 plot_ratio_legend: bool = False
@@ -251,6 +251,13 @@ if __name__ == "__main__":
         # ratio
         df["Fratio"] = (df["Fc2h6_ultra"] / df["Fch4_ultra"]) / 0.076 * 100
         if plot_ratio:
+            # カスタムのサイズ範囲とマーカーサイズを指定する場合
+            custom_size_ranges = {
+                "small": (0, 0.5),
+                "medium": (0.5, 1.0),
+                "large": (1.0, float("inf")),
+            }
+            custom_sizes = {"small": 50, "medium": 150, "large": 300}
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
                 col_flux="Fratio",
@@ -262,6 +269,8 @@ if __name__ == "__main__":
                 y_list=y_list,  # メートル単位のy座標
                 c_list=c_list,
                 hotspots=hotspots,
+                hotspot_size_ranges=custom_size_ranges,
+                hotspot_sizes=custom_sizes,
                 center_lat=center_lan,
                 center_lon=center_lon,
                 satellite_image=image,
@@ -288,7 +297,7 @@ if __name__ == "__main__":
                 x_list=x_list,  # メートル単位のx座標
                 y_list=y_list,  # メートル単位のy座標
                 c_list=None,
-                figsize=(8,8),
+                figsize=(8, 8),
                 hotspots=hotspots,
                 hotspots_alpha=0.5,
                 hotspot_labels={

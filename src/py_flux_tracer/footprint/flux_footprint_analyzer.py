@@ -716,6 +716,8 @@ class FluxFootprintAnalyzer:
         hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_labels: dict[HotspotType, str] | None = None,
         hotspot_markers: dict[HotspotType, str] | None = None,
+        hotspot_size_ranges: dict[str, tuple[float, float]] | None = None,  # 新規追加
+        hotspot_sizes: dict[str, float] | None = None,  # 新規追加
         legend_alpha: float = 1.0,
         legend_bbox_to_anchor: tuple[float, float] = (0.55, -0.01),
         legend_loc: str = "upper center",
@@ -934,6 +936,20 @@ class FluxFootprintAnalyzer:
                 "comb": "comb",
             }
 
+            # デフォルトのサイズ範囲を定義
+            default_size_ranges = {
+                "small": (0, 0.5),
+                "medium": (0.5, 1.0),
+                "large": (1.0, float("inf")),
+            }
+
+            # デフォルトのマーカーサイズを定義
+            default_sizes = {"small": 50, "medium": 100, "large": 200}
+
+            # ユーザー指定のサイズ範囲とマーカーサイズを使用（指定がない場合はデフォルト値を使用）
+            size_ranges = hotspot_size_ranges or default_size_ranges
+            sizes = hotspot_sizes or default_sizes
+
             # 座標変換のための定数
             meters_per_lat: float = self.EARTH_RADIUS_METER * (math.pi / 180)
             meters_per_lon: float = meters_per_lat * math.cos(math.radians(center_lat))
@@ -985,12 +1001,29 @@ class FluxFootprintAnalyzer:
                     # 使用するラベルを決定
                     label = (hotspot_labels or default_labels).get(spot_type, spot_type)
 
+                    spot_sizes = [
+                        sizes[
+                            FluxFootprintAnalyzer._get_size_category(
+                                spot.delta_ch4, size_ranges
+                            )
+                        ]
+                        for spot in hotspots
+                        if spot.type == spot_type
+                        and left_lon
+                        <= (center_lon + (spot.avg_lon - center_lon) * lon_correction)
+                        <= right_lon
+                        and bottom_lat
+                        <= (center_lat + (spot.avg_lat - center_lat) * lat_correction)
+                        <= top_lat
+                    ]
+
                     handle = ax_data.scatter(
                         spots_lon,
                         spots_lat,
                         c=color,
                         marker=marker,  # マーカー形状を指定
-                        s=100,
+                        # s=100,
+                        s=spot_sizes,  # 修正したサイズリストを使用
                         alpha=hotspots_alpha,
                         label=label,
                         edgecolor="black",
@@ -1750,3 +1783,25 @@ class FluxFootprintAnalyzer:
             x_dst = np.nan
 
         return x_dst
+
+    @staticmethod
+    def _get_size_category(value: float, ranges: dict[str, tuple[float, float]]) -> str:
+        """
+        値に基づいてサイズカテゴリを決定します。
+
+        Parameters
+        ----------
+        value : float
+            分類する値（ΔCH4など）
+        ranges : dict[str, tuple[float, float]]
+            カテゴリごとの範囲を定義する辞書
+
+        Returns
+        -------
+        str
+            該当するカテゴリ名
+        """
+        for category, (min_val, max_val) in ranges.items():
+            if min_val < value <= max_val:
+                return category
+        return "small"  # デフォルトのカテゴリ
