@@ -100,9 +100,9 @@ class CorrectingUtils:
                 水蒸気干渉が補正されたデータフレーム
         """
         # 元のデータを保護するためコピーを作成
-        df_h2o_corrected = df.copy()
+        df_h2o_corrected: pd.DataFrame = df.copy()
         # 水蒸気濃度の配列を取得
-        h2o = np.array(df_h2o_corrected[col_h2o_ppm])
+        h2o: np.ndarray = np.array(df_h2o_corrected[col_h2o_ppm])
 
         # 補正項の計算
         correction_curve = coef_a + coef_b * h2o + coef_c * pow(h2o, 2)
@@ -155,9 +155,9 @@ class CorrectingUtils:
         """
         df_copied: pd.DataFrame = df.copy()
         # CH4
-        ch4_min = df_copied[col_ch4_ppm].quantile(quantile_value)
+        ch4_min: float = df_copied[col_ch4_ppm].quantile(quantile_value)
         df_copied[col_ch4_ppm] = df_copied[col_ch4_ppm] - ch4_min + base_ch4_ppm
         # C2H6
-        c2h6_min = df_copied[col_c2h6_ppb].quantile(quantile_value)
+        c2h6_min: float = df_copied[col_c2h6_ppb].quantile(quantile_value)
         df_copied[col_c2h6_ppb] = df_copied[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
         return df_copied

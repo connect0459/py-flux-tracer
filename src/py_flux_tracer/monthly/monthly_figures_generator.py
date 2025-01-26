@@ -155,6 +155,10 @@ class MonthlyFiguresGenerator:
         col_ch4_flux: str = "Fch4_ultra",
         col_c2h6_conc: str = "C2H6_ultra",
         col_c2h6_flux: str = "Fc2h6_ultra",
+        ylim_ch4_conc: tuple = (1.8, 2.6),  # CH4濃度のy軸範囲
+        ylim_ch4_flux: tuple = (-100, 600),  # CH4フラックスのy軸範囲
+        ylim_c2h6_conc: tuple = (-12, 20),  # C2H6濃度のy軸範囲
+        ylim_c2h6_flux: tuple = (-20, 40),  # C2H6フラックスのy軸範囲
         print_summary: bool = False,
     ) -> None:
         """
@@ -178,6 +182,14 @@ class MonthlyFiguresGenerator:
                 C2H6濃度列の名前
             col_c2h6_flux : str
                 C2H6フラックス列の名前
+            ylim_ch4_conc : tuple
+                CH4濃度のy軸範囲
+            ylim_ch4_flux : tuple
+                CH4フラックスのy軸範囲
+            ylim_c2h6_conc : tuple
+                C2H6濃度のy軸範囲
+            ylim_c2h6_flux : tuple
+                C2H6フラックスのy軸範囲
             print_summary : bool
                 解析情報をprintするかどうか
         """
@@ -219,15 +231,14 @@ class MonthlyFiguresGenerator:
         # CH4濃度のプロット
         ax1.scatter(df[col_datetime], df[col_ch4_conc], color="red", alpha=0.5, s=20)
         ax1.set_ylabel("CH$_4$ Concentration\n(ppm)")
-        ax1.set_ylim(1.8, 2.6)
+        ax1.set_ylim(*ylim_ch4_conc)  # 引数からy軸範囲を設定
         ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top", fontsize=20)
         ax1.grid(True, alpha=0.3)
 
         # CH4フラックスのプロット
         ax2.scatter(df[col_datetime], df[col_ch4_flux], color="red", alpha=0.5, s=20)
         ax2.set_ylabel("CH$_4$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
-        ax2.set_ylim(-100, 600)
-        # ax2.set_yticks([-100, 0, 200, 400, 600])
+        ax2.set_ylim(*ylim_ch4_flux)  # 引数からy軸範囲を設定
         ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top", fontsize=20)
         ax2.grid(True, alpha=0.3)
 
@@ -236,6 +247,7 @@ class MonthlyFiguresGenerator:
             df[col_datetime], df[col_c2h6_conc], color="orange", alpha=0.5, s=20
         )
         ax3.set_ylabel("C$_2$H$_6$ Concentration\n(ppb)")
+        ax3.set_ylim(*ylim_c2h6_conc)  # 引数からy軸範囲を設定
         ax3.text(0.02, 0.98, "(c)", transform=ax3.transAxes, va="top", fontsize=20)
         ax3.grid(True, alpha=0.3)
 
@@ -244,7 +256,7 @@ class MonthlyFiguresGenerator:
             df[col_datetime], df[col_c2h6_flux], color="orange", alpha=0.5, s=20
         )
         ax4.set_ylabel("C$_2$H$_6$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
-        ax4.set_ylim(-20, 40)
+        ax4.set_ylim(*ylim_c2h6_flux)  # 引数からy軸範囲を設定
         ax4.text(0.02, 0.98, "(d)", transform=ax4.transAxes, va="top", fontsize=20)
         ax4.grid(True, alpha=0.3)
 
@@ -714,21 +726,60 @@ class MonthlyFiguresGenerator:
             ax.xaxis.set_major_locator(mdates.MonthLocator())
             ax.xaxis.set_minor_locator(plt.NullLocator())  # マイナー線を非表示
         elif x_interval == "10days":
-            # 10日刻みでメジャー線、日毎にマイナー線を表示
-            ax.xaxis.set_major_locator(mdates.DayLocator(bymonthday=[1, 11, 21]))
-            ax.xaxis.set_minor_locator(mdates.DayLocator())
-            ax.grid(True, which="minor", alpha=0.1)  # マイナー線の表示設定
+            # 月初め(1日)、10日、20日、30日に目盛りを表示
+            class Custom10DayLocator(mdates.DateLocator):
+                def __call__(self):
+                    dmin, dmax = self.viewlim_to_dt()
+                    dates = []
+                    current = pd.to_datetime(dmin).normalize()
+                    end = pd.to_datetime(dmax).normalize()
 
-        # カスタムフォーマッタの作成（月初めの1日のみMMを表示）
+                    while current <= end:
+                        # その月の1日、10日、20日、30日を追加
+                        for day in [1, 10, 20, 30]:
+                            try:
+                                date = current.replace(day=day)
+                                if dmin <= date <= dmax:
+                                    dates.append(date)
+                            except ValueError:
+                                # 30日が存在しない月（2月など）の場合は
+                                # その月の最終日を使用
+                                if day == 30:
+                                    last_day = (
+                                        current + pd.DateOffset(months=1)
+                                    ).replace(day=1) - pd.Timedelta(days=1)
+                                    if dmin <= last_day <= dmax:
+                                        dates.append(last_day)
+
+                        # 次の月へ
+                        current = (current + pd.DateOffset(months=1)).replace(day=1)
+
+                    return self.raise_if_exceeds(
+                        np.array([mdates.date2num(date) for date in dates])
+                    )
+
+            ax.xaxis.set_major_locator(Custom10DayLocator())
+            ax.xaxis.set_minor_locator(mdates.DayLocator())
+            ax.grid(True, which="minor", alpha=0.1)
+
+        # カスタムフォーマッタの作成
         def date_formatter(x, p):
             date = mdates.num2date(x)
-            # 月初めの1日の場合のみ月を表示
-            if date.day == 1:
-                return f"{date.strftime('%m')}"
-            return ""
+            if x_interval == "month":
+                # 月初めの1日の場合のみ月を表示
+                if date.day == 1:
+                    return f"{date.strftime('%m')}"
+                return ""
+            else:  # "10days"の場合
+                # MM/DD形式で表示し、/を中心に配置
+                month = f"{date.strftime('%m'):>2}"  # 右寄せで2文字
+                day = f"{date.strftime('%d'):<2}"  # 左寄せで2文字
+                return f"{month}/{day}"
 
         ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
-        plt.setp(ax.xaxis.get_majorticklabels(), ha="right", rotation=0)
+        plt.setp(
+            ax.xaxis.get_majorticklabels(), ha="center", rotation=0
+        )  # 中央揃えに変更
 
         plt.tight_layout()
 
@@ -2530,6 +2581,7 @@ class MonthlyFiguresGenerator:
         col_c2h6: str = "Ultra_C2H6_ppb",
         col_timestamp: str = "TIMESTAMP",
         add_serial_labels: bool = True,
+        figsize: tuple[float, float] = (12, 10),
     ) -> None:
         """時系列データのプロットを作成する
 
@@ -2549,6 +2601,10 @@ class MonthlyFiguresGenerator:
                 エタンデータのカラム名
             col_timestamp : str
                 タイムスタンプのカラム名
+            add_serial_labels : bool
+                シリアルラベルを追加するかどうかのフラグ
+            figsize : tuple[float, float]
+                プロットのサイズを指定するタプル
         """
         # 出力ディレクトリの作成
         os.makedirs(output_dir, exist_ok=True)
@@ -2573,7 +2629,7 @@ class MonthlyFiguresGenerator:
         minutes_elapsed = (df.index - start_time).total_seconds() / 60
 
         # プロットの作成
-        _, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+        _, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=figsize, sharex=True)
 
         # 鉛直風速
         ax1.plot(minutes_elapsed, df[col_uz], "k-", linewidth=0.5)

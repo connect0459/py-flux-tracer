@@ -3,16 +3,16 @@ import math
 import folium
 import numpy as np
 import pandas as pd
-import plotly.graph_objs as go
 import plotly.offline as pyo
-import matplotlib.dates as mdates
+import plotly.graph_objs as go
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from tqdm import tqdm
-from typing import get_args, Literal
 from pathlib import Path
 from datetime import timedelta
 from dataclasses import dataclass
 from geopy.distance import geodesic
+from typing import get_args, Literal
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.hotspot_data import HotspotData, HotspotType
 from .correcting_utils import CorrectingUtils, H2OCorrectionConfig, BiasRemovalConfig
@@ -2409,6 +2409,7 @@ class MobileSpatialAnalyzer:
         scatter_ylim: tuple[float, float] | None = None,
         hist_bin_width: float = 0.5,
         print_summary: bool = False,
+        stack_bars: bool = True,  # 追加：積み上げ方式を選択するパラメータ
         save_fig: bool = False,
         show_fig: bool = True,
         show_scatter: bool = True,  # 散布図の表示を制御するオプションを追加
@@ -2487,21 +2488,37 @@ class MobileSpatialAnalyzer:
         bins = np.linspace(start, end, n_bins + 1)
 
         # タイプごとにヒストグラムを積み上げ
-        bottom = np.zeros(len(bins) - 1)
-        for spot_type in existing_types:
-            data = df[df["type"] == spot_type]["emission_rate"]
-            if len(data) > 0:
-                counts, _ = np.histogram(data, bins=bins)
-                ax1.bar(
-                    bins[:-1],
-                    counts,
-                    width=hist_bin_width,
-                    bottom=bottom,
-                    alpha=0.6,
-                    label=spot_type,
-                    color=hotspot_colors[spot_type],
-                )
-                bottom += counts
+        if stack_bars:
+            # 積み上げ方式
+            bottom = np.zeros(len(bins) - 1)
+            for spot_type in existing_types:
+                data = df[df["type"] == spot_type]["emission_rate"]
+                if len(data) > 0:
+                    counts, _ = np.histogram(data, bins=bins)
+                    ax1.bar(
+                        bins[:-1],
+                        counts,
+                        width=hist_bin_width,
+                        bottom=bottom,
+                        alpha=0.6,
+                        label=spot_type,
+                        color=hotspot_colors[spot_type],
+                    )
+                    bottom += counts
+        else:
+            # 重ね合わせ方式
+            for spot_type in existing_types:
+                data = df[df["type"] == spot_type]["emission_rate"]
+                if len(data) > 0:
+                    counts, _ = np.histogram(data, bins=bins)
+                    ax1.bar(
+                        bins[:-1],
+                        counts,
+                        width=hist_bin_width,
+                        alpha=0.4,  # 透明度を上げて重なりを見やすく
+                        label=spot_type,
+                        color=hotspot_colors[spot_type],
+                    )
 
         ax1.set_xlabel("CH$_4$ Emission (L min$^{-1}$)")
         ax1.set_ylabel("Frequency")

@@ -106,7 +106,8 @@ west_sections_list: list[int] = [
 output_dir: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs"
 )
-print_summary: bool = False
+print_summary: bool = True
+# print_summary: bool = False
 
 if __name__ == "__main__":
     msa = MobileSpatialAnalyzer(
@@ -207,8 +208,8 @@ if __name__ == "__main__":
             hist_log_y=True,
             # hist_xlim=emission_rate_lim,
             # scatter_xlim=emission_rate_lim,
-            hist_xlim=(0, 50),
-            scatter_xlim=(0, 50),
+            hist_xlim=(0, 60),
+            scatter_xlim=(0, 60),
             hist_ylim=(0, 100),
             scatter_ylim=(0, 1.6),
             hist_bin_width=0.5,
@@ -216,6 +217,7 @@ if __name__ == "__main__":
             save_fig=True,
             show_fig=False,
             show_scatter=False,
+            # print_summary=True,
             print_summary=False,
         )
 

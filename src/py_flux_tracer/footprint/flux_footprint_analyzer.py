@@ -6,13 +6,13 @@ import jpholiday
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 from PIL import Image
 from PIL.ImageFile import ImageFile
+from tqdm import tqdm
 from pathlib import Path
-from typing import Literal, Mapping
 from datetime import datetime
 from dataclasses import dataclass
+from typing import Literal, Mapping
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.figure_utils import FigureUtils
 from ..commons.hotspot_data import HotspotData, HotspotType

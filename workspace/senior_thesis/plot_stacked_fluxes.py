@@ -172,7 +172,7 @@ project_files_dir: str = (
 
 if __name__ == "__main__":
     plot_stacked_fluxes(
-        input_filepath=f"{project_files_dir}/analyze_monthly-2024.12.18.csv",
+        input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
         output_dir=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}.png",
         ylim=100,
