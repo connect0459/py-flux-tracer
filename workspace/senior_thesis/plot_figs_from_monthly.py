@@ -56,10 +56,10 @@ output_dir = (
 # フラグ
 plot_turbulences: bool = False
 plot_timeseries: bool = False
-plot_comparison: bool = False
+plot_comparison: bool = True
 plot_diurnals: bool = True
 diurnal_subplot_fontsize: float = 36
-plot_scatter: bool = False
+plot_scatter: bool = True
 plot_sources: bool = True
 plot_wind_rose: bool = False
 plot_seasonal: bool = True
@@ -75,9 +75,7 @@ if __name__ == "__main__":
         file_pattern="SA.Ultra.*.xlsx",
     ) as converter:
         df_ultra = converter.read_sheets(
-            # sheet_names=["Final", "Final.SA"],
-            # columns=["Fch4_ultra", "Fc2h6_ultra", "Fch4"],
-            sheet_names=["Final", "Final.SA"],
+            sheet_names=["Final", "Final.SA", "eddy"],
             columns=[
                 "Fch4_ultra",
                 "Fc2h6_ultra",
@@ -90,16 +88,15 @@ if __name__ == "__main__":
                 "p_value",
                 "stderr",
                 "RSSI",
-                "Wind direction_x",
-                "WS vector_x",
+                "Wind direction",
+                "WS vector",
+                " TF-wch4",
+                " TF-wc2h6",
             ],
             start_date=start_date,
             end_date=end_date,
             include_end_date=include_end_date,
         )
-        # カラムの重複による自動リネームに対処
-        df_ultra["Wind direction"] = df_ultra["Wind direction_x"]
-        df_ultra["WS vector"] = df_ultra["WS vector_x"]
 
     # Picarro
     with MonthlyConverter(
@@ -107,8 +104,8 @@ if __name__ == "__main__":
         file_pattern="SA.Picaro.*.xlsx",
     ) as converter:
         df_picarro = converter.read_sheets(
-            sheet_names=["Final"],
-            columns=["Fch4_picaro"],
+            sheet_names=["Final", "eddy"],
+            columns=["Fch4_picaro", " TFwch4_c"],
             start_date=start_date,
             end_date=end_date,
             include_end_date=include_end_date,
@@ -136,21 +133,26 @@ if __name__ == "__main__":
     # CH4_ultraをppb単位に直したカラムを作成
     df_combined["CH4_ultra_cal_ppb"] = df_combined["CH4_ultra_cal"] * 1000
 
+    # # 伝達関数の補正量が max_ratio を超えるときにnanとする
+    # max_ratio: float = 2.5
+    # # ultra
+    # df_combined["Fch4_ultra"] = np.where(
+    #     df_combined[" TF-wch4"] > max_ratio, np.nan, df_combined["Fch4_ultra"]
+    # )
+    # df_combined["Fc2h6_ultra"] = np.where(
+    #     df_combined[" TF-wc2h6"] > max_ratio, np.nan, df_combined["Fc2h6_ultra"]
+    # )
+    # # g2401
+    # df_combined["Fch4_picaro"] = np.where(
+    #     df_combined[" TFwch4_c"] > max_ratio, np.nan, df_combined["Fch4_picaro"]
+    # )
+
     # print("----------")
     # print(df_combined.head(10))  # DataFrameの先頭10行を表示
 
     mfg = MonthlyFiguresGenerator()
 
     if plot_timeseries:
-        # mfg.plot_c1c2_concentrations_and_fluxes_timeseries(
-        #     df=df_combined,
-        #     col_ch4_conc="CH4_ultra_cal",
-        #     col_ch4_flux="Fch4_ultra",
-        #     col_c2h6_conc="C2H6_ultra_cal",
-        #     col_c2h6_flux="Fc2h6_ultra",
-        #     output_dir=(os.path.join(output_dir, "timeseries")),
-        #     print_summary=False,
-        # )
         df_combined_without_fleeze = df_combined.copy()
         freeze_mask = (
             (df_combined_without_fleeze.index >= "2024-09-02")
@@ -170,7 +172,7 @@ if __name__ == "__main__":
             col_c2h6_conc="C2H6_ultra_cal",
             col_c2h6_flux="Fc2h6_ultra",
             output_dir=(os.path.join(output_dir, "timeseries")),
-            # print_summary=True,
+            # print_summary=False,
         )
         mfg.plot_c1c2_timeseries(
             df=df_combined_without_fleeze,
@@ -291,7 +293,15 @@ if __name__ == "__main__":
 
         if plot_diurnals:
             df_month_for_diurnanls = df_month.copy()
-
+            conc_label: str | None = (
+                "(a)"
+                if month == 10
+                else "(b)"
+                if month == 11
+                else "(c)"
+                if month == 12
+                else None
+            )
             mfg.plot_diurnal_concentrations(
                 df=df_month_for_diurnanls,
                 output_dir=os.path.join(output_dir, "diurnal_conc"),
@@ -302,15 +312,66 @@ if __name__ == "__main__":
                 alpha_std=0.2,
                 ch4_ylim=(1.9, 2.3),
                 c2h6_ylim=(-3, 11),
-                subplot_label_ch4="(a)"
-                if month == 10
-                else "(b)"
-                if month == 11
-                else None,
-                add_legend=True if month == 11 else False,
+                subplot_label_ch4=conc_label,
+                # add_legend=True if month == 11 else False,
+                add_legend=False,
                 interval="30min",
                 print_summary=False,
             )
+
+            # flux_slope/conc_slope
+            try:
+                if month == 10 or month == 11 or month == 12:
+                    df_month["gas_ratio_conc"] = df_month["slope"] / 0.076 * 100
+                    df_month["gas_ratio_conc"] = np.where(
+                        (df_month["gas_ratio_conc"] >= 0)
+                        & (df_month["gas_ratio_conc"] <= 100),
+                        df_month["gas_ratio_conc"],
+                        np.nan,
+                    )
+                    df_month["gas_ratio_flux"] = (
+                        df_month["Fc2h6_ultra"] / df_month["Fch4_ultra"] / 0.076 * 100
+                    )
+                    df_month["gas_ratio_flux"] = np.where(
+                        (df_month["gas_ratio_flux"] >= 0)
+                        & (df_month["gas_ratio_flux"] <= 100),
+                        df_month["gas_ratio_flux"],
+                        np.nan,
+                    )
+                    # 日変化パターン
+                    mfg.plot_gas_ratio_diurnal(
+                        df=df_month,
+                        output_dir=os.path.join(output_dir, "gas_ratio"),
+                        col_ratio_1="gas_ratio_conc",
+                        col_ratio_2="gas_ratio_flux",
+                        label_1="濃度勾配",
+                        label_2="フラックス",
+                        color_1="purple",
+                        color_2="red",
+                        output_filename=f"gas_ratio_diurnal-{month_str}.png",
+                        subplot_label=conc_label,
+                        subplot_fontsize=24,
+                        y_max=100,
+                        xlabel="Hour",
+                        ylabel="都市ガス比率 (%)",
+                        save_fig=True,
+                        show_fig=False,
+                    )
+                    # 散布図
+                    mfg.plot_scatter(
+                        df=df_month,
+                        x_col="gas_ratio_conc",
+                        y_col="gas_ratio_flux",
+                        xlabel="都市ガス比率 (濃度) (%)",
+                        ylabel="都市ガス比率 (フラックス) (%)",
+                        output_dir=(os.path.join(output_dir, "gas_ratio")),
+                        output_filename=f"scatter-ultra_slopes-{month_str}.png",
+                        x_axis_range=(0, 100),
+                        y_axis_range=(0, 100),
+                    )
+            except Exception:
+                pass
+
             # 日変化パターンを月ごとに作成
             mfg.plot_c1c2_fluxes_diurnal_patterns(
                 df=df_month_for_diurnanls,
@@ -360,121 +421,10 @@ if __name__ == "__main__":
                 ax1_ylim=(-20, 150),
                 ax2_ylim=(0, 6),
             )
-            # mfg.plot_c1c2_fluxes_diurnal_patterns(
-            #     df=df_month_for_diurnanls,
-            #     y_cols_ch4=["Fch4_ultra",  "Fch4_picaro"],
-            #     y_cols_c2h6=["Fc2h6_ultra"],
-            #     labels_ch4=["Ultra", "G2401"],
-            #     labels_c2h6=["Ultra"],
-            #     legend_only_ch4=True,
-            #     add_label=True,
-            #     # add_legend=True,
-            #     # add_label=False,
-            #     add_legend=True,
-            #     subplot_fontsize=diurnal_subplot_fontsize,
-            #     subplot_label_ch4=None,
-            #     subplot_label_c2h6=None,
-            #     colors_ch4=["red", "blue"],
-            #     colors_c2h6=["orange"],
-            #     output_dir=(os.path.join(output_dir, "diurnal")),
-            #     output_filename="diurnal_g2401_ultra_legend.png",  # タグ付けしたファイル名
-            #     ax1_ylim=(-20, 150),
-            #     ax2_ylim=(0, 6),
-            # )
-            # if month == 11:
-            #     mfg.plot_c1c2_fluxes_diurnal_patterns(
-            #         df=df_month_for_diurnanls,
-            #         y_cols_ch4=["Fch4_ultra", "Fch4_open", "Fch4_picaro"],
-            #         y_cols_c2h6=["Fc2h6_ultra"],
-            #         labels_ch4=[r"Ultra CH$_4$", "Open Path", "G2401"],
-            #         labels_c2h6=[r"Ultra C$_2$H$_6$"],
-            #         legend_only_ch4=False,
-            #         add_label=True,
-            #         add_legend=True,
-            #         subplot_label_ch4=subplot_label[0],
-            #         subplot_label_c2h6=subplot_label[1],
-            #         colors_ch4=["red", "black", "blue"],
-            #         colors_c2h6=["orange"],
-            #         output_dir=(os.path.join(output_dir, "diurnal")),
-            #         output_filename="diurnal-legend.png",  # タグ付けしたファイル名
-            #     )
-            #     FigureUtils.setup_plot_params(font_size=19)
-            #     mfg.plot_c1c2_fluxes_diurnal_patterns(
-            #         df=df_month_for_diurnanls,
-            #         y_cols_ch4=["Fch4_ultra", "Fch4_picaro"],
-            #         y_cols_c2h6=["Fc2h6_ultra"],
-            #         labels_ch4=["Ultra CH$_4$", "G2401"],
-            #         labels_c2h6=["Ultra C$_2$H$_6$"],
-            #         legend_only_ch4=False,
-            #         add_label=True,
-            #         # add_legend=True,
-            #         # add_label=False,
-            #         add_legend=True,
-            #         subplot_label_ch4=None,
-            #         subplot_label_c2h6=None,
-            #         colors_ch4=["red", "blue"],
-            #         colors_c2h6=["orange"],
-            #         output_dir=(os.path.join(output_dir, "diurnal")),
-            #         output_filename="diurnal_g2401_ultra_with_c2h6-11.png",  # タグ付けしたファイル名
-            #         ax1_ylim=(-20, 150),
-            #         ax2_ylim=(0, 6),
-            #     )
-            #     FigureUtils.setup_plot_params()
 
             mfg.logger.info("'diurnals'を作成しました。")
 
         if plot_scatter:
-            # # c1c2 conc
-            # try:
-            #     mfg.plot_scatter(
-            #         df=df_month,
-            #         y_col="C2H6_ultra_cal",
-            #         ylabel=r"C$_2$H$_6$ Concentration (ppb)",
-            #         output_dir=(os.path.join(output_dir, "scatter")),
-            #         output_filename=f"scatter-ultra_c1c2_c_ppbppm-{month_str}.png",
-            #         # ppb/ppm
-            #         x_col="CH4_ultra_cal",
-            #         xlabel=r"CH$_4$ Concentration (ppm)",
-            #         x_axis_range=(1.8, 2.6),
-            #         y_axis_range=(-21, 0),
-            #         fixed_slope=0.076 * 1000,
-            #         # # ppb/ppb
-            #         # x_col="CH4_ultra_cal_ppb",
-            #         # xlabel=r"CH$_4$ Concentration (ppb)",
-            #         # fixed_slope=0.076,
-            #         # x_axis_range=(1800, 2600),
-            #         # y_axis_range=(-21, 1),
-            #         # x_scientific=True,
-            #         show_fixed_slope=True,
-            #         # x_axis_range=None,
-            #         # y_axis_range=None,
-            #     )
-            #     mfg.plot_scatter(
-            #         df=df_month,
-            #         y_col="C2H6_ultra_cal",
-            #         ylabel=r"C$_2$H$_6$ Concentration (ppb)",
-            #         output_dir=(os.path.join(output_dir, "scatter")),
-            #         output_filename=f"scatter-ultra_c1c2_c_ppbppb-{month_str}.png",
-            #         # # ppb/ppm
-            #         # x_col="CH4_ultra_cal",
-            #         # xlabel=r"CH$_4$ Concentration (ppm)",
-            #         # x_axis_range=(1.8, 2.6),
-            #         # y_axis_range=(-21, 0),
-            #         # fixed_slope=0.076 * 1000,
-            #         # ppb/ppb
-            #         x_col="CH4_ultra_cal_ppb",
-            #         xlabel=r"CH$_4$ Concentration (ppb)",
-            #         fixed_slope=0.076,
-            #         x_axis_range=(1800, 2600),
-            #         y_axis_range=(-10, 20),
-            #         x_scientific=True,
-            #         show_fixed_slope=True,
-            #         # x_axis_range=None,
-            #         # y_axis_range=None,
-            #     )
-            # except Exception as e:
-            #     print(e)
-
             # c1c2 flux
             mfg.plot_scatter(
                 df=df_month,
@@ -517,36 +467,9 @@ if __name__ == "__main__":
                 y_axis_range=(-50, 200),
             )
 
-            # flux_slope/conc_slope
-            try:
-                if month == 10 or month == 11 or month == 12:
-                    df_month["gas_ratio_conc"] = (
-                        df_month["C2H6_ultra_cal"]
-                        / df_month["CH4_ultra_cal_ppb"]
-                        / 0.076
-                        * 100
-                    )
-                    df_month["gas_ratio_flux"] = (
-                        df_month["Fc2h6_ultra"] / df_month["Fch4_ultra"] / 0.076 * 100
-                    )
-                    # print(df_month.head(5))
-                    mfg.plot_scatter(
-                        df=df_month,
-                        x_col="gas_ratio_conc",
-                        y_col="gas_ratio_flux",
-                        xlabel=r"C2C1 conc ratio",
-                        ylabel=r"C2C1 flux ratio",
-                        output_dir=(os.path.join(output_dir, "scatter")),
-                        output_filename=f"scatter-ultra_slopes-{month_str}.png",
-                        # x_axis_range=(0, 100),
-                        # y_axis_range=(0, 100),
-                    )
-            except Exception:
-                pass
             mfg.logger.info("'scatters'を作成しました。")
 
         if plot_sources:
-            print_summaries_sources: bool = True
             mfg.plot_source_contributions_diurnal(
                 df=df_month,
                 output_dir=(os.path.join(output_dir, "sources")),
@@ -556,27 +479,11 @@ if __name__ == "__main__":
                 y_max=110,
                 subplot_label=subplot_label[0],
                 subplot_fontsize=24,
-                print_summary=print_summaries_sources,
+                print_summary=False,
                 add_legend=False,
             )
             mfg.logger.info("'sources'を作成しました。")
 
-        # flux_data = {
-        #     "G2401": df_month["Fch4_picaro"],
-        #     "Ultra": df_month["Fch4_ultra"],
-        # }
-        # colors = {
-        #     "G2401": "blue",
-        #     "Ultra": "red",
-        # }
-        # MonthlyFiguresGenerator.plot_fluxes_distributions(
-        #     flux_data=flux_data,
-        #     month=month,
-        #     output_dir=os.path.join(output_dir, "tests"),
-        #     colors=colors,
-        #     output_filename="flux_distribution_month_{month}.png",
-        #     show_fig=False,
-        # )
         if plot_comparison:
             # 開始日から1か月後の日付を計算
             start_date = f"2024-{month_str}-01"
@@ -750,7 +657,7 @@ if __name__ == "__main__":
                 add_xlabel=False,
                 add_ylabel=False,
                 add_legend=False,
-                print_summary=True,
+                print_summary=False,
             )
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_season,
@@ -768,7 +675,7 @@ if __name__ == "__main__":
                 add_xlabel=False,
                 add_ylabel=False,
                 add_legend=False,
-                # print_summary=True,
+                # print_summary=False,
             )
 
             # 2024年7月1日から2024年7月31日までのデータを除外
@@ -831,3 +738,49 @@ if __name__ == "__main__":
                 save_fig=True,
                 show_fig=False,
             )
+
+    # 正月の平日/休日
+    mfg.logger.info("年末年始の処理を開始します。")
+
+    # 月ごとのDataFrameを作成
+    df_around_year: pd.DataFrame = pd.read_csv(
+        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/around_year_2025.csv",
+        skiprows=[1],
+        na_values=[
+            "#DIV/0!",
+            "#VALUE!",
+            "#REF!",
+            "#N/A",
+            "#NAME?",
+            "NAN",
+            "nan",
+        ],
+    )
+    FigureUtils.setup_plot_params(font_size=20)
+    df_around_year_for_diurnal = df_around_year.copy()
+    mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
+        df=df_around_year_for_diurnal,
+        y_col_ch4="Fch4_ultra",
+        y_col_c2h6="Fc2h6_ultra",
+        output_dir=os.path.join(output_dir, "around_year"),
+        output_filename="diurnal_by_date_around_year.png",
+        add_label=True,
+        subplot_label_ch4=None,
+        subplot_label_c2h6=None,
+        plot_holiday=False,
+        ax1_ylim=(-20, 150),
+        ax2_ylim=(-1, 8),
+    )
+    mfg.plot_source_contributions_diurnal_by_date(
+        df=df_season,
+        output_dir=(os.path.join(output_dir, "around_year")),
+        output_filename="source_contributions_by_date_around_year.png",
+        col_ch4_flux="Fch4_ultra",
+        col_c2h6_flux="Fc2h6_ultra",
+        subplot_fontsize=24,
+        y_max=100,
+        # add_xlabel=False,
+        # add_ylabel=False,
+        add_legend=True,
+        # print_summary=False,
+    )

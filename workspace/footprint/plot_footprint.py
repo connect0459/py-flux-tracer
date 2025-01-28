@@ -127,16 +127,16 @@ check_points_for_scale_checker: list[tuple[float, float, str]] = [
 
 # ファイルおよびディレクトリのパス
 output_dir: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
-dotenv_path = "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
+dotenv_path :str= "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
 
 start_end_dates_list: list[list[str]] = [
-    ["2024-05-15", "2024-11-30"],
+    ["2024-05-15", "2024-12-31"],
     ["2024-06-01", "2024-08-31"],
     ["2024-09-01", "2024-11-30"],
 ]
 plot_ch4: bool = True
 plot_c2h6: bool = False
-plot_ratio: bool = True
+plot_ratio: bool = False
 plot_ratio_legend: bool = False
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False

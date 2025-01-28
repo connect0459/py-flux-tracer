@@ -149,7 +149,7 @@ class MonthlyConverter:
     def read_sheets(
         self,
         sheet_names: str | list[str],
-        columns: list[str] | None = None,  # 新しいパラメータを追加
+        columns: list[str] | None = None,
         col_datetime: str = "Date",
         header: int = 0,
         skiprows: int | list[int] = [1],

@@ -1616,6 +1616,181 @@ class MonthlyFiguresGenerator:
             self.logger.info(f"Max: {max_val:.2f} (Hour: {max_time})")
             self.logger.info(f"Max/Min ratio: {max_val / min_val:.2f}\n")
 
+    def plot_gas_ratio_diurnal(
+        self,
+        df: pd.DataFrame,
+        output_dir: str,
+        col_ratio_1: str,
+        col_ratio_2: str,
+        label_1: str,
+        label_2: str,
+        color_1: str,
+        color_2: str,
+        output_filename: str = "gas_ratio_diurnal.png",
+        add_xlabel: bool = True,
+        add_ylabel: bool = True,
+        add_legend: bool = True,
+        xlabel: str = "Hour",
+        ylabel: str = "都市ガスが占める排出比率 (%)",
+        subplot_fontsize: int = 20,
+        subplot_label: str | None = None,
+        y_max: float | None = 100,
+        figsize: tuple[float, float] = (12, 5),
+        save_fig: bool = True,
+        show_fig: bool = False,
+    ) -> None:
+        """2つの比率の日変化を比較するプロット
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            データフレーム
+        output_dir : str
+            出力ディレクトリ
+        col_ratio_1 : str
+            1つ目の比率のカラム名
+        col_ratio_2 : str
+            2つ目の比率のカラム名
+        label_1 : str
+            1つ目の比率のラベル
+        label_2 : str
+            2つ目の比率のラベル
+        color_1 : str
+            1つ目の比率の色
+        color_2 : str
+            2つ目の比率の色
+        output_filename : str, optional
+            出力ファイル名, by default "gas_ratio_diurnal.png"
+        add_xlabel : bool, optional
+            x軸ラベルを追加するかどうか, by default True
+        add_ylabel : bool, optional
+            y軸ラベルを追加するかどうか, by default True
+        add_legend : bool, optional
+            凡例を追加するかどうか, by default True
+        xlabel : str, optional
+            x軸のラベル, by default "Hour"
+        ylabel : str, optional
+            y軸のラベル, by default "都市ガスが占める排出比率 (%)"
+        subplot_fontsize : int, optional
+            サブプロットのフォントサイズ, by default 20
+        subplot_label : str | None, optional
+            サブプロットのラベル, by default None
+        y_max : float | None, optional
+            y軸の最大値, by default 100
+        figsize : tuple[float, float], optional
+            図のサイズ, by default (12, 5)
+        save_fig : bool, optional
+            図を保存するかどうか, by default True
+        show_fig : bool, optional
+            図を表示するかどうか, by default False
+        """
+        # 出力ディレクトリの作成
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, output_filename)
+
+        # 時刻でグループ化して平均を計算
+        hourly_means = df.groupby(df.index.hour)[[col_ratio_1, col_ratio_2]].mean()
+        hourly_stds = df.groupby(df.index.hour)[[col_ratio_1, col_ratio_2]].std()
+
+        # 24時間目のデータ点を追加（0時のデータを使用）
+        last_hour = hourly_means.iloc[0:1].copy()
+        last_hour.index = [24]
+        hourly_means = pd.concat([hourly_means, last_hour])
+
+        last_hour_std = hourly_stds.iloc[0:1].copy()
+        last_hour_std.index = [24]
+        hourly_stds = pd.concat([hourly_stds, last_hour_std])
+
+        # 24時間分の時刻を生成
+        time_points = pd.date_range("2024-01-01", periods=25, freq="h")
+
+        # プロットの作成
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # 1つ目の比率
+        ax.plot(
+            time_points,  # [:-1]を削除
+            hourly_means[col_ratio_1],
+            color=color_1,
+            label=label_1,
+            alpha=0.7,
+        )
+        ax.fill_between(
+            time_points,  # [:-1]を削除
+            hourly_means[col_ratio_1] - hourly_stds[col_ratio_1],
+            hourly_means[col_ratio_1] + hourly_stds[col_ratio_1],
+            color=color_1,
+            alpha=0.2,
+        )
+
+        # 2つ目の比率
+        ax.plot(
+            time_points,  # [:-1]を削除
+            hourly_means[col_ratio_2],
+            color=color_2,
+            label=label_2,
+            alpha=0.7,
+        )
+        ax.fill_between(
+            time_points,  # [:-1]を削除
+            hourly_means[col_ratio_2] - hourly_stds[col_ratio_2],
+            hourly_means[col_ratio_2] + hourly_stds[col_ratio_2],
+            color=color_2,
+            alpha=0.2,
+        )
+
+        # 軸の設定
+        if add_xlabel:
+            ax.set_xlabel(xlabel)
+        if add_ylabel:
+            ax.set_ylabel(ylabel)
+
+        # y軸の範囲設定
+        if y_max is not None:
+            ax.set_ylim(0, y_max)
+
+        # グリッド線の追加
+        ax.grid(True, alpha=0.3)
+        ax.grid(True, which="minor", alpha=0.1)
+
+        # x軸の設定
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
+        ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
+        ax.set_xlim(time_points[0], time_points[-1])
+        ax.set_xticks(time_points[::6])
+        ax.set_xticklabels(["0", "6", "12", "18", "24"])
+
+        # サブプロットラベルの追加
+        if subplot_label:
+            ax.text(
+                0.02,
+                0.98,
+                subplot_label,
+                transform=ax.transAxes,
+                va="top",
+                fontsize=subplot_fontsize,
+            )
+
+        # 凡例の追加
+        if add_legend:
+            # 凡例を図の下部中央に配置
+            ax.legend(
+                loc="center",
+                bbox_to_anchor=(0.5, -0.25),  # 図の下部に配置
+                ncol=2,  # 2列で表示
+                frameon=False,  # 枠を非表示
+            )
+            # 凡例のために下部のマージンを調整
+            plt.subplots_adjust(bottom=0.2)
+
+        # プロットの保存と表示
+        plt.tight_layout()
+        if save_fig:
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
+
     def plot_scatter(
         self,
         df: pd.DataFrame,
@@ -2158,9 +2333,9 @@ class MonthlyFiguresGenerator:
                 ax.set_xlabel("Time (hour)")
             if add_ylabel:
                 if ax == ax1:  # 左側のプロットのラベル
-                    ax.set_ylabel("Weekdays CH$_4$ flux\n" r"(nmol m$^{-2}$ s$^{-1}$)")
+                    ax.set_ylabel("CH$_4$ flux\n" r"(nmol m$^{-2}$ s$^{-1}$)")
                 else:  # 右側のプロットのラベル
-                    ax.set_ylabel("Weekends CH$_4$ flux\n" r"(nmol m$^{-2}$ s$^{-1}$)")
+                    ax.set_ylabel("CH$_4$ flux\n" r"(nmol m$^{-2}$ s$^{-1}$)")
 
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
             ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
