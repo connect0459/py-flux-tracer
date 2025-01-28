@@ -127,17 +127,19 @@ check_points_for_scale_checker: list[tuple[float, float, str]] = [
 
 # ファイルおよびディレクトリのパス
 output_dir: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
-dotenv_path :str= "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
+dotenv_path: str = (
+    "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
+)
 
 start_end_dates_list: list[list[str]] = [
     ["2024-05-15", "2024-12-31"],
     ["2024-06-01", "2024-08-31"],
     ["2024-09-01", "2024-11-30"],
 ]
-plot_ch4: bool = True
+plot_ch4: bool = False
 plot_c2h6: bool = False
-plot_ratio: bool = False
-plot_ratio_legend: bool = False
+plot_ratio: bool = True
+plot_ratio_legend: bool = True
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
 plot_scale_checker: bool = False
@@ -176,6 +178,7 @@ if __name__ == "__main__":
     image = ffa.get_satellite_image_from_local(
         local_image_path=local_image_path
     )  # ローカル
+    FigureUtils.setup_plot_params(font_family=["Arial", "MS Gothic"])
 
     for i, start_end_date in enumerate(start_end_dates_list):
         start_date = start_end_date[0]
@@ -220,6 +223,8 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ch4{date_tag}.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
 
@@ -245,6 +250,8 @@ if __name__ == "__main__":
                 cbar_labelpad=35,
                 output_dir=output_dir,
                 output_filename=f"footprint_c2h6{date_tag}.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
 
@@ -252,12 +259,11 @@ if __name__ == "__main__":
         df["Fratio"] = (df["Fc2h6_ultra"] / df["Fch4_ultra"]) / 0.076 * 100
         if plot_ratio:
             # カスタムのサイズ範囲とマーカーサイズを指定する場合
-            custom_size_ranges = {
-                "small": (0, 0.5),
-                "medium": (0.5, 1.0),
-                "large": (1.0, float("inf")),
+            custom_sizes = {
+                "small": ((0, 0.5), 20),
+                "medium": ((0.5, 1.0), 100),
+                "large": ((1.0, float("inf")), 200),
             }
-            custom_sizes = {"small": 50, "medium": 150, "large": 300}
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
                 col_flux="Fratio",
@@ -269,7 +275,6 @@ if __name__ == "__main__":
                 y_list=y_list,  # メートル単位のy座標
                 c_list=c_list,
                 hotspots=hotspots,
-                hotspot_size_ranges=custom_size_ranges,
                 hotspot_sizes=custom_sizes,
                 center_lat=center_lan,
                 center_lon=center_lon,
@@ -283,56 +288,58 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ratio{date_tag}.png",
+                save_fig=True,
                 show_fig=False,
             )
 
-            FigureUtils.setup_plot_params(font_family=["Arial", "MS Gothic"])
-            image_for_mono = ffa.get_satellite_image_from_local(
-                local_image_path=local_image_path,
-                alpha=0.5,
-                grayscale=True,
-            )  # ローカル
-            # フットプリントを描画しない
-            ffa.plot_flux_footprint_with_hotspots(
-                x_list=x_list,  # メートル単位のx座標
-                y_list=y_list,  # メートル単位のy座標
-                c_list=None,
-                figsize=(8, 8),
-                hotspots=hotspots,
-                hotspots_alpha=0.5,
-                hotspot_labels={
-                    "bio": "生物起源",
-                    "gas": "都市ガス起源",
-                    "comb": "燃焼起源",
-                },
-                # hotspot_colors={"bio": "blue", "gas": "red", "comb": "green"},
-                hotspot_colors={"bio": "gray", "gas": "gray", "comb": "green"},
-                hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
-                legend_loc="upper right",
-                legend_bbox_to_anchor=(0.95, 0.95),
-                legend_ncol=1,
-                center_lat=center_lan,
-                center_lon=center_lon,
-                satellite_image=image_for_mono,
-                cmap="jet",
-                vmin=0,
-                vmax=100,
-                xy_max=5000,
-                add_legend=False,
-                add_cbar=False,
-                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
-                cbar_labelpad=20,
-                output_dir=output_dir,
-                output_filename="footprint_mono.png",
-                show_fig=(i == 0),
-            )
-            del x_list, y_list, c_list
+            # image_for_mono = ffa.get_satellite_image_from_local(
+            #     local_image_path=local_image_path,
+            #     alpha=0.5,
+            #     grayscale=True,
+            # )  # ローカル
+            # # フットプリントを描画しない
+            # ffa.plot_flux_footprint_with_hotspots(
+            #     x_list=x_list,  # メートル単位のx座標
+            #     y_list=y_list,  # メートル単位のy座標
+            #     c_list=None,
+            #     figsize=(8, 8),
+            #     hotspots=hotspots,
+            #     hotspots_alpha=0.5,
+            #     hotspot_labels={
+            #         "bio": "生物起源",
+            #         "gas": "都市ガス起源",
+            #         "comb": "燃焼起源",
+            #     },
+            #     # hotspot_colors={"bio": "blue", "gas": "red", "comb": "green"},
+            #     hotspot_colors={"bio": "gray", "gas": "gray", "comb": "green"},
+            #     hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
+            #     legend_loc="upper right",
+            #     legend_bbox_to_anchor=(0.95, 0.95),
+            #     legend_ncol=1,
+            #     center_lat=center_lan,
+            #     center_lon=center_lon,
+            #     satellite_image=image_for_mono,
+            #     cmap="jet",
+            #     vmin=0,
+            #     vmax=100,
+            #     xy_max=5000,
+            #     add_legend=False,
+            #     add_cbar=False,
+            #     cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
+            #     cbar_labelpad=20,
+            #     output_dir=output_dir,
+            #     output_filename="footprint_mono.png",
+            #     show_fig=(i == 0),
+            #     save_fig=True,
+            #     show_fig=False,
+            # )
+            # del x_list, y_list, c_list
 
         if plot_ratio_legend:
             x_list, y_list, c_list = ffa.calculate_flux_footprint(
                 df=df,
                 col_flux="Fratio",
-                plot_count=plot_count,
+                plot_count=100,
             )
             # フットプリントとホットスポットの可視化
             ffa.plot_flux_footprint_with_hotspots(
@@ -351,7 +358,9 @@ if __name__ == "__main__":
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
                 output_dir=output_dir,
-                output_filename="footprint_ratio_legend.png",
+                output_filename="footprint_ratio-legend.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
 
@@ -378,6 +387,8 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ch4_gas{date_tag}.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
 
@@ -404,6 +415,8 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename=f"footprint_ch4_bio{date_tag}.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
 
@@ -429,5 +442,7 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename="footprint_ch4-scale_checker.png",
+                save_fig=True,
+                show_fig=False,
             )
             del x_list, y_list, c_list
