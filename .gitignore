@@ -13,6 +13,9 @@ wheels/
 .pytest_cache
 .ruff_cache
 
+# vscode settings
+.vscode
+
 # :Zone.Identifier
 **/*:Zone.Identifier
 
