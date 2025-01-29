@@ -1,6 +1,8 @@
 import pandas as pd
+import warnings
 from pathlib import Path
 from datetime import datetime
+from importlib.metadata import version
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 
 
@@ -144,7 +146,7 @@ class MonthlyConverter:
             if not file_path.exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
             self._excel_files[file_name] = pd.ExcelFile(file_path)
-        return self._excel_files[file_name].sheet_names
+        return [str(name) for name in self._excel_files[file_name].sheet_names]
 
     def read_sheets(
         self,
@@ -364,7 +366,23 @@ class MonthlyConverter:
         ----------
             pd.DataFrame
                 指定された期間のデータのみを含むデータフレーム。
+
+        .. warning::
+            このメソッドは非推奨です。代わりに `extract_period_data` を使用してください。
+            v1.0.0 で削除される予定です。
         """
+        try:
+            ver = version("py_flux_tracer")
+            # print(ver)
+            if ver.startswith("0."):
+                warnings.warn(
+                    "`extract_monthly_data` is deprecated. Please use `extract_period_data` instead. This method will be removed in v1.0.0.",
+                    FutureWarning,
+                    stacklevel=2,
+                )
+        except Exception:
+            pass
+
         # 入力チェック
         if not all(1 <= month <= 12 for month in target_months):
             raise ValueError("target_monthsは1から12の間である必要があります")
@@ -383,7 +401,9 @@ class MonthlyConverter:
         df_copied[datetime_column] = pd.to_datetime(df_copied[datetime_column])
 
         # 月でフィルタリング
-        monthly_data = df_copied[df_copied[datetime_column].dt.month.isin(target_months)]
+        monthly_data = df_copied[
+            df_copied[datetime_column].dt.month.isin(target_months)
+        ]
 
         # 日付範囲でフィルタリング
         if start_day is not None:
@@ -394,6 +414,50 @@ class MonthlyConverter:
             monthly_data = monthly_data[monthly_data[datetime_column].dt.day <= end_day]
 
         return monthly_data
+
+    @staticmethod
+    def extract_period_data(
+        df: pd.DataFrame,
+        start_date: str | pd.Timestamp,
+        end_date: str | pd.Timestamp,
+        datetime_column: str = "Date",
+    ) -> pd.DataFrame:
+        """
+        指定された期間のデータを抽出します。
+
+        Parameters
+        ----------
+            df : pd.DataFrame
+                入力データフレーム
+            start_date : str | pd.Timestamp
+                開始日（'YYYY-MM-DD'形式の文字列またはTimestamp）
+            end_date : str | pd.Timestamp
+                終了日（'YYYY-MM-DD'形式の文字列またはTimestamp）
+            datetime_column : str
+                日付を含む列の名前。デフォルトは"Date"
+
+        Returns
+        ----------
+            pd.DataFrame
+                指定された期間のデータのみを含むデータフレーム
+        """
+        # データフレームのコピーを作成
+        df_copied = df.copy()
+        df_copied[datetime_column] = pd.to_datetime(df_copied[datetime_column])
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date)
+
+        # 開始日と終了日の順序チェック
+        if start_dt > end_dt:
+            raise ValueError("start_date は end_date より前である必要があります")
+
+        # 期間でフィルタリング
+        period_data = df_copied[
+            (df_copied[datetime_column] >= start_dt)
+            & (df_copied[datetime_column] <= end_dt)
+        ]
+
+        return period_data
 
     @staticmethod
     def merge_dataframes(
