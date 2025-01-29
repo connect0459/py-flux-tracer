@@ -48,7 +48,7 @@ subplot_labels: list[list[str | None]] = [
     ["(g)", None],
     ["(h)", None],
 ]
-lags_list: list[int] = [9.2, 10.0, 10.0, 10.0, 11.7, 13.2, 15.5]
+lags_list: list[float] = [9.2, 10.0, 10.0, 10.0, 11.7, 13.2, 15.5]
 output_dir = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )

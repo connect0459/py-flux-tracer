@@ -3,7 +3,7 @@ from py_flux_tracer import EddyDataPreprocessor
 
 
 if __name__ == "__main__":
-    root_path: str = "/mnt/c/Users/nakao/workspace/sac/ultra/data/2025.01.21/Ultra_Eddy"
+    root_path: str = "/mnt/c/Users/nakao/workspace/sac/ultra/data/2025.01.29/Ultra_Eddy"
 
     input_dir: str = os.path.join(root_path, "eddy_csv")
     resampled_dir: str = os.path.join(root_path, "eddy_csv-resampled")

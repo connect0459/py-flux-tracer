@@ -415,9 +415,10 @@ class MonthlyFiguresGenerator:
         # 日付範囲の処理
         if start_date is not None:
             start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
-            df_min_date = (
-                df_copied.index.normalize().min().normalize()
-            )  # 日付のみの比較のため正規化
+            # df_min_date = (
+            #     df_copied.index.normalize().min().normalize()
+            # )  # 日付のみの比較のため正規化
+            df_min_date = pd.to_datetime(df_copied.index.min()).normalize()
 
             # データの最小日付が指定開始日より後の場合にのみ警告
             if df_min_date.date() > start_dt.date():
@@ -427,7 +428,8 @@ class MonthlyFiguresGenerator:
                 )
                 start_dt = df_min_date
         else:
-            start_dt = df_copied.index.normalize().min()
+            # start_dt = df_copied.index.normalize().min()
+            start_dt = pd.to_datetime(df_copied.index.min()).normalize()
 
         if end_date is not None:
             end_dt = (
@@ -435,9 +437,10 @@ class MonthlyFiguresGenerator:
                 + pd.Timedelta(days=1)
                 - pd.Timedelta(seconds=1)
             )
-            df_max_date = (
-                df_copied.index.normalize().max().normalize()
-            )  # 日付のみの比較のため正規化
+            # df_max_date = (
+            #     df_copied.index.normalize().max().normalize()
+            # )  # 日付のみの比較のため正規化
+            df_max_date = pd.to_datetime(df_copied.index.max()).normalize()
 
             # データの最大日付が指定終了日より前の場合にのみ警告
             if df_max_date.date() < pd.to_datetime(end_date).date():
@@ -518,7 +521,7 @@ class MonthlyFiguresGenerator:
                 date = mdates.num2date(x)
                 return f"{date.strftime('%m')}"
 
-            ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
+            ax.xaxis.set_major_formatter(FuncFormatter(date_formatter))
 
             # 補助目盛りの設定
             ax.xaxis.set_minor_locator(mdates.MonthLocator())

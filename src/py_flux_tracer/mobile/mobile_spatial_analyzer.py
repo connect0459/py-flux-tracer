@@ -261,6 +261,8 @@ class MSAInputConfig:
             raise ValueError(
                 f"Unsupported file extension: '{extension}'. Supported: {supported_extensions}"
             )
+        if not os.path.exists(self.path):
+            raise FileNotFoundError(f"File is not found: '{self.path}'")
 
     @classmethod
     def validate_and_create(
@@ -1334,7 +1336,7 @@ class MobileSpatialAnalyzer:
                 )
 
         # デフォルトの比率とラベル設定
-        default_ratio_labels = {
+        default_ratio_labels: dict[float, tuple[float, float, str]] = {
             0.001: (1.25, 2, "0.001"),
             0.005: (1.25, 8, "0.005"),
             0.010: (1.25, 15, "0.01"),
@@ -1558,10 +1560,11 @@ class MobileSpatialAnalyzer:
                         center_lon=self._center_lon,
                     )
                     section: int = self._determine_section(angle)
+                    source_raw = pd.Timestamp(str(ratios.index[i]))
 
                     hotspots.append(
                         HotspotData(
-                            source=ratios.index[i].strftime("%Y-%m-%d %H:%M:%S"),
+                            source=source_raw.strftime("%Y-%m-%d %H:%M:%S"),
                             angle=angle,
                             avg_lat=current_lat,
                             avg_lon=current_lon,
@@ -1667,7 +1670,7 @@ class MobileSpatialAnalyzer:
             )
 
         # サンプリング周波数に応じてシフト量を調整
-        shift_periods: float = -config.lag * config.fs  # fsを掛けて補正
+        shift_periods: int = -int(config.lag * config.fs)  # fsを掛けて補正
 
         # 遅れ時間の補正
         for col in columns_to_shift:
@@ -1677,26 +1680,27 @@ class MobileSpatialAnalyzer:
         df = df.dropna(subset=[col_latitude, col_longitude] + columns_to_shift)
 
         # 水蒸気補正の適用
-        h2o_correction: H2OCorrectionConfig = config.h2o_correction
+        # 水蒸気補正の適用
         if config.h2o_correction is not None and all(
             x is not None
             for x in [
-                h2o_correction.coef_a,
-                h2o_correction.coef_b,
-                h2o_correction.coef_c,
+                config.h2o_correction.coef_a,
+                config.h2o_correction.coef_b,
+                config.h2o_correction.coef_c,
             ]
         ):
+            h2o_correction: H2OCorrectionConfig = config.h2o_correction
             df = CorrectingUtils.correct_h2o_interference(
                 df=df,
-                coef_a=h2o_correction.coef_a,
-                coef_b=h2o_correction.coef_b,
-                coef_c=h2o_correction.coef_c,
+                coef_a=float(h2o_correction.coef_a),  # type: ignore
+                coef_b=float(h2o_correction.coef_b),  # type: ignore
+                coef_c=float(h2o_correction.coef_c),  # type: ignore
                 h2o_ppm_threshold=h2o_correction.h2o_ppm_threshold,
             )
 
         # バイアス除去の適用
-        bias_removal: BiasRemovalConfig = config.bias_removal
-        if bias_removal is not None:
+        if config.bias_removal is not None:
+            bias_removal: BiasRemovalConfig = config.bias_removal
             df = CorrectingUtils.remove_bias(
                 df=df,
                 quantile_value=bias_removal.quantile_value,
