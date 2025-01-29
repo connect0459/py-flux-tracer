@@ -716,8 +716,8 @@ class FluxFootprintAnalyzer:
         hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_labels: dict[HotspotType, str] | None = None,
         hotspot_markers: dict[HotspotType, str] | None = None,
-        hotspot_size_ranges: dict[str, tuple[float, float]] | None = None,  # 新規追加
-        hotspot_sizes: dict[str, float] | None = None,  # 新規追加
+        hotspot_sizes: dict[str, tuple[tuple[float, float], float]] | None = None,
+        hotspot_sorting_by_delta_ch4: bool = True,
         legend_alpha: float = 1.0,
         legend_bbox_to_anchor: tuple[float, float] = (0.55, -0.01),
         legend_loc: str = "upper center",
@@ -785,6 +785,17 @@ class FluxFootprintAnalyzer:
             hotspot_markers : dict[HotspotType, str] | None, optional
                 ホットスポットの形状を指定する辞書。
                 例: {'bio': '^', 'gas': 'o', 'comb': 's'}
+            hotspot_sizes : dict[str, tuple[tuple[float, float], float]] | None, optional
+                ホットスポットのサイズ範囲とマーカーサイズを指定する辞書。
+                キーはサイズカテゴリ名、値は((最小値, 最大値), マーカーサイズ)のタプル。
+                例: {
+                    "small": ((0, 0.5), 50),
+                    "medium": ((0.5, 1.0), 100),
+                    "large": ((1.0, float("inf")), 200)
+                }
+                デフォルトはNone。
+            hotspot_sorting_by_delta_ch4 : bool
+                ホットスポットをΔCH4で昇順ソートするか。デフォルトはTrue。
             legend_alpha : float
                 凡例の透過率（デフォルトは1.0）。
             legend_bbox_to_anchor : tuple[float, float], optional
@@ -936,23 +947,23 @@ class FluxFootprintAnalyzer:
                 "comb": "comb",
             }
 
-            # デフォルトのサイズ範囲を定義
-            default_size_ranges = {
-                "small": (0, 0.5),
-                "medium": (0.5, 1.0),
-                "large": (1.0, float("inf")),
+            # デフォルトのサイズ設定を定義
+            default_sizes = {
+                "small": ((0, 0.5), 50),
+                "medium": ((0.5, 1.0), 100),
+                "large": ((1.0, float("inf")), 200),
             }
 
-            # デフォルトのマーカーサイズを定義
-            default_sizes = {"small": 50, "medium": 100, "large": 200}
-
-            # ユーザー指定のサイズ範囲とマーカーサイズを使用（指定がない場合はデフォルト値を使用）
-            size_ranges = hotspot_size_ranges or default_size_ranges
+            # ユーザー指定のサイズ設定を使用（指定がない場合はデフォルト値を使用）
             sizes = hotspot_sizes or default_sizes
 
             # 座標変換のための定数
             meters_per_lat: float = self.EARTH_RADIUS_METER * (math.pi / 180)
             meters_per_lon: float = meters_per_lat * math.cos(math.radians(center_lat))
+
+            # ΔCH4で昇順ソート
+            if hotspot_sorting_by_delta_ch4:
+                hotspots = sorted(hotspots, key=lambda x: x.delta_ch4)
 
             for spot_type, color in (hotspot_colors or default_colors).items():
                 spots_lon = []
@@ -1002,11 +1013,7 @@ class FluxFootprintAnalyzer:
                     label = (hotspot_labels or default_labels).get(spot_type, spot_type)
 
                     spot_sizes = [
-                        sizes[
-                            FluxFootprintAnalyzer._get_size_category(
-                                spot.delta_ch4, size_ranges
-                            )
-                        ]
+                        sizes[self._get_size_category(spot.delta_ch4, sizes)][1]
                         for spot in hotspots
                         if spot.type == spot_type
                         and left_lon
@@ -1785,23 +1792,25 @@ class FluxFootprintAnalyzer:
         return x_dst
 
     @staticmethod
-    def _get_size_category(value: float, ranges: dict[str, tuple[float, float]]) -> str:
+    def _get_size_category(
+        value: float, sizes: dict[str, tuple[tuple[float, float], float]]
+    ) -> str:
         """
-        値に基づいてサイズカテゴリを決定します。
+        サイズカテゴリを決定します。
 
         Parameters
         ----------
-        value : float
-            分類する値（ΔCH4など）
-        ranges : dict[str, tuple[float, float]]
-            カテゴリごとの範囲を定義する辞書
+            value : float
+                サイズを決定するための値。
+            sizes : dict[str, tuple[tuple[float, float], float]]
+                サイズカテゴリの辞書。キーはカテゴリ名、値は最小値と最大値のタプルおよびサイズ。
 
         Returns
-        -------
-        str
-            該当するカテゴリ名
+        ----------
+            str
+                指定された値に基づいて決定されたサイズカテゴリ。デフォルトは"small"。
         """
-        for category, (min_val, max_val) in ranges.items():
+        for category, ((min_val, max_val), _) in sizes.items():
             if min_val < value <= max_val:
                 return category
         return "small"  # デフォルトのカテゴリ
