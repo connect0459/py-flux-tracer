@@ -57,7 +57,7 @@ build-backend = "hatchling.build"
 [tool.hatch.version]
 source = "vcs"
 raw-options = { local_scheme = "no-local-version" }
-write-to = "src/py_flux_tracer/_version_generated.py"
+write-to = "src/py_flux_tracer/_version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/py_flux_tracer"]
