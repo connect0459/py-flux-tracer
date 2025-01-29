@@ -1,25 +1,22 @@
-name: Deploy to PyPI
+name: Deploy to PyPI and update Pages
 
 on:
   release:
-    types: [published] # ドラフトから公開時のみトリガー
+    types: [published]
 
 jobs:
-  # リリース時のみ実行
-  deploy:
+  deploy-to-pypi:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
-    # GitHub Pagesへのデプロイ権限を追加
     permissions:
       contents: read
-      pages: write
       id-token: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # すべての履歴を取得（タグ情報のため）
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,17 +37,25 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: twine upload dist/*
 
-      # GitHub Pagesの設定
+  update-pages:
+    needs: deploy-to-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      # docsフォルダをアップロード
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: "docs"
 
-      # GitHub Pagesにデプロイ
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
