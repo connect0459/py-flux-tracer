@@ -3,6 +3,8 @@ import pandas as pd
 from scipy import signal
 from typing import Literal
 
+WindowFunctionType = Literal["hanning", "hamming", "blackman"]
+
 
 class SpectrumCalculator:
     def __init__(
@@ -11,7 +13,7 @@ class SpectrumCalculator:
         fs: float,
         apply_window: bool = True,
         plots: int = 30,
-        window_type: str = "hamming",
+        window_type: WindowFunctionType = "hamming",
     ):
         """
         データロガーから取得したデータファイルを用いて計算を行うクラス。
@@ -26,14 +28,14 @@ class SpectrumCalculator:
                 窓関数を適用するフラグ。デフォルトはTrue。
             plots : int
                 プロットする点の数。可視化のためのデータポイント数。
-            window_type : str
+            window_type : WindowFunctionType
                 窓関数の種類。デフォルトは'hamming'。
         """
         self._df: pd.DataFrame = df
         self._fs: float = fs
         self._apply_window: bool = apply_window
         self._plots: int = plots
-        self._window_type: str = window_type
+        self._window_type: WindowFunctionType = window_type
 
     def calculate_co_spectrum(
         self,
@@ -426,15 +428,15 @@ class SpectrumCalculator:
 
     @staticmethod
     def _generate_window_function(
-        type: Literal["hanning", "hamming", "blackman"], data_length: int
+        type: WindowFunctionType, data_length: int
     ) -> np.ndarray:
         """
         指定された種類の窓関数を適用する
 
         Parameters
         ----------
-            type : Literal['hanning', 'hamming', 'blackman']
-                窓関数の種類 ('hanning', 'hamming', 'blackman')
+            type : WindowFunctionType
+                窓関数の種類
             data_length : int
                 データ長
 
@@ -446,7 +448,7 @@ class SpectrumCalculator:
         Notes
         ----------
             - 指定された種類の窓関数を適用し、numpy配列として返す
-            - 無効な種類が指定された場合、警告を表示しHann窓を適用する
+            - 無効な種類が指定された場合、hanning窓を使用する
         """
         if type == "hamming":
             return np.hamming(data_length)

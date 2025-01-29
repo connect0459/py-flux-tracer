@@ -52,7 +52,7 @@ class BiasRemovalConfig:
         """
         if not 0 <= self.quantile_value < 1:
             raise ValueError(
-                f"QUANTILE_VALUE must be between 0 and 1, got {self.quantile_value}"
+                f"quantile_value must be between 0 and 1, got {self.quantile_value}"
             )
 
 

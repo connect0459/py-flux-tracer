@@ -6,8 +6,12 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from scipy import stats
 from pathlib import Path
+from typing import Literal
 from datetime import datetime
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
+
+
+MeasuredWindKeyType = Literal["u_m", "v_m", "w_m"]
 
 
 class EddyDataPreprocessor:
@@ -44,12 +48,12 @@ class EddyDataPreprocessor:
         self.logger: Logger = EddyDataPreprocessor.setup_logger(logger, log_level)
 
     def add_uvw_columns(
-        self, 
+        self,
         df: pd.DataFrame,
-        column_mapping: dict[str, str] = {
+        column_mapping: dict[MeasuredWindKeyType, str] = {
             "u_m": "Ux",
             "v_m": "Uy",
-            "w_m": "Uz"
+            "w_m": "Uz",
         },
     ) -> pd.DataFrame:
         """
@@ -60,7 +64,7 @@ class EddyDataPreprocessor:
         ----------
             df : pd.DataFrame
                 風速データを含むDataFrame
-            column_mapping : dict[str, str]
+            column_mapping : dict[MeasuredWindKeyType, str]
                 入力データのカラム名マッピング。
                 キーは"u_m", "v_m", "w_m"で、値は対応する入力データのカラム名。
                 デフォルトは{"u_m": "Ux", "v_m": "Uy", "w_m": "Uz"}。
@@ -75,7 +79,7 @@ class EddyDataPreprocessor:
             ValueError
                 必要なカラムが存在しない場合、またはマッピングに必要なキーが不足している場合
         """
-        required_keys = ["u_m", "v_m", "w_m"]
+        required_keys: list[MeasuredWindKeyType] = ["u_m", "v_m", "w_m"]
         # マッピングに必要なキーが存在するか確認
         for key in required_keys:
             if key not in column_mapping:
@@ -84,7 +88,9 @@ class EddyDataPreprocessor:
         # 必要な列がDataFrameに存在するか確認
         for key, column in column_mapping.items():
             if column not in df.columns:
-                raise ValueError(f"必要な列 '{column}' (mapped from '{key}') がDataFrameに存在しません。")
+                raise ValueError(
+                    f"必要な列 '{column}' (mapped from '{key}') がDataFrameに存在しません。"
+                )
 
         df_copied: pd.DataFrame = df.copy()
         # pandasの.valuesを使用してnumpy配列を取得し、その型をnp.ndarrayに明示的にキャストする
@@ -128,7 +134,6 @@ class EddyDataPreprocessor:
     def analyze_lag_times(
         self,
         input_dir: str | Path,
-        figsize: tuple[float, float] = (10, 8),
         input_files_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
         col1: str = "edp_wind_w",
@@ -136,11 +141,12 @@ class EddyDataPreprocessor:
         median_range: float = 20,
         output_dir: str | Path | None = None,
         output_tag: str = "",
-        plot_range_tuple: tuple = (-50, 200),
         add_title: bool = True,
+        figsize: tuple[float, float] = (10, 8),
+        plot_range_tuple: tuple = (-50, 200),
+        print_results: bool = True,
         xlabel: str | None = "Seconds",
         ylabel: str | None = "Frequency",
-        print_results: bool = True,
         index_column: str = "TIMESTAMP",
         index_format: str = "%Y-%m-%d %H:%M:%S.%f",
         resample_in_processing: bool = False,
@@ -165,10 +171,10 @@ class EddyDataPreprocessor:
         metadata_rows: int = 4,
         skiprows: list[int] = [0, 2, 3],
         add_uvw_columns: bool = True,
-        uvw_column_mapping: dict[str, str] = {
+        uvw_column_mapping: dict[MeasuredWindKeyType, str] = {
             "u_m": "Ux",
             "v_m": "Uy",
-            "w_m": "Uz"
+            "w_m": "Uz",
         },
     ) -> dict[str, float]:
         """
@@ -179,8 +185,6 @@ class EddyDataPreprocessor:
         ----------
             input_dir : str | Path
                 入力データファイルが格納されているディレクトリのパス。
-            figsize : tuple[float, float]
-                プロットのサイズ（幅、高さ）。
             input_files_pattern : str
                 入力ファイル名のパターン（正規表現）。
             input_files_suffix : str
@@ -195,16 +199,18 @@ class EddyDataPreprocessor:
                 出力ディレクトリのパス。Noneの場合は保存しない。
             output_tag : str
                 出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。
-            plot_range_tuple : tuple
-                ヒストグラムの表示範囲。
             add_title : bool
                 プロットにタイトルを追加するかどうか。デフォルトはTrue。
+            figsize : tuple[float, float]
+                プロットのサイズ（幅、高さ）。
+            plot_range_tuple : tuple
+                ヒストグラムの表示範囲。
+            print_results : bool
+                結果をコンソールに表示するかどうか。デフォルトはTrue。
             xlabel : str | None
                 x軸のラベル。デフォルトは"Seconds"。
             ylabel : str | None
                 y軸のラベル。デフォルトは"Frequency"。
-            print_results : bool
-                結果をコンソールに表示するかどうか。
             resample_in_processing : bool
                 データを遅れ時間の計算中にリサンプリングするかどうか。
                 inputするファイルが既にリサンプリング済みの場合はFalseでよい。
@@ -219,7 +225,7 @@ class EddyDataPreprocessor:
                 スキップする行番号のリスト。
             add_uvw_columns : bool
                 u, v, wの列を追加するかどうか。デフォルトはTrue。
-            uvw_column_mapping : dict[str, str]
+            uvw_column_mapping : dict[MeasuredWindKeyType, str]
                 u, v, wの列名をマッピングする辞書。デフォルトは以下の通り。
                 {
                     "u_m": "Ux",
@@ -242,7 +248,7 @@ class EddyDataPreprocessor:
         # メイン処理
         # ファイル名に含まれる数字に基づいてソート
         csv_files = EddyDataPreprocessor._get_sorted_files(
-            input_dir, input_files_pattern, input_files_suffix
+            directory=input_dir, pattern=input_files_pattern, suffix=input_files_suffix
         )
         if not csv_files:
             raise FileNotFoundError(
@@ -251,7 +257,7 @@ class EddyDataPreprocessor:
 
         for file in tqdm(csv_files, desc="Calculating"):
             path: str = os.path.join(input_dir, file)
-            df: pd.DataFrame = {} # 未定義エラーを防止
+            df: pd.DataFrame = pd.DataFrame()  # 空のDataFrameで初期化
             if resample_in_processing:
                 df, _ = self.get_resampled_df(
                     filepath=path,
@@ -265,6 +271,7 @@ class EddyDataPreprocessor:
                 )
             else:
                 df = pd.read_csv(path, skiprows=skiprows)
+            # 仰角などを補正した風速成分を追加
             if add_uvw_columns:
                 df = self.add_uvw_columns(df=df, column_mapping=uvw_column_mapping)
             lags_list = EddyDataPreprocessor._calculate_lag_time(
@@ -299,9 +306,9 @@ class EddyDataPreprocessor:
             plt.hist(data, bins=20, range=plot_range_tuple)
             if add_title:
                 plt.title(f"Delays of {column}")
-            if xlabel is None:
+            if xlabel is not None:
                 plt.xlabel(xlabel)
-            if ylabel is None:
+            if ylabel is not None:
                 plt.ylabel(ylabel)
             plt.xlim(plot_range_tuple)
 
@@ -350,13 +357,13 @@ class EddyDataPreprocessor:
 
         return results
 
-    def get_generated_columns_names(self, print: bool = True) -> list[str]:
+    def get_generated_columns_names(self, print_summary: bool = True) -> list[str]:
         """
         クラス内部で生成されるカラム名を取得する。
 
         Parameters
         ----------
-            print : bool
+            print_summary : bool
                 print()で表示するか。デフォルトはTrue。
 
         Returns
@@ -373,7 +380,7 @@ class EddyDataPreprocessor:
             self.DEGREE_WIND_DIR,
             self.DEGREE_WIND_INC,
         ]
-        if print:
+        if print_summary:
             print(list_cols)
         return list_cols
 
@@ -431,8 +438,9 @@ class EddyDataPreprocessor:
                 メタデータとして読み込む行数。デフォルトは4。
             skiprows : list[int], optional
                 スキップする行インデックスのリスト。デフォルトは[0, 2, 3]のため、1, 3, 4行目がスキップされる。
-            resample : bool
-                メソッド内でリサンプリング&欠損補間をするか。Falseの場合はfloat変換などの処理のみ適用する。
+            resample : bool, optional
+                メソッド内でリサンプリング&欠損補間をするか。デフォルトはTrue。
+                Falseの場合はfloat変換などの処理のみ適用する。
             interpolate : bool, optional
                 欠損値の補完を適用するフラグ。デフォルトはTrue。
 
@@ -742,13 +750,15 @@ class EddyDataPreprocessor:
         return lags_list
 
     @staticmethod
-    def _get_sorted_files(directory: str, pattern: str, suffix: str) -> list[str]:
+    def _get_sorted_files(
+        directory: str | Path, pattern: str, suffix: str
+    ) -> list[str]:
         """
         指定されたディレクトリ内のファイルを、ファイル名に含まれる数字に基づいてソートして返す。
 
         Parameters
         ----------
-            directory : str
+            directory : str | Path
                 ファイルが格納されているディレクトリのパス
             pattern : str
                 ファイル名からソートキーを抽出する正規表現パターン

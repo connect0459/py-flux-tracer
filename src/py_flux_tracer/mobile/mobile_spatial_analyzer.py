@@ -173,46 +173,67 @@ class HotspotParams:
 
     Parameters
     ----------
-    CH4_PPM : str
-        CH4濃度を示すカラム名
-    C2H6_PPB : str
-        C2H6濃度を示すカラム名
-    H2O_PPM : str
-        H2O濃度を示すカラム名
-    CH4_PPM_DELTA_THRESHOLD : float
-        CH4濃度変化量の閾値
-    C2H6_PPB_DELTA_THRESHOLD : float
-        C2H6濃度変化量の閾値
-    H2O_PPM_THRESHOLD : float
-        H2O濃度の閾値
-    ROLLING_METHOD : RollingMethod
-        移動計算の方法
-        - "quantile"は下位{QUANTILE_VALUE}%の値を使用する。
-        - "mean"は移動平均を行う。
-    QUANTILE_VALUE : float
-        下位何パーセントの値を使用するか。デフォルトは5。
+        col_ch4_ppm : str
+            CH4濃度を示すカラム名
+        col_c2h6_ppb : str
+            C2H6濃度を示すカラム名
+        col_h2o_ppm : str
+            H2O濃度を示すカラム名
+        ch4_ppm_delta_min : float
+            CH4濃度変化量の下限閾値。この値未満のデータは除外
+        ch4_ppm_delta_max : float
+            CH4濃度変化量の上限閾値。この値を超えるデータは除外
+        c2h6_ppb_delta_min : float
+            C2H6濃度変化量の下限閾値。この値未満のデータは除外
+        c2h6_ppb_delta_max : float
+            C2H6濃度変化量の上限閾値。この値を超えるデータは除外
+        h2o_ppm_min : float
+            H2O濃度の下限閾値。この値未満のデータは除外
+        rolling_method : RollingMethod
+            移動計算の方法
+            - "quantile"は下位{quantile_value}%の値を使用する。
+            - "mean"は移動平均を行う。
+        quantile_value : float
+            下位何パーセントの値を使用するか。デフォルトは5。
     """
 
-    CH4_PPM: str = "ch4_ppm"
-    C2H6_PPB: str = "c2h6_ppb"
-    H2O_PPM: str = "h2o_ppm"
-    CH4_PPM_DELTA_THRESHOLD: float = 0.05
-    C2H6_PPB_DELTA_THRESHOLD: float = 0.0
-    H2O_PPM_THRESHOLD: float = 2000
-    ROLLING_METHOD: RollingMethod = "quantile"
-    QUANTILE_VALUE: float = 0.05
+    col_ch4_ppm: str = "ch4_ppm"
+    col_c2h6_ppb: str = "c2h6_ppb"
+    col_h2o_ppm: str = "h2o_ppm"
+    ch4_ppm_delta_min: float = 0.05
+    ch4_ppm_delta_max: float = float("inf")
+    c2h6_ppb_delta_min: float = 0.0
+    c2h6_ppb_delta_max: float = 1000.0
+    h2o_ppm_min: float = 2000
+    rolling_method: RollingMethod = "quantile"
+    quantile_value: float = 0.05
 
     def __post_init__(self) -> None:
         """パラメータの検証を行います。
 
         Raises
         ----------
-            ValueError: QUANTILE_VALUEが0以上1以下でない場合
+            ValueError: quantile_value が0以上1以下でない場合
+            ValueError: 下限値が上限値を超える場合
         """
-        # QUANTILE_VALUEの値域チェック
-        if not 0 <= self.QUANTILE_VALUE <= 1:
+        if not 0 <= self.quantile_value <= 1:
             raise ValueError(
-                f"QUANTILE_VALUE must be between 0 and 1, got {self.QUANTILE_VALUE}"
+                f"quantile_value must be between 0 and 1, got {self.quantile_value}"
+            )
+
+        if math.isinf(self.ch4_ppm_delta_min) or math.isinf(self.c2h6_ppb_delta_min):
+            raise ValueError(
+                "Lower threshold values cannot be set to infinity: ch4_ppm_delta_min, c2h6_ppb_delta_min."
+            )
+
+        if self.ch4_ppm_delta_min > self.ch4_ppm_delta_max:
+            raise ValueError(
+                "ch4_ppm_delta_min must be less than or equal to ch4_ppm_delta_max"
+            )
+
+        if self.c2h6_ppb_delta_min > self.c2h6_ppb_delta_max:
+            raise ValueError(
+                "c2h6_ppb_delta_min must be less than or equal to c2h6_ppb_delta_max"
             )
 
 
@@ -261,8 +282,9 @@ class MSAInputConfig:
             raise ValueError(
                 f"Unsupported file extension: '{extension}'. Supported: {supported_extensions}"
             )
+        # ファイルの存在確認
         if not os.path.exists(self.path):
-            raise FileNotFoundError(f"File is not found: '{self.path}'")
+            raise FileNotFoundError(f"'{self.path}'")
 
     @classmethod
     def validate_and_create(
@@ -270,8 +292,8 @@ class MSAInputConfig:
         fs: float,
         lag: float,
         path: Path | str,
-        h2o_correction: H2OCorrectionConfig | None = None,
         bias_removal: BiasRemovalConfig | None = None,
+        h2o_correction: H2OCorrectionConfig | None = None,
     ) -> "MSAInputConfig":
         """
         入力値を検証し、MSAInputConfigインスタンスを生成するファクトリメソッドです。
@@ -376,11 +398,6 @@ class MobileSpatialAnalyzer:
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
-
-        Returns
-        ----------
-            None
-                初期化処理が完了したことを示します。
         """
         # ロガー
         log_level: int = INFO
@@ -434,11 +451,6 @@ class MobileSpatialAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 分析対象のホットスポットリスト
-
-        Returns
-        ----------
-            None
-                統計情報の表示が完了したことを示します。
         """
         # タイプごとにホットスポットを分類
         hotspots_by_type: dict[HotspotType, list[HotspotData]] = {
@@ -496,14 +508,16 @@ class MobileSpatialAnalyzer:
             df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
                 df=df,
                 window_size=self._window_size,
-                col_ch4_ppm=params.CH4_PPM,
-                col_c2h6_ppb=params.C2H6_PPB,
-                col_h2o_ppm=params.H2O_PPM,
-                ch4_ppm_delta_threshold=params.CH4_PPM_DELTA_THRESHOLD,
-                c2h6_ppb_delta_threshold=params.C2H6_PPB_DELTA_THRESHOLD,
-                h2o_ppm_threshold=params.H2O_PPM_THRESHOLD,
-                rolling_method=params.ROLLING_METHOD,
-                quantile_value=params.QUANTILE_VALUE,
+                col_ch4_ppm=params.col_ch4_ppm,
+                col_c2h6_ppb=params.col_c2h6_ppb,
+                col_h2o_ppm=params.col_h2o_ppm,
+                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
+                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
+                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
+                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
+                h2o_ppm_threshold=params.h2o_ppm_min,
+                rolling_method=params.rolling_method,
+                quantile_value=params.quantile_value,
             )
 
             # ホットスポットの検出
@@ -852,14 +866,16 @@ class MobileSpatialAnalyzer:
             processed_df = MobileSpatialAnalyzer._calculate_hotspots_parameters(
                 df=df,
                 window_size=self._window_size,
-                col_ch4_ppm=params.CH4_PPM,
-                col_c2h6_ppb=params.C2H6_PPB,
-                col_h2o_ppm=params.H2O_PPM,
-                ch4_ppm_delta_threshold=params.CH4_PPM_DELTA_THRESHOLD,
-                c2h6_ppb_delta_threshold=params.C2H6_PPB_DELTA_THRESHOLD,
-                h2o_ppm_threshold=params.H2O_PPM_THRESHOLD,
-                rolling_method=params.ROLLING_METHOD,
-                quantile_value=params.QUANTILE_VALUE,
+                col_ch4_ppm=params.col_ch4_ppm,
+                col_c2h6_ppb=params.col_c2h6_ppb,
+                col_h2o_ppm=params.col_h2o_ppm,
+                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
+                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
+                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
+                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
+                h2o_ppm_threshold=params.h2o_ppm_min,
+                rolling_method=params.rolling_method,
+                quantile_value=params.quantile_value,
             )
             # ソース名を列として追加
             processed_df["source"] = source_name
@@ -1792,8 +1808,10 @@ class MobileSpatialAnalyzer:
         col_ch4_ppm: str,
         col_c2h6_ppb: str,
         col_h2o_ppm: str,
-        ch4_ppm_delta_threshold: float = 0.05,
-        c2h6_ppb_delta_threshold: float = 0.0,
+        ch4_ppm_delta_min: float = 0.05,
+        ch4_ppm_delta_max: float = float("inf"),
+        c2h6_ppb_delta_min: float = 0.0,
+        c2h6_ppb_delta_max: float = 1000.0,
         h2o_ppm_threshold: float = 2000,
         rolling_method: RollingMethod = "quantile",
         quantile_value: float = 0.05,
@@ -1815,10 +1833,14 @@ class MobileSpatialAnalyzer:
                 C2H6濃度を示すカラム名
             col_h2o_ppm : str
                 H2O濃度を示すカラム名
-            ch4_ppm_delta_threshold : float
-                CH4の閾値
-            c2h6_ppb_delta_threshold : float
-                C2H6の閾値
+            ch4_ppm_delta_min : float
+                CH4濃度の下限閾値。この値未満のデータは除外されます。
+            ch4_ppm_delta_max : float
+                CH4濃度の上限閾値。この値を超えるデータは除外されます。
+            c2h6_ppb_delta_min : float
+                C2H6濃度の下限閾値。この値未満のデータは除外されます。
+            c2h6_ppb_delta_max : float
+                C2H6濃度の上限閾値。この値を超えるデータは除外されます。
             h2o_ppm_threshold : float
                 H2Oの閾値
             rolling_method : RollingMethod
@@ -1891,14 +1913,17 @@ class MobileSpatialAnalyzer:
 
         # フィルタリング条件の適用
         df_copied.loc[
-            df_copied["ch4_ppm_delta"] < ch4_ppm_delta_threshold, "c2c1_ratio_delta"
+            (df_copied["ch4_ppm_delta"] < ch4_ppm_delta_min)
+            | (df_copied["ch4_ppm_delta"] > ch4_ppm_delta_max),
+            "c2c1_ratio_delta",
         ] = np.nan
-        df_copied.loc[df_copied["c2h6_ppb_delta"] < -10.0, "c2h6_ppb_delta"] = np.nan
-        df_copied.loc[df_copied["c2h6_ppb_delta"] > 1000.0, "c2h6_ppb_delta"] = np.nan
-        # ホットスポットの定義上0未満の値もカウントされるので0未満は一律0とする
         df_copied.loc[
-            df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_threshold, "c2c1_ratio_delta"
-        ] = 0.0
+            (df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_min)
+            | (df_copied["c2h6_ppb_delta"] > c2h6_ppb_delta_max),
+            "c2h6_ppb_delta",
+        ] = np.nan
+        # ホットスポットの定義上0未満の値もカウントされるので0未満は一律0とする
+        df_copied.loc[df_copied["c2h6_ppb_delta"] < 0, "c2c1_ratio_delta"] = 0.0
 
         # 水蒸気濃度によるフィルタリング
         df_copied.loc[
