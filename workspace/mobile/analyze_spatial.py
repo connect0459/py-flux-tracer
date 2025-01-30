@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 from py_flux_tracer import (
     HotspotData,
     MobileSpatialAnalyzer,
@@ -184,15 +185,23 @@ if __name__ == "__main__":
 
     # Emissionの分析
     # [method, rate_lim]
-    emissions_methods_configs: list[list[str | tuple[float, float]]] = [
+    emissions_methods_configs: list[
+        list[Literal["weller", "weitzel", "joo", "umezawa"] | tuple[float, float]]
+    ] = [
         ["weller", (0, 5)],
         # ["weitzel", (0, 3)],
         # ["joo", (0, 10)],
         ["umezawa", (0, 50)],
     ]
     for configs in emissions_methods_configs:
-        method = configs[0]
-        emission_rate_lim: tuple[float, float] = configs[1]
+        method = (
+            configs[0]
+            if configs[0] in ["weller", "weitzel", "joo", "umezawa"]
+            else "weller"
+        )  # 有効な値のみを許可
+        emission_rate_lim = (
+            configs[1] if isinstance(configs[1], tuple) else (0, 5)
+        )  # タプルであることを確認
 
         msa.logger.info(f"{method}のemission解析を開始します。")
         # 排出量の計算と基本統計

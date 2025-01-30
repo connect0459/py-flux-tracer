@@ -15,12 +15,12 @@ SiteConfigKeys = Literal["name", "center_lat", "center_lon"]
 sites_configs: list[dict[SiteConfigKeys, str | float]] = [
     {
         "name": "SAC",
-        "center_lan": 34.573904320329724,
+        "center_lat": 34.573904320329724,
         "center_lon": 135.4829511120712,
     },
     {
         "name": "YYG",
-        "center_lan": 35.6644926,
+        "center_lat": 35.6644926,
         "center_lon": 139.6842876,
     },
 ]
@@ -59,8 +59,8 @@ if __name__ == "__main__":
     )
     image = ffa.get_satellite_image_from_api(
         api_key=gms_api_key,
-        center_lat=site_info["center_lan"],
-        center_lon=site_info["center_lon"],
+        center_lat=float(site_info["center_lat"]),  # float型にキャスト
+        center_lon=float(site_info["center_lon"]),  # float型にキャスト
         output_path=local_image_path,
         zoom=zoom,
     )  # API

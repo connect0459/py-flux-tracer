@@ -7,12 +7,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from PIL import Image
-from PIL.ImageFile import ImageFile
 from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime
 from dataclasses import dataclass
-from typing import Literal, Mapping
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from typing import Any, Callable, Literal, Mapping
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.figure_utils import FigureUtils
 from ..commons.hotspot_data import HotspotData, HotspotType
@@ -67,7 +68,7 @@ class FluxFootprintAnalyzer:
         column_mapping: Mapping[str, str] | None = None,
         labelsize: float = 20,
         ticksize: float = 16,
-        plot_params: dict[str, any] | None = None,
+        plot_params: dict[str, Any] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -94,7 +95,7 @@ class FluxFootprintAnalyzer:
                 軸ラベルのフォントサイズ。デフォルトは20。
             ticksize : float
                 軸目盛りのフォントサイズ。デフォルトは16。
-            plot_params : dict[str, any] | None
+            plot_params : dict[str, Any] | None
                 matplotlibのプロットパラメータを指定する辞書。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを生成します。
@@ -335,13 +336,15 @@ class FluxFootprintAnalyzer:
         z_m: float = self._z_m
         z_d: float = FluxFootprintAnalyzer._calculate_ground_correction(
             z_m=z_m,
-            wind_speed=data_weekday[self._cols[self._default_cols.WIND_SPEED]].values,
+            wind_speed=data_weekday[
+                self._cols[self._default_cols.WIND_SPEED]
+            ].to_numpy(),
             friction_velocity=data_weekday[
                 self._cols[self._default_cols.FRICTION_VELOCITY]
-            ].values,
+            ].to_numpy(),
             stability_parameter=data_weekday[
                 self._cols[self._default_cols.STABILITY]
-            ].values,
+            ].to_numpy(),
         )
 
         x_list: list[float] = []
@@ -427,6 +430,10 @@ class FluxFootprintAnalyzer:
         col_weekday: str = self.COL_FFA_IS_WEEKDAY
         if source_type == "csv":
             # 既存のCSV処理ロジック
+            if not isinstance(data_source, str):
+                raise ValueError(
+                    "source_type='csv'の場合、data_sourceはstr型である必要があります"
+                )
             return self._combine_all_csv(
                 csv_dir_path=data_source, col_datetime=col_datetime
             )
@@ -484,7 +491,7 @@ class FluxFootprintAnalyzer:
         scale: int = 1,
         size: tuple[int, int] = (2160, 2160),
         zoom: int = 13,
-    ) -> ImageFile:
+    ) -> Image.Image:
         """
         Google Maps Static APIを使用して衛星画像を取得します。
 
@@ -507,7 +514,7 @@ class FluxFootprintAnalyzer:
 
         Returns
         ----------
-            ImageFile
+            Image.Image
                 取得した衛星画像
 
         Raises
@@ -534,7 +541,7 @@ class FluxFootprintAnalyzer:
             response = requests.get(base_url, params=params)
             response.raise_for_status()
             # 画像ファイルに変換
-            image = Image.open(io.BytesIO(response.content))
+            image: Image.Image = Image.open(io.BytesIO(response.content))
             image.save(output_path)
             self._got_satellite_image = True
             self.logger.info(f"リモート画像を取得し、保存しました: {output_path}")
@@ -548,7 +555,7 @@ class FluxFootprintAnalyzer:
         local_image_path: str,
         alpha: float = 1.0,
         grayscale: bool = False,
-    ) -> ImageFile:
+    ) -> Image.Image:
         """
         ローカルファイルから衛星画像を読み込みます。
 
@@ -563,7 +570,7 @@ class FluxFootprintAnalyzer:
 
         Returns
         ----------
-            ImageFile
+            Image.Image
                 読み込んだ衛星画像（透過設定済み）
 
         Raises
@@ -577,7 +584,7 @@ class FluxFootprintAnalyzer:
             )
 
         # 画像を読み込む
-        image: ImageFile = Image.open(local_image_path)
+        image: Image.Image = Image.open(local_image_path)
 
         # 白黒変換が指定されている場合
         if grayscale:
@@ -611,14 +618,14 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        reduce_c_function: callable = np.mean,
+        reduce_c_function: Callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | Path | None = None,
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
-        satellite_image: ImageFile | None = None,
+        satellite_image: Image.Image | None = None,
         xy_max: float = 5000,
     ) -> None:
         """
@@ -644,7 +651,7 @@ class FluxFootprintAnalyzer:
                 カラーバーの最小値。
             vmax : float
                 カラーバーの最大値。
-            reduce_c_function : callable, optional
+            reduce_c_function : Callable, optional
                 フットプリントの集約関数（デフォルトはnp.mean）。
             cbar_label : str | None, optional
                 カラーバーのラベル。
@@ -662,7 +669,7 @@ class FluxFootprintAnalyzer:
                 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig : bool
                 図の表示を許可するフラグ。デフォルトはTrue。
-            satellite_image : ImageFile | None, optional
+            satellite_image : Image.Image | None, optional
                 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
             xy_max : float, optional
                 表示範囲の最大値（デフォルトは4000）。
@@ -707,7 +714,7 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        reduce_c_function: callable = np.mean,
+        reduce_c_function: Callable = np.mean,
         dpi: float = 300,
         figsize: tuple[float, float] = (8, 8),
         constrained_layout: bool = False,
@@ -728,8 +735,10 @@ class FluxFootprintAnalyzer:
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
-        satellite_image: ImageFile | None = None,
-        satellite_image_aspect: str = "auto",
+        satellite_image: Image.Image | None = None,
+        satellite_image_aspect: Literal[
+            "auto", "equal"
+        ] = "auto",  # メソッドの引数定義を修正
         xy_max: float = 5000,
     ) -> None:
         """
@@ -764,7 +773,7 @@ class FluxFootprintAnalyzer:
                 カラーバーラベルのパディング。
             cmap : str
                 使用するカラーマップの名前。
-            reduce_c_function : callable
+            reduce_c_function : Callable
                 フットプリントの集約関数（デフォルトはnp.mean）。
             dpi : float, optional
                 出力画像の解像度（デフォルトは300）。
@@ -820,9 +829,9 @@ class FluxFootprintAnalyzer:
                 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig : bool
                 図の表示を許可するフラグ。デフォルトはTrue。
-            satellite_image : ImageFile | None, optional
+            satellite_image : Image.Image | None, optional
                 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
-            satellite_image_aspect : str
+            satellite_image_aspect : Literal['auto', 'equal']
                 衛星画像のアスペクト比を指定します。デフォルトは'auto'。
             xy_max : float, optional
                 表示範囲の最大値（デフォルトは5000）。
@@ -884,10 +893,10 @@ class FluxFootprintAnalyzer:
         plt.rcParams["axes.edgecolor"] = "None"
 
         # 従来のロジック
-        fig: plt.Figure = plt.figure(
+        fig: Figure = plt.figure(
             figsize=figsize, dpi=dpi, constrained_layout=constrained_layout
         )
-        ax_data: plt.Axes = fig.add_axes([0.05, 0.1, 0.8, 0.8])
+        ax_data: Axes = fig.add_axes((0.05, 0.1, 0.8, 0.8))
 
         # 9. フットプリントの描画
         # フットプリントの描画とカラーバー用の2つのhexbinを作成
@@ -903,7 +912,7 @@ class FluxFootprintAnalyzer:
                 gridsize=100,
                 linewidths=0,
                 mincnt=100,
-                extent=[left_lon, right_lon, bottom_lat, top_lat],
+                extent=(left_lon, right_lon, bottom_lat, top_lat),
                 reduce_C_function=reduce_c_function,
             )
 
@@ -919,7 +928,7 @@ class FluxFootprintAnalyzer:
             gridsize=100,
             linewidths=0,
             mincnt=100,
-            extent=[left_lon, right_lon, bottom_lat, top_lat],
+            extent=(left_lon, right_lon, bottom_lat, top_lat),
             reduce_C_function=reduce_c_function,
             visible=False,  # プロットには表示しない
         )
@@ -1042,7 +1051,7 @@ class FluxFootprintAnalyzer:
         ax_img = ax_data.twiny().twinx()
         ax_img.imshow(
             satellite_image,
-            extent=[left_lon, right_lon, bottom_lat, top_lat],
+            extent=(left_lon, right_lon, bottom_lat, top_lat),
             aspect=satellite_image_aspect,
         )
 
@@ -1059,7 +1068,7 @@ class FluxFootprintAnalyzer:
 
         # 13. カラーバーの追加
         if add_cbar:
-            cbar_ax: plt.Axes = fig.add_axes([0.88, 0.1, 0.03, 0.8])
+            cbar_ax: Axes = fig.add_axes((0.88, 0.1, 0.03, 0.8))
             cbar = fig.colorbar(hidden_hexbin, cax=cbar_ax)  # hidden_hexbinを使用
             # cbar_labelが指定されている場合のみラベルを設定
             if cbar_label:
@@ -1110,14 +1119,14 @@ class FluxFootprintAnalyzer:
         cbar_label: str | None = None,
         cbar_labelpad: int = 20,
         cmap: str = "jet",
-        reduce_c_function: callable = np.mean,
+        reduce_c_function: Callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
         output_dir: str | Path | None = None,
         output_filename: str = "footprint-scale_checker.png",
         save_fig: bool = True,
         show_fig: bool = True,
-        satellite_image: ImageFile | None = None,
+        satellite_image: Image.Image | None = None,
         xy_max: float = 5000,
     ) -> None:
         """
@@ -1147,7 +1156,7 @@ class FluxFootprintAnalyzer:
                 カラーバーの最小値。
             vmax : float
                 カラーバーの最大値。
-            reduce_c_function : callable, optional
+            reduce_c_function : Callable, optional
                 フットプリントの集約関数（デフォルトはnp.mean）。
             cbar_label : str, optional
                 カラーバーのラベル。
@@ -1169,7 +1178,7 @@ class FluxFootprintAnalyzer:
                 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig : bool
                 図の表示を許可するフラグ。デフォルトはTrue。
-            satellite_image : ImageFile | None, optional
+            satellite_image : Image.Image | None, optional
                 使用する衛星画像。指定がない場合はデフォルトの画像が生成されます。
             xy_max : float, optional
                 表示範囲の最大値（デフォルトは5000）。
@@ -1201,7 +1210,7 @@ class FluxFootprintAnalyzer:
                     delta_ch4=0.0,
                     delta_c2h6=0.0,
                     ratio=0.0,
-                    type=f"{direction}_{distance}m",
+                    type="scale_check",
                     section=0,
                     source="scale_check",
                     angle=0,
@@ -1218,7 +1227,7 @@ class FluxFootprintAnalyzer:
                     delta_ch4=0.0,
                     delta_c2h6=0.0,
                     ratio=0.0,
-                    type=label,
+                    type="scale_check",
                     section=0,
                     source="scale_check",
                     angle=0,
@@ -1228,7 +1237,8 @@ class FluxFootprintAnalyzer:
 
         # カスタムカラーマップの作成
         hotspot_colors = {
-            spot.type: plt.cm.tab10(i % 10) for i, spot in enumerate(dummy_hotspots)
+            spot.type: f'C{i % 10}' 
+            for i, spot in enumerate(dummy_hotspots)
         }
 
         # 既存のメソッドを呼び出してプロット
@@ -1443,7 +1453,7 @@ class FluxFootprintAnalyzer:
         displacement_height[neutral_condition_mask] = np.nan
 
         # 平均変位高さを計算
-        d: float = np.nanmean(displacement_height)
+        d: float = float(np.nanmean(displacement_height))
 
         # 地面修正量を返す
         return z - d
@@ -1488,8 +1498,8 @@ class FluxFootprintAnalyzer:
     @staticmethod
     def filter_data(
         df: pd.DataFrame,
-        start_date: str | None = None,
-        end_date: str | None = None,
+        start_date: str | datetime | None = None,
+        end_date: str | datetime | None = None,
         months: list[int] | None = None,
     ) -> pd.DataFrame:
         """
@@ -1499,9 +1509,9 @@ class FluxFootprintAnalyzer:
         ----------
             df : pd.DataFrame
                 フィルタリングするデータフレーム
-            start_date : str | None
+            start_date : str | datetime | None
                 フィルタリングの開始日（'YYYY-MM-DD'形式）。デフォルトはNone。
-            end_date : str | None
+            end_date : str | datetime | None
                 フィルタリングの終了日（'YYYY-MM-DD'形式）。デフォルトはNone。
             months : list[int] | None
                 フィルタリングする月のリスト（例：[1, 2, 12]）。デフォルトはNone。
@@ -1545,7 +1555,7 @@ class FluxFootprintAnalyzer:
                 raise ValueError(
                     "monthsは1から12までの整数のリストである必要があります"
                 )
-            df_copied = df_copied[df_copied.index.month.isin(months)]
+            df_copied = df_copied[pd.to_datetime(df_copied.index).month.isin(months)]
 
         # フィルタリング後のデータが空でないことを確認
         if df_copied.empty:

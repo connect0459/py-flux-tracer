@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-
+from typing import Any
 
 class FigureUtils:
     @staticmethod
@@ -9,7 +9,7 @@ class FigureUtils:
         legend_size: float = 20,
         tick_size: float = 20,
         title_size: float = 20,
-        plot_params: dict[str, any] | None = None,
+        plot_params: dict[str, Any] | None = None,
     ) -> None:
         """
         matplotlibのプロットパラメータを設定します。
@@ -26,7 +26,7 @@ class FigureUtils:
                 軸目盛りのフォントサイズ。
             title_size : float
                 タイトルのフォントサイズ。
-            plot_params : dict[str, any] | None
+            plot_params : dict[str, Any] | None
                 matplotlibのプロットパラメータの辞書。
         """
         # デフォルトのプロットパラメータ

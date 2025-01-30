@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 # ホットスポットの種類を表す型エイリアス
-HotspotType = Literal["bio", "gas", "comb"]
+HotspotType = Literal["bio", "gas", "comb", "scale_check"]
 
 
 @dataclass
