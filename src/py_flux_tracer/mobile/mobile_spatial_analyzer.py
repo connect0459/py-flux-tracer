@@ -40,7 +40,7 @@ class EmissionData:
             CH4の増加量 (ppm)
         delta_c2h6 : float
             C2H6の増加量 (ppb)
-        ratio : float
+        delta_ratio : float
             C2H6/CH4比
         emission_rate : float
             排出量 (L/min)
@@ -57,7 +57,7 @@ class EmissionData:
     longitude: float
     delta_ch4: float
     delta_c2h6: float
-    ratio: float
+    delta_ratio: float
     emission_rate: float
     daily_emission: float
     annual_emission: float
@@ -105,8 +105,8 @@ class EmissionData:
             raise ValueError("Delta C2H6 must be a int or float")
 
         # ratioのバリデーション
-        if not isinstance(self.ratio, (int, float)) or self.ratio < 0:
-            raise ValueError("Ratio must be a non-negative number")
+        if not isinstance(self.delta_ratio, (int, float)) or self.delta_ratio < 0:
+            raise ValueError("Delta ratio must be a non-negative number")
 
         # emission_rateのバリデーション
         if not isinstance(self.emission_rate, (int, float)) or self.emission_rate < 0:
@@ -134,7 +134,7 @@ class EmissionData:
             self.longitude,
             self.delta_ch4,
             self.delta_c2h6,
-            self.ratio,
+            self.delta_ratio,
             self.emission_rate,
             self.daily_emission,
             self.annual_emission,
@@ -158,7 +158,7 @@ class EmissionData:
             "longitude": self.longitude,
             "delta_ch4": self.delta_ch4,
             "delta_c2h6": self.delta_c2h6,
-            "ratio": self.ratio,
+            "delta_ratio": self.delta_ratio,
             "emission_rate": self.emission_rate,
             "daily_emission": self.daily_emission,
             "annual_emission": self.annual_emission,
@@ -694,7 +694,7 @@ class MobileSpatialAnalyzer:
                 <b>Lon</b> <span>:</span> <span>{spot.avg_lon:.3f}</span>
                 <b>ΔCH<sub>4</sub></b> <span>:</span> <span>{spot.delta_ch4:.3f}</span>
                 <b>ΔC<sub>2</sub>H<sub>6</sub></b> <span>:</span> <span>{spot.delta_c2h6:.3f}</span>
-                <b>Ratio</b> <span>:</span> <span>{spot.ratio:.3f}</span>
+                <b>Ratio</b> <span>:</span> <span>{spot.delta_ratio:.3f}</span>
                 <b>Type</b> <span>:</span> <span>{spot.type}</span>
                 <b>Section</b> <span>:</span> <span>{spot.section}</span>
             </div>
@@ -795,7 +795,7 @@ class MobileSpatialAnalyzer:
                 "type": spot.type,
                 "delta_ch4": spot.delta_ch4,
                 "delta_c2h6": spot.delta_c2h6,
-                "ratio": spot.ratio,
+                "delta_ratio": spot.delta_ratio,
                 "correlation": spot.correlation,
                 "angle": spot.angle,
                 "section": spot.section,
@@ -1734,7 +1734,7 @@ class MobileSpatialAnalyzer:
                 [
                     {
                         "timestamp": pd.to_datetime(spot.source),
-                        "ratio": spot.ratio,
+                        "delta_ratio": spot.delta_ratio,
                         "type": spot.type,
                     }
                     for spot in hotspots
@@ -1748,7 +1748,7 @@ class MobileSpatialAnalyzer:
                 # 点をプロット
                 ax4.scatter(
                     type_data["timestamp"],
-                    type_data["ratio"],
+                    type_data["delta_ratio"],
                     c=hotspot_colors.get(spot_type, "black"),
                     label=spot_type,
                     alpha=0.6,
@@ -1832,22 +1832,22 @@ class MobileSpatialAnalyzer:
         if enhanced_mask.any():
             lat = df["latitude"][enhanced_mask]
             lon = df["longitude"][enhanced_mask]
-            ratios = df["c2c1_ratio_delta"][enhanced_mask]
+            delta_ratio = df["c2c1_ratio_delta"][enhanced_mask]
             delta_ch4 = df["ch4_ppm_delta"][enhanced_mask]
             delta_c2h6 = df["c2h6_ppb_delta"][enhanced_mask]
 
             # 各ポイントに対してホットスポットを作成
             for i in range(len(lat)):
-                if pd.notna(ratios.iloc[i]):
+                if pd.notna(delta_ratio.iloc[i]):
                     current_lat = lat.iloc[i]
                     current_lon = lon.iloc[i]
                     correlation = df["c1c2_correlation"].iloc[i]
 
                     # 比率に基づいてタイプを決定
                     spot_type: HotspotType = "bio"
-                    if ratios.iloc[i] >= 100:
+                    if delta_ratio.iloc[i] >= 100:
                         spot_type = "comb"
-                    elif ratios.iloc[i] >= 5:
+                    elif delta_ratio.iloc[i] >= 5:
                         spot_type = "gas"
 
                     angle: float = MobileSpatialAnalyzer._calculate_angle(
@@ -1857,7 +1857,7 @@ class MobileSpatialAnalyzer:
                         center_lon=self._center_lon,
                     )
                     section: int = self._determine_section(angle)
-                    source_raw = pd.Timestamp(str(ratios.index[i]))
+                    source_raw = pd.Timestamp(str(delta_ratio.index[i]))
 
                     hotspots.append(
                         HotspotData(
@@ -1868,7 +1868,7 @@ class MobileSpatialAnalyzer:
                             delta_ch4=delta_ch4.iloc[i],
                             delta_c2h6=delta_c2h6.iloc[i],
                             correlation=max(-1, min(1, correlation)),
-                            ratio=ratios.iloc[i],
+                            delta_ratio=delta_ratio.iloc[i],
                             section=section,
                             type=spot_type,
                         )
@@ -2202,7 +2202,7 @@ class MobileSpatialAnalyzer:
             | (df_copied["c2h6_ppb_delta"] > c2h6_ppb_delta_max),
             "c2h6_ppb_delta",
         ] = np.nan
-        # ホットスポットの定義上0未満の値もカウントされるので0未満は一律0とする
+        # c2h6_ppb_delta は0未満のものを一律0とする
         df_copied.loc[df_copied["c2h6_ppb_delta"] < 0, "c2c1_ratio_delta"] = 0.0
 
         # 水蒸気濃度によるフィルタリング
@@ -2616,7 +2616,7 @@ class MobileSpatialAnalyzer:
                 longitude=spot.avg_lon,
                 delta_ch4=spot.delta_ch4,
                 delta_c2h6=spot.delta_c2h6,
-                ratio=spot.ratio,
+                delta_ratio=spot.delta_ratio,
                 emission_rate=emission_rate,
                 daily_emission=daily_emission,
                 annual_emission=annual_emission,

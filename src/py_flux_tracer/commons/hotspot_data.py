@@ -20,13 +20,13 @@ class HotspotData:
             平均緯度
         avg_lon : float
             平均経度
+        correlation : float
+            ΔC2H6/ΔCH4相関係数
         delta_ch4 : float
             CH4の増加量
         delta_c2h6 : float
             C2H6の増加量
-        correlation : float
-            ΔC2H6/ΔCH4相関係数
-        ratio : float
+        delta_ratio : float
             ΔC2H6/ΔCH4の比率
         section : int
             所属する区画番号
@@ -38,10 +38,10 @@ class HotspotData:
     angle: float
     avg_lat: float
     avg_lon: float
+    correlation: float
     delta_ch4: float
     delta_c2h6: float
-    correlation: float
-    ratio: float
+    delta_ratio: float
     section: int
     type: HotspotType
 
@@ -88,8 +88,8 @@ class HotspotData:
             )
 
         # 比率は0または正の値であることを確認
-        if self.ratio < 0:
-            raise ValueError(f"'ratio' must be 0 or a positive value: {self.ratio}")
+        if self.delta_ratio < 0:
+            raise ValueError(f"'ratio' must be 0 or a positive value: {self.delta_ratio}")
 
         # セクション番号は0または正の整数であることを確認
         if not isinstance(self.section, int) or self.section < 0:
