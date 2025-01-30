@@ -1083,7 +1083,7 @@ class FluxFootprintAnalyzer:
                 loc=legend_loc,  # 凡例の基準位置を指定
                 bbox_to_anchor=legend_bbox_to_anchor,  # アンカーポイントを指定
                 ncol=ncol,  # 列数を指定
-                framealpha=legend_alpha,  # 完全に不透過に設定（0.0は完全透過）
+                framealpha=legend_alpha,
             )
 
         # 15. 画像の保存
@@ -1237,8 +1237,7 @@ class FluxFootprintAnalyzer:
 
         # カスタムカラーマップの作成
         hotspot_colors = {
-            spot.type: f'C{i % 10}' 
-            for i, spot in enumerate(dummy_hotspots)
+            spot.type: f"C{i % 10}" for i, spot in enumerate(dummy_hotspots)
         }
 
         # 既存のメソッドを呼び出してプロット
