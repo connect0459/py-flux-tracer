@@ -1977,7 +1977,6 @@ class MobileSpatialAnalyzer:
         df = df.dropna(subset=[col_latitude, col_longitude] + columns_to_shift)
 
         # 水蒸気補正の適用
-        # 水蒸気補正の適用
         if config.h2o_correction is not None and all(
             x is not None
             for x in [
