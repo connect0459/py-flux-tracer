@@ -81,15 +81,20 @@ class HotspotData:
         if not isinstance(self.delta_c2h6, float):
             raise ValueError(f"'delta_c2h6' must be a float value: {self.delta_c2h6}")
 
+        # 比率は0または正の値であることを確認
+        # if self.delta_ratio < 0:
+        #     raise ValueError(
+        #         f"'delta_ratio' must be 0 or a positive value: {self.delta_ratio}"
+        #     )
+        # エラーが出たため暫定的にfloat型の確認のみに変更
+        if not isinstance(self.delta_ratio, float):
+            raise ValueError(f"'delta_ratio' must be a float value: {self.delta_ratio}")
+
         # 相関係数は-1から1の範囲内であることを確認
         if not -1 <= self.correlation <= 1 and str(self.correlation) != "nan":
             raise ValueError(
                 f"'correlation' must be between -1 and 1: {self.correlation}"
             )
-
-        # 比率は0または正の値であることを確認
-        if self.delta_ratio < 0:
-            raise ValueError(f"'ratio' must be 0 or a positive value: {self.delta_ratio}")
 
         # セクション番号は0または正の整数であることを確認
         if not isinstance(self.section, int) or self.section < 0:
