@@ -1563,6 +1563,16 @@ class MobileSpatialAnalyzer:
         col_ch4: str = "ch4_ppm",
         col_c2h6: str = "c2h6_ppb",
         col_h2o: str = "h2o_ppm",
+        add_legend: bool = True,
+        legend_bbox_to_anchor: tuple[float, float] = (0.5, 0.05),
+        legend_ncol: int | None = None,
+        font_size: float = 12,
+        label_pad: float = 10,
+        line_color: str = "black",
+        hotspot_colors: dict[str, str] = {"bio": "blue", "gas": "red", "comb": "green"},
+        hotspot_markerscale: float = 1,
+        hotspot_size: int = 10,
+        time_margin_minutes: float = 2.0,
         ylim_ch4: tuple[float, float] | None = None,
         ylim_c2h6: tuple[float, float] | None = None,
         ylim_h2o: tuple[float, float] | None = None,
@@ -1571,13 +1581,6 @@ class MobileSpatialAnalyzer:
         yscale_log_c2h6: bool = False,
         yscale_log_h2o: bool = False,
         yscale_log_ratio: bool = False,
-        font_size: float = 12,
-        label_pad: float = 10,
-        line_color: str = "black",
-        hotspot_colors: dict[str, str] = {"bio": "blue", "gas": "red", "comb": "green"},
-        interpolate_hotspots: bool = True,
-        alpha_interpolated: float = 0.2,
-        time_margin_minutes: float = 2.0,
         ylabel_ch4: str = "$\\mathregular{CH_{4}}$ (ppm)",
         ylabel_c2h6: str = "$\\mathregular{C_{2}H_{6}}$ (ppb)",
         ylabel_h2o: str = "$\\mathregular{H_{2}O}$ (ppm)",
@@ -1610,6 +1613,32 @@ class MobileSpatialAnalyzer:
                 C2H6データのキーを指定します。デフォルトは"c2h6_ppb"です。
             col_h2o : str
                 H2Oデータのキーを指定します。デフォルトは"h2o_ppm"です。
+            add_legend : bool
+                ホットスポットの凡例を表示するかどうか。デフォルトはTrueです。
+            legend_bbox_to_anchor : tuple[float, float]
+                ホットスポットの凡例の位置。デフォルトは(0.5, 0.05)です。
+            legend_ncol : int | None
+                凡例のカラム数。Noneの場合はホットスポットの種類数を使用して、一行で表示します。
+            font_size : float
+                基本フォントサイズ。デフォルトは12。
+            label_pad : float
+                y軸ラベルのパディング。デフォルトは10。
+            line_color : str
+                線の色。デフォルトは"black"。
+            hotspot_colors : dict[str, str]
+                ホットスポットタイプごとの色指定。
+            hotspot_markerscale : float
+                ホットスポットの凡例でのサイズ。hotspot_size のサイズに合わせて相対的に決める。デフォルトは1。
+            hotspot_size : int
+                ホットスポットの図でのサイズ。デフォルトは10。
+            ylabel_ch4 : str
+                CH4プロットのy軸ラベル。デフォルトは"$\\mathregular{CH_{4}}$ (ppm)"です。
+            ylabel_c2h6 : str
+                C2H6プロットのy軸ラベル。デフォルトは"$\\mathregular{C_{2}H_{6}}$ (ppb)"です。
+            ylabel_h2o : str
+                H2Oプロットのy軸ラベル。デフォルトは"$\\mathregular{H_{2}O}$ (ppm)"です。
+            ylabel_ratio : str
+                比率プロットのy軸ラベル。デフォルトは"ΔC$_2$H$_6$/ΔCH$_4$\\n(ppb ppm$^{-1}$)"です。
             ylim_ch4 : tuple[float, float] | None
                 CH4プロットのy軸範囲。デフォルトはNoneです。
             ylim_c2h6 : tuple[float, float] | None
@@ -1626,26 +1655,6 @@ class MobileSpatialAnalyzer:
                 H2Oデータのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
             yscale_log_ratio : bool
                 比率データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
-            font_size : float
-                基本フォントサイズ。デフォルトは12。
-            label_pad : float
-                y軸ラベルのパディング。デフォルトは10。
-            line_color : str
-                線の色。デフォルトは"black"。
-            hotspot_colors : dict[str, str]
-                ホットスポットタイプごとの色指定。
-            interpolate_hotspots : bool
-                ホットスポット間を補間するかどうか。デフォルトはTrue。
-            alpha_interpolated : float
-                補間点の透明度。デフォルトは0.2。
-            ylabel_ch4 : str
-                CH4プロットのy軸ラベル。デフォルトは"$\\mathregular{CH_{4}}$ (ppm)"です。
-            ylabel_c2h6 : str
-                C2H6プロットのy軸ラベル。デフォルトは"$\\mathregular{C_{2}H_{6}}$ (ppb)"です。
-            ylabel_h2o : str
-                H2Oプロットのy軸ラベル。デフォルトは"$\\mathregular{H_{2}O}$ (ppm)"です。
-            ylabel_ratio : str
-                比率プロットのy軸ラベル。デフォルトは"ΔC$_2$H$_6$/ΔCH$_4$\\n(ppb ppm$^{-1}$)"です。
         """
         # プロットパラメータの設定
         plt.rcParams.update(
@@ -1743,32 +1752,8 @@ class MobileSpatialAnalyzer:
                     c=hotspot_colors.get(spot_type, "black"),
                     label=spot_type,
                     alpha=0.6,
+                    s=hotspot_size,
                 )
-
-                if interpolate_hotspots and len(type_data) > 1:
-                    # データを時間でソート
-                    type_data = type_data.sort_values("timestamp")
-
-                    # 補間のための時間範囲を作成 (1秒間隔)
-                    time_range = pd.date_range(start=time_min, end=time_max, freq="1s")
-
-                    # 線形補間を実行
-                    interpolated = pd.DataFrame({"timestamp": time_range})
-                    interpolated = interpolated.merge(
-                        type_data, on="timestamp", how="left"
-                    )
-                    interpolated["ratio"] = interpolated["ratio"].interpolate(
-                        method="linear"
-                    )
-
-                    # 補間された線をプロット
-                    ax4.plot(
-                        interpolated["timestamp"],
-                        interpolated["ratio"],
-                        c=hotspot_colors.get(spot_type, "black"),
-                        alpha=alpha_interpolated,
-                        linestyle="--",
-                    )
 
         ax4.set_ylabel(ylabel_ratio, labelpad=label_pad)
         if ylim_ratio:
@@ -1778,8 +1763,21 @@ class MobileSpatialAnalyzer:
         ax4.grid(True, alpha=0.3)
         ax4.set_xlim(plot_time_min, plot_time_max)  # 他のプロットと同じ時間範囲を設定
 
-        if hotspots:
-            ax4.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        # 凡例を図の下部に配置
+        if hotspots and add_legend:
+            ncol = (
+                legend_ncol if legend_ncol is not None else len(set(hotspot_df["type"]))
+            )
+            # markerscaleは元のサイズに対する倍率を指定するため、
+            # 目的のサイズ（100）をプロットのマーカーサイズで割ることで、適切な倍率を計算しています
+            fig.legend(
+                bbox_to_anchor=legend_bbox_to_anchor,
+                loc="upper center",
+                ncol=ncol,
+                columnspacing=1.0,
+                handletextpad=0.5,
+                markerscale=hotspot_markerscale,
+            )
 
         # x軸のフォーマット調整（全てのサブプロットで共通）
         for ax in [ax1, ax2, ax3, ax4]:
@@ -1788,8 +1786,8 @@ class MobileSpatialAnalyzer:
             ax.tick_params(axis="both", which="major", labelsize=font_size)
             ax.grid(True, alpha=0.3)
 
-        # サブプロット間の間隔調整
-        plt.subplots_adjust(hspace=0.38)
+        # サブプロット間の間隔調整と凡例のためのスペース確保
+        plt.subplots_adjust(hspace=0.38, bottom=0.12)  # bottomを0.15から0.12に変更
 
         # 図の保存
         if save_fig:
@@ -1983,7 +1981,6 @@ class MobileSpatialAnalyzer:
         if config.h2o_correction is not None and all(
             x is not None
             for x in [
-                config.h2o_correction.coef_a,
                 config.h2o_correction.coef_b,
                 config.h2o_correction.coef_c,
             ]
@@ -1991,10 +1988,10 @@ class MobileSpatialAnalyzer:
             h2o_correction: H2OCorrectionConfig = config.h2o_correction
             df = CorrectingUtils.correct_h2o_interference(
                 df=df,
-                coef_a=float(h2o_correction.coef_a),  # type: ignore
                 coef_b=float(h2o_correction.coef_b),  # type: ignore
                 coef_c=float(h2o_correction.coef_c),  # type: ignore
                 h2o_ppm_threshold=h2o_correction.h2o_ppm_threshold,
+                target_h2o_ppm=h2o_correction.target_h2o_ppm,
             )
 
         # バイアス除去の適用

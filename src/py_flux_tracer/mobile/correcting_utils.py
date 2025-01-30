@@ -9,20 +9,20 @@ class H2OCorrectionConfig:
 
     Parameters
     ----------
-    coef_a : float | None
-        補正曲線の切片
     coef_b : float | None
         補正曲線の1次係数
     coef_c : float | None
         補正曲線の2次係数
     h2o_ppm_threshold : float | None
         水蒸気濃度の下限値（この値未満のデータは除外）
+    target_h2o_ppm : float
+        換算先の水蒸気濃度（デフォルト: 10000 ppm）
     """
 
-    coef_a: float | None = None
     coef_b: float | None = None
     coef_c: float | None = None
     h2o_ppm_threshold: float | None = 2000
+    target_h2o_ppm: float = 10000
 
 
 @dataclass
@@ -60,29 +60,21 @@ class CorrectingUtils:
     @staticmethod
     def correct_h2o_interference(
         df: pd.DataFrame,
-        coef_a: float,
         coef_b: float,
         coef_c: float,
         col_ch4_ppm: str = "ch4_ppm",
         col_h2o_ppm: str = "h2o_ppm",
         h2o_ppm_threshold: float | None = 2000,
+        target_h2o_ppm: float = 10000,
     ) -> pd.DataFrame:
         """
         水蒸気干渉を補正するためのメソッドです。
-        CH4濃度に対する水蒸気の影響を2次関数を用いて補正します。
-
-        References
-        ----------
-            - Commane et al. (2023): Intercomparison of commercial analyzers for atmospheric ethane and methane observations
-                https://amt.copernicus.org/articles/16/1431/2023/,
-                https://amt.copernicus.org/articles/16/1431/2023/amt-16-1431-2023.pdf
+        CH4濃度を特定の水蒸気濃度下での値に換算します。
 
         Parameters
         ----------
             df : pd.DataFrame
                 補正対象のデータフレーム
-            coef_a : float
-                補正曲線の切片
             coef_b : float
                 補正曲線の1次係数
             coef_c : float
@@ -93,6 +85,8 @@ class CorrectingUtils:
                 水蒸気濃度を示すカラム名
             h2o_ppm_threshold : float | None
                 水蒸気濃度の下限値（この値未満のデータは除外）
+            target_h2o_ppm : float
+                換算先の水蒸気濃度（デフォルト: 10000 ppm）
 
         Returns
         ----------
@@ -103,20 +97,21 @@ class CorrectingUtils:
         df_h2o_corrected: pd.DataFrame = df.copy()
         # 水蒸気濃度の配列を取得
         h2o: np.ndarray = np.array(df_h2o_corrected[col_h2o_ppm])
-
-        # 補正項の計算
-        correction_curve = coef_a + coef_b * h2o + coef_c * pow(h2o, 2)
-        max_correction = np.max(correction_curve)
-        correction_term = -(correction_curve - max_correction)
-
-        # CH4濃度の補正
-        df_h2o_corrected[col_ch4_ppm] = df_h2o_corrected[col_ch4_ppm] + correction_term
+        
+        # 現在の水蒸気濃度での補正項
+        term_ch4 = coef_b * h2o + coef_c * np.power(h2o, 2)
+        
+        # 目標水蒸気濃度での補正項
+        target_term = coef_b * target_h2o_ppm + coef_c * np.power(target_h2o_ppm, 2)
+        
+        # CH4濃度の補正（現在の補正項を引いて、目標水蒸気濃度での補正項を足す）
+        df_h2o_corrected[col_ch4_ppm] = (
+            df_h2o_corrected[col_ch4_ppm] - term_ch4 + target_term
+        )
 
         # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
         if h2o_ppm_threshold is not None:
-            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = (
-                np.nan
-            )
+            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = np.nan
             df_h2o_corrected = df_h2o_corrected.dropna(subset=[col_ch4_ppm])
 
         return df_h2o_corrected

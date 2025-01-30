@@ -55,14 +55,13 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 9,
+   "execution_count": 16,
    "id": "82bb8a9d",
    "metadata": {},
    "outputs": [],
    "source": [
     "# picoデータの補正式に関するパラメータ\n",
     "pico_h2o_correction = H2OCorrectionConfig(\n",
-    "    coef_a=2.0631,  # 切片\n",
     "    coef_b=1.0111e-06,  # 1次の係数\n",
     "    coef_c=-1.8683e-10,  # 2次の係数\n",
     ")\n",
@@ -154,7 +153,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": null,
+   "execution_count": 17,
    "id": "c33039f0",
    "metadata": {},
    "outputs": [],
@@ -178,7 +177,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 10,
+   "execution_count": 18,
    "id": "281be5f3-4925-45cc-9bd7-ba722b071315",
    "metadata": {
     "scrolled": false
@@ -230,7 +229,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 12,
+   "execution_count": 20,
    "id": "e56a2a2d-3c76-4138-80c4-284e4e13885d",
    "metadata": {
     "scrolled": true
@@ -282,6 +281,7 @@
     "        title_font_size=20,\n",
     "        save_fig=False,\n",
     "        colorbar_title=\"ΔC₂H₆/ΔCH₄<br>(ppb/ppm)\",\n",
+    "        marker_size=8\n",
     "    )\n",
     "\n",
     "    del df_processed"

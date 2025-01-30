@@ -10,7 +10,6 @@ from py_flux_tracer import (
 
 # picoデータの補正式に関するパラメータ
 pico_h2o_correction = H2OCorrectionConfig(
-    coef_a=2.0631,  # 切片
     coef_b=1.0111e-06,  # 1次の係数
     coef_c=-1.8683e-10,  # 2次の係数
 )
