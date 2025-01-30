@@ -10,6 +10,7 @@ import matplotlib.dates as mdates
 from tqdm import tqdm
 from pathlib import Path
 from datetime import timedelta
+from matplotlib import gridspec
 from dataclasses import dataclass
 from geopy.distance import geodesic
 from typing import get_args, Literal
@@ -1272,10 +1273,19 @@ class MobileSpatialAnalyzer:
         ylim: tuple[float, float] = (0, 50),
         xlabel: str = "Δ$\\mathregular{CH_{4}}$ (ppm)",
         ylabel: str = "Δ$\\mathregular{C_{2}H_{6}}$ (ppb)",
+        xscale_log: bool = False,
+        yscale_log: bool = False,
         add_legend: bool = True,
         save_fig: bool = True,
         show_fig: bool = True,
-        ratio_labels: dict[float, tuple[float, float, str]] | None = None,
+        ratio_labels: dict[float, tuple[float, float, str]] | None = {
+            0.001: (1.25, 2, "0.001"),
+            0.005: (1.25, 8, "0.005"),
+            0.010: (1.25, 15, "0.01"),
+            0.020: (1.25, 30, "0.02"),
+            0.030: (1.0, 40, "0.03"),
+            0.076: (0.20, 42, "0.076 (Osaka)"),
+        },
     ) -> None:
         """
         検出されたホットスポットのΔC2H6とΔCH4の散布図をプロットします。
@@ -1298,22 +1308,6 @@ class MobileSpatialAnalyzer:
                 ホットスポットの色を定義する辞書。
             hotspot_labels : dict[HotspotType, str]
                 ホットスポットのラベルを定義する辞書。
-            save_fig : bool
-                図の保存を許可するフラグ。デフォルトはTrue。
-            show_fig : bool
-                図の表示を許可するフラグ。デフォルトはTrue。
-            ratio_labels : dict[float, tuple[float, float, str]] | None
-                比率線とラベルの設定。
-                キーは比率値、値は (x位置, y位置, ラベルテキスト) のタプル。
-                Noneの場合はデフォルト設定を使用。デフォルト値:
-                {
-                    0.001: (1.25, 2, "0.001"),
-                    0.005: (1.25, 8, "0.005"),
-                    0.010: (1.25, 15, "0.01"),
-                    0.020: (1.25, 30, "0.02"),
-                    0.030: (1.0, 40, "0.03"),
-                    0.076: (0.20, 42, "0.076 (Osaka)")
-                }
             xlim : tuple[float, float]
                 x軸の範囲を指定します。デフォルトは(0, 2.0)です。
             ylim : tuple[float, float]
@@ -1322,8 +1316,28 @@ class MobileSpatialAnalyzer:
                 x軸のラベルを指定します。デフォルトは"Δ$\\mathregular{CH_{4}}$ (ppm)"です。
             ylabel : str
                 y軸のラベルを指定します。デフォルトは"Δ$\\mathregular{C_{2}H_{6}}$ (ppb)"です。
+            xscale_log : bool
+                x軸を対数スケールにするかどうか。デフォルトはFalse。
+            yscale_log : bool
+                y軸を対数スケールにするかどうか。デフォルトはFalse。
             add_legend : bool
                 凡例を追加するかどうか。
+            save_fig : bool
+                図の保存を許可するフラグ。デフォルトはTrue。
+            show_fig : bool
+                図の表示を許可するフラグ。デフォルトはTrue。
+            ratio_labels : dict[float, tuple[float, float, str]] | None
+                比率線とラベルの設定。
+                キーは比率値、値は (x位置, y位置, ラベルテキスト) のタプル。
+                Noneの場合は表示しない。デフォルト値:
+                {
+                    0.001: (1.25, 2, "0.001"),
+                    0.005: (1.25, 8, "0.005"),
+                    0.010: (1.25, 15, "0.01"),
+                    0.020: (1.25, 30, "0.02"),
+                    0.030: (1.0, 40, "0.03"),
+                    0.076: (0.20, 42, "0.076 (Osaka)")
+                }
         """
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -1351,28 +1365,23 @@ class MobileSpatialAnalyzer:
                     label=hotspot_labels[spot_type],
                 )
 
-        # デフォルトの比率とラベル設定
-        default_ratio_labels: dict[float, tuple[float, float, str]] = {
-            0.001: (1.25, 2, "0.001"),
-            0.005: (1.25, 8, "0.005"),
-            0.010: (1.25, 15, "0.01"),
-            0.020: (1.25, 30, "0.02"),
-            0.030: (1.0, 40, "0.03"),
-            0.076: (0.20, 42, "0.076 (Osaka)"),
-        }
-
-        ratio_labels = ratio_labels or default_ratio_labels
-
         # プロット後、軸の設定前に比率の線を追加
         x = np.array([0, 5])
         base_ch4 = 0.0
         base = 0.0
 
         # 各比率に対して線を引く
-        for ratio, (x_pos, y_pos, label) in ratio_labels.items():
-            y = (x - base_ch4) * 1000 * ratio + base
-            plt.plot(x, y, "-", c="black", alpha=0.5)
-            plt.text(x_pos, y_pos, label)
+        if ratio_labels is not None:
+            for ratio, (x_pos, y_pos, label) in ratio_labels.items():
+                y = (x - base_ch4) * 1000 * ratio + base
+                plt.plot(x, y, "-", c="black", alpha=0.5)
+                plt.text(x_pos, y_pos, label)
+
+        # 軸の設定
+        if xscale_log:
+            plt.xscale("log")
+        if yscale_log:
+            plt.yscale("log")
 
         plt.xlim(xlim)
         plt.ylim(ylim)
@@ -1410,8 +1419,12 @@ class MobileSpatialAnalyzer:
         ylim_ch4: tuple[float, float] | None = None,
         ylim_c2h6: tuple[float, float] | None = None,
         ylim_h2o: tuple[float, float] | None = None,
+        yscale_log_ch4: bool = False,
+        yscale_log_c2h6: bool = False,
+        yscale_log_h2o: bool = False,
         font_size: float = 12,
         label_pad: float = 10,
+        line_color: str = "black",
     ) -> None:
         """
         時系列データをプロットします。
@@ -1427,7 +1440,7 @@ class MobileSpatialAnalyzer:
             output_dir : str | Path | None
                 保存先のディレクトリを指定します。save_fig=Trueの場合は必須です。
             output_filename : str
-                保存するファイル名を指定します。デフォルトは"time_series.png"です。
+                保存するファイル名を指定します。デフォルトは"timeseries.png"です。
             save_fig : bool
                 図を保存するかどうかを指定します。デフォルトはFalseです。
             show_fig : bool
@@ -1444,10 +1457,18 @@ class MobileSpatialAnalyzer:
                 C2H6プロットのy軸範囲を指定します。デフォルトはNoneです。
             ylim_h2o : tuple[float, float] | None
                 H2Oプロットのy軸範囲を指定します。デフォルトはNoneです。
+            yscale_log_ch4 : bool
+                CH4データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            yscale_log_c2h6 : bool
+                C2H6データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            yscale_log_h2o : bool
+                H2Oデータのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
             font_size : float
                 基本フォントサイズ。デフォルトは12。
             label_pad : float
                 y軸ラベルのパディング。デフォルトは10。
+            line_color : str
+                線の色。デフォルトは"black"。
         """
         # プロットパラメータの設定
         plt.rcParams.update(
@@ -1476,25 +1497,31 @@ class MobileSpatialAnalyzer:
 
         # CH4プロット
         ax1 = fig.add_subplot(3, 1, 1)
-        ax1.plot(df.index, df[col_ch4], c="red")
+        ax1.plot(df.index, df[col_ch4], c=line_color)
         if ylim_ch4:
             ax1.set_ylim(ylim_ch4)
+        if yscale_log_ch4:
+            ax1.set_yscale("log")
         ax1.set_ylabel("$\\mathregular{CH_{4}}$ (ppm)", labelpad=label_pad)
         ax1.grid(True, alpha=0.3)
 
         # C2H6プロット
         ax2 = fig.add_subplot(3, 1, 2)
-        ax2.plot(df.index, df[col_c2h6], c="red")
+        ax2.plot(df.index, df[col_c2h6], c=line_color)
         if ylim_c2h6:
             ax2.set_ylim(ylim_c2h6)
+        if yscale_log_c2h6:
+            ax2.set_yscale("log")
         ax2.set_ylabel("$\\mathregular{C_{2}H_{6}}$ (ppb)", labelpad=label_pad)
         ax2.grid(True, alpha=0.3)
 
         # H2Oプロット
         ax3 = fig.add_subplot(3, 1, 3)
-        ax3.plot(df.index, df[col_h2o], c="red")
+        ax3.plot(df.index, df[col_h2o], c=line_color)
         if ylim_h2o:
             ax3.set_ylim(ylim_h2o)
+        if yscale_log_h2o:
+            ax3.set_yscale("log")
         ax3.set_ylabel("$\\mathregular{H_{2}O}$ (ppm)", labelpad=label_pad)
         ax3.grid(True, alpha=0.3)
 
@@ -1517,6 +1544,262 @@ class MobileSpatialAnalyzer:
             os.makedirs(output_dir, exist_ok=True)
             output_path = os.path.join(output_dir, output_filename)
             plt.savefig(output_path, bbox_inches="tight")
+
+        if show_fig:
+            plt.show()
+        else:
+            plt.close(fig=fig)
+
+    def plot_conc_timeseries_with_hotspots(
+        self,
+        hotspots: list[HotspotData] | None = None,
+        source_name: str | None = None,
+        output_dir: str | Path | None = None,
+        output_filename: str = "timeseries_with_hotspots.png",
+        dpi: int = 200,
+        figsize: tuple[float, float] = (8, 6),
+        save_fig: bool = True,
+        show_fig: bool = True,
+        col_ch4: str = "ch4_ppm",
+        col_c2h6: str = "c2h6_ppb",
+        col_h2o: str = "h2o_ppm",
+        ylim_ch4: tuple[float, float] | None = None,
+        ylim_c2h6: tuple[float, float] | None = None,
+        ylim_h2o: tuple[float, float] | None = None,
+        ylim_ratio: tuple[float, float] | None = None,
+        yscale_log_ch4: bool = False,
+        yscale_log_c2h6: bool = False,
+        yscale_log_h2o: bool = False,
+        yscale_log_ratio: bool = False,
+        font_size: float = 12,
+        label_pad: float = 10,
+        line_color: str = "black",
+        hotspot_colors: dict[str, str] = {"bio": "blue", "gas": "red", "comb": "green"},
+        interpolate_hotspots: bool = True,
+        alpha_interpolated: float = 0.2,
+        time_margin_minutes: float = 2.0,
+        ylabel_ch4: str = "$\\mathregular{CH_{4}}$ (ppm)",
+        ylabel_c2h6: str = "$\\mathregular{C_{2}H_{6}}$ (ppb)",
+        ylabel_h2o: str = "$\\mathregular{H_{2}O}$ (ppm)",
+        ylabel_ratio: str = "ΔC$_2$H$_6$/ΔCH$_4$\n(ppb ppm$^{-1}$)",
+    ) -> None:
+        """
+        時系列データとホットスポットをプロットします。
+
+        Parameters
+        ----------
+            hotspots : list[HotspotData] | None
+                表示するホットスポットのリスト。Noneの場合はホットスポットは表示されません。
+            source_name : str | None
+                プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
+            output_dir : str | Path | None
+                出力先ディレクトリのパス。
+            output_filename : str
+                保存するファイル名。デフォルトは"timeseries_with_hotspots.png"です。
+            dpi : int
+                図の解像度を指定します。デフォルトは200です。
+            figsize : tuple[float, float]
+                図のサイズを指定します。デフォルトは(8, 6)です。
+            save_fig : bool
+                図を保存するかどうかを指定します。デフォルトはFalseです。
+            show_fig : bool
+                図を表示するかどうかを指定します。デフォルトはTrueです。
+            col_ch4 : str
+                CH4データのキーを指定します。デフォルトは"ch4_ppm"です。
+            col_c2h6 : str
+                C2H6データのキーを指定します。デフォルトは"c2h6_ppb"です。
+            col_h2o : str
+                H2Oデータのキーを指定します。デフォルトは"h2o_ppm"です。
+            ylim_ch4 : tuple[float, float] | None
+                CH4プロットのy軸範囲。デフォルトはNoneです。
+            ylim_c2h6 : tuple[float, float] | None
+                C2H6プロットのy軸範囲。デフォルトはNoneです。
+            ylim_h2o : tuple[float, float] | None
+                H2Oプロットのy軸範囲。デフォルトはNoneです。
+            ylim_ratio : tuple[float, float] | None
+                比率プロットのy軸範囲。デフォルトはNoneです。
+            yscale_log_ch4 : bool
+                CH4データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            yscale_log_c2h6 : bool
+                C2H6データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            yscale_log_h2o : bool
+                H2Oデータのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            yscale_log_ratio : bool
+                比率データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
+            font_size : float
+                基本フォントサイズ。デフォルトは12。
+            label_pad : float
+                y軸ラベルのパディング。デフォルトは10。
+            line_color : str
+                線の色。デフォルトは"black"。
+            hotspot_colors : dict[str, str]
+                ホットスポットタイプごとの色指定。
+            interpolate_hotspots : bool
+                ホットスポット間を補間するかどうか。デフォルトはTrue。
+            alpha_interpolated : float
+                補間点の透明度。デフォルトは0.2。
+            ylabel_ch4 : str
+                CH4プロットのy軸ラベル。デフォルトは"$\\mathregular{CH_{4}}$ (ppm)"です。
+            ylabel_c2h6 : str
+                C2H6プロットのy軸ラベル。デフォルトは"$\\mathregular{C_{2}H_{6}}$ (ppb)"です。
+            ylabel_h2o : str
+                H2Oプロットのy軸ラベル。デフォルトは"$\\mathregular{H_{2}O}$ (ppm)"です。
+            ylabel_ratio : str
+                比率プロットのy軸ラベル。デフォルトは"ΔC$_2$H$_6$/ΔCH$_4$\\n(ppb ppm$^{-1}$)"です。
+        """
+        # プロットパラメータの設定
+        plt.rcParams.update(
+            {
+                "font.size": font_size,
+                "axes.labelsize": font_size,
+                "axes.titlesize": font_size,
+                "xtick.labelsize": font_size,
+                "ytick.labelsize": font_size,
+            }
+        )
+
+        dfs_dict: dict[str, pd.DataFrame] = self._data.copy()
+        # データソースの選択
+        if not dfs_dict:
+            raise ValueError("データが読み込まれていません。")
+
+        if source_name not in dfs_dict:
+            raise ValueError(
+                f"指定されたデータソース '{source_name}' が見つかりません。"
+            )
+
+        df = dfs_dict[source_name]
+
+        # プロットの作成
+        fig = plt.figure(figsize=figsize, dpi=dpi)
+
+        # サブプロットのグリッドを作成 (4行1列)
+        gs = gridspec.GridSpec(4, 1, height_ratios=[1, 1, 1, 1])
+
+        # 時間軸の範囲を設定（余白付き）
+        time_min = df.index.min()
+        time_max = df.index.max()
+        time_margin = pd.Timedelta(minutes=time_margin_minutes)
+        plot_time_min = time_min - time_margin
+        plot_time_max = time_max + time_margin
+
+        # CH4プロット
+        ax1 = fig.add_subplot(gs[0])
+        ax1.plot(df.index, df[col_ch4], c=line_color)
+        if ylim_ch4:
+            ax1.set_ylim(ylim_ch4)
+        if yscale_log_ch4:
+            ax1.set_yscale("log")
+        ax1.set_ylabel(ylabel_ch4, labelpad=label_pad)
+        ax1.grid(True, alpha=0.3)
+        ax1.set_xlim(plot_time_min, plot_time_max)
+
+        # C2H6プロット
+        ax2 = fig.add_subplot(gs[1])
+        ax2.plot(df.index, df[col_c2h6], c=line_color)
+        if ylim_c2h6:
+            ax2.set_ylim(ylim_c2h6)
+        if yscale_log_c2h6:
+            ax2.set_yscale("log")
+        ax2.set_ylabel(ylabel_c2h6, labelpad=label_pad)
+        ax2.grid(True, alpha=0.3)
+        ax2.set_xlim(plot_time_min, plot_time_max)
+
+        # H2Oプロット
+        ax3 = fig.add_subplot(gs[2])
+        ax3.plot(df.index, df[col_h2o], c=line_color)
+        if ylim_h2o:
+            ax3.set_ylim(ylim_h2o)
+        if yscale_log_h2o:
+            ax3.set_yscale("log")
+        ax3.set_ylabel(ylabel_h2o, labelpad=label_pad)
+        ax3.grid(True, alpha=0.3)
+        ax3.set_xlim(plot_time_min, plot_time_max)
+
+        # ホットスポットの比率プロット
+        ax4 = fig.add_subplot(gs[3])
+
+        if hotspots:
+            # ホットスポットをDataFrameに変換
+            hotspot_df = pd.DataFrame(
+                [
+                    {
+                        "timestamp": pd.to_datetime(spot.source),
+                        "ratio": spot.ratio,
+                        "type": spot.type,
+                    }
+                    for spot in hotspots
+                ]
+            )
+
+            # タイプごとにプロット
+            for spot_type in set(hotspot_df["type"]):
+                type_data = hotspot_df[hotspot_df["type"] == spot_type]
+
+                # 点をプロット
+                ax4.scatter(
+                    type_data["timestamp"],
+                    type_data["ratio"],
+                    c=hotspot_colors.get(spot_type, "black"),
+                    label=spot_type,
+                    alpha=0.6,
+                )
+
+                if interpolate_hotspots and len(type_data) > 1:
+                    # データを時間でソート
+                    type_data = type_data.sort_values("timestamp")
+
+                    # 補間のための時間範囲を作成 (1秒間隔)
+                    time_range = pd.date_range(start=time_min, end=time_max, freq="1s")
+
+                    # 線形補間を実行
+                    interpolated = pd.DataFrame({"timestamp": time_range})
+                    interpolated = interpolated.merge(
+                        type_data, on="timestamp", how="left"
+                    )
+                    interpolated["ratio"] = interpolated["ratio"].interpolate(
+                        method="linear"
+                    )
+
+                    # 補間された線をプロット
+                    ax4.plot(
+                        interpolated["timestamp"],
+                        interpolated["ratio"],
+                        c=hotspot_colors.get(spot_type, "black"),
+                        alpha=alpha_interpolated,
+                        linestyle="--",
+                    )
+
+        ax4.set_ylabel(ylabel_ratio, labelpad=label_pad)
+        if ylim_ratio:
+            ax4.set_ylim(ylim_ratio)
+        if yscale_log_ratio:
+            ax4.set_yscale("log")
+        ax4.grid(True, alpha=0.3)
+        ax4.set_xlim(plot_time_min, plot_time_max)  # 他のプロットと同じ時間範囲を設定
+
+        if hotspots:
+            ax4.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+
+        # x軸のフォーマット調整（全てのサブプロットで共通）
+        for ax in [ax1, ax2, ax3, ax4]:
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+            ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+            ax.tick_params(axis="both", which="major", labelsize=font_size)
+            ax.grid(True, alpha=0.3)
+
+        # サブプロット間の間隔調整
+        plt.subplots_adjust(hspace=0.38)
+
+        # 図の保存
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, output_filename)
+            plt.savefig(output_path, bbox_inches="tight", dpi=dpi)
 
         if show_fig:
             plt.show()
