@@ -16,7 +16,7 @@ from matplotlib.figure import Figure
 from typing import Any, Callable, Literal, Mapping
 from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
 from ..commons.figure_utils import FigureUtils
-from ..commons.hotspot_data import HotspotData, HotspotType
+from ..mobile.mobile_measurement_analyzer import HotspotData, HotspotType
 
 
 @dataclass
@@ -1212,7 +1212,7 @@ class FluxFootprintAnalyzer:
                     delta_ratio=0.0,
                     type="scale_check",
                     section=0,
-                    source="scale_check",
+                    timestamp="scale_check",
                     angle=0,
                     correlation=0,
                 )
@@ -1229,7 +1229,7 @@ class FluxFootprintAnalyzer:
                     delta_ratio=0.0,
                     type="scale_check",
                     section=0,
-                    source="scale_check",
+                    timestamp="scale_check",
                     angle=0,
                     correlation=0,
                 )

@@ -6,8 +6,8 @@ from py_flux_tracer import (
     FluxFootprintAnalyzer,
     HotspotData,
     MonthlyConverter,
-    MobileSpatialAnalyzer,
-    MSAInputConfig,
+    MobileMeasurementAnalyzer,
+    MMAInputConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
 )
@@ -22,78 +22,78 @@ pico_bias_removal = BiasRemovalConfig(
 )
 
 # MSAInputConfigによる詳細指定
-inputs: list[MSAInputConfig] = [
-    MSAInputConfig(
+inputs: list[MMAInputConfig] = [
+    MMAInputConfig(
         lag=7,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
@@ -122,7 +122,7 @@ check_points_for_scale_checker: list[tuple[float, float, str]] = [
     (34.55958388887034, 135.4461794468429, "石津水再生センター"),
     (34.601272994096846, 135.46248381802235, "三宝水再生センター"),
 ]
-hotspot_custom_sizes = {
+hotspot_custom_sizes: dict[str, tuple[tuple[float, float], float]] = {
     "small": ((0, 0.5), 50),
     "medium": ((0.5, 1.0), 150),
     "large": ((1.0, float("inf")), 250),
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # ホットスポットの検出
-    msa = MobileSpatialAnalyzer(
+    msa = MobileMeasurementAnalyzer(
         center_lat=center_lan,
         center_lon=center_lon,
         inputs=inputs,

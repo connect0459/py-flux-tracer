@@ -9,8 +9,8 @@
 
 ## 移動観測解析
 
-- `MobileSpatialAnalyzer`: 移動観測データを解析するためのクラスです。
-- `MSAInputConfig`: 移動観測データの入力設定を管理するクラスです。
+- `MobileMeasurementAnalyzer`: 移動観測データを解析するためのクラスです。
+- `MMAInputConfig`: 移動観測データの入力設定を管理するクラスです。
 
 ## 伝達関数解析
 

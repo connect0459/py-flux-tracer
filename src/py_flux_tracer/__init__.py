@@ -1,18 +1,19 @@
 from .campbell.eddy_data_preprocessor import EddyDataPreprocessor
 from .campbell.spectrum_calculator import SpectrumCalculator
 from .commons.figure_utils import FigureUtils
-from .commons.hotspot_data import HotspotData, HotspotType
 from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
 from .mobile.correcting_utils import (
     CorrectingUtils,
-    H2OCorrectionConfig,
     BiasRemovalConfig,
+    H2OCorrectionConfig,
 )
-from .mobile.mobile_spatial_analyzer import (
-    EmissionData,
+from .mobile.emission_analyzer import EmissionAnalyzer, EmissionData
+from .mobile.mobile_measurement_analyzer import (
+    HotspotData,
     HotspotParams,
-    MobileSpatialAnalyzer,
-    MSAInputConfig,
+    HotspotType,
+    MMAInputConfig,
+    MobileMeasurementAnalyzer,
 )
 from .monthly.monthly_converter import MonthlyConverter
 from .monthly.monthly_figures_generator import MonthlyFiguresGenerator
@@ -47,16 +48,17 @@ __all__ = [
     "EddyDataPreprocessor",
     "SpectrumCalculator",
     "FigureUtils",
-    "HotspotData",
-    "HotspotType",
     "FluxFootprintAnalyzer",
     "CorrectingUtils",
-    "H2OCorrectionConfig",
     "BiasRemovalConfig",
+    "H2OCorrectionConfig",
+    "EmissionAnalyzer",
     "EmissionData",
+    "HotspotData",
     "HotspotParams",
-    "MobileSpatialAnalyzer",
-    "MSAInputConfig",
+    "HotspotType",
+    "MMAInputConfig",
+    "MobileMeasurementAnalyzer",
     "MonthlyConverter",
     "MonthlyFiguresGenerator",
     "FftFileReorganizer",

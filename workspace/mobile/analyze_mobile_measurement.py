@@ -2,10 +2,11 @@ import os
 from typing import Literal
 from py_flux_tracer import (
     HotspotData,
-    MobileSpatialAnalyzer,
-    MSAInputConfig,
+    MobileMeasurementAnalyzer,
+    MMAInputConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
+    EmissionAnalyzer,
 )
 
 # picoデータの補正式に関するパラメータ
@@ -18,78 +19,78 @@ pico_bias_removal = BiasRemovalConfig(
 )
 
 # MSAInputConfigによる詳細指定
-inputs: list[MSAInputConfig] = [
-    MSAInputConfig(
+inputs: list[MMAInputConfig] = [
+    MMAInputConfig(
         lag=7,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MSAInputConfig(
+    MMAInputConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
@@ -110,7 +111,7 @@ print_summary: bool = True
 # print_summary: bool = False
 
 if __name__ == "__main__":
-    msa = MobileSpatialAnalyzer(
+    msa = MobileMeasurementAnalyzer(
         center_lat=34.573904320329724,
         center_lon=135.4829511120712,
         inputs=inputs,
@@ -204,12 +205,12 @@ if __name__ == "__main__":
 
         msa.logger.info(f"{method}のemission解析を開始します。")
         # 排出量の計算と基本統計
-        emission_data_list, _ = MobileSpatialAnalyzer.calculate_emission_rates(
+        emission_data_list, _ = EmissionAnalyzer.calculate_emission_rates(
             unique_hotspots, method=method, print_summary=True
         )
 
         # 分布の可視化
-        MobileSpatialAnalyzer.plot_emission_analysis(
+        EmissionAnalyzer.plot_emission_analysis(
             emission_data_list,
             output_dir=output_dir,
             output_filename=f"emission_plots-{method}.png",
