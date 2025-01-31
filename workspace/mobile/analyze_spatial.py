@@ -5,6 +5,7 @@ from py_flux_tracer import (
     MMAInputConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
+    EmissionAnalysisResult,
     EmissionFormula,
     HEAInputConfig,
     HotspotEmissionAnalyzer,
@@ -192,9 +193,7 @@ if __name__ == "__main__":
         HEAInputConfig(
             formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)
         ),
-        HEAInputConfig(
-            formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)
-        ),
+        HEAInputConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
         HEAInputConfig(
             formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)
         ),
@@ -204,13 +203,15 @@ if __name__ == "__main__":
         msa.logger.info(f"{method}のemission解析を開始します。")
 
         # 排出量の計算と基本統計
-        emission_data_list, _ = HotspotEmissionAnalyzer.calculate_emission_rates(
-            unique_hotspots, config=config, print_summary=True
+        emission_result: EmissionAnalysisResult = (
+            HotspotEmissionAnalyzer.calculate_emission_rates(
+                unique_hotspots, config=config, print_summary=True
+            )
         )
 
         # 分布の可視化
         HotspotEmissionAnalyzer.plot_emission_analysis(
-            emission_data_list,
+            analysis_result=emission_result,
             output_dir=output_dir,
             output_filename=f"emission_plots-{method}.png",
             hist_log_y=True,

@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import get_args
+from typing import Any, get_args
 from .mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -132,9 +132,13 @@ class EmissionData:
             "latitude": self.latitude,
             "longitude": self.longitude,
         }
-        nan_fields = [field for field, value in numeric_fields.items() if math.isnan(value)]
+        nan_fields = [
+            field for field, value in numeric_fields.items() if math.isnan(value)
+        ]
         if nan_fields:
-            raise ValueError(f"Numeric fields cannot contain NaN values: {', '.join(nan_fields)}")
+            raise ValueError(
+                f"Numeric fields cannot contain NaN values: {', '.join(nan_fields)}"
+            )
 
     def to_dict(self) -> dict:
         """
@@ -266,13 +270,68 @@ class HEAInputConfig:
                 raise ValueError(f"Category {category} has invalid range: min > max")
 
 
+@dataclass
+class EmissionAnalysisResult:
+    """
+    排出量分析の結果を格納するデータクラス。
+    calculate_emission_ratesの戻り値をtype-safeに管理します。
+
+    Parameters
+    ----------
+        emission_data_list : list[EmissionData]
+            各ホットスポットの排出量データのリスト
+        stats : dict[HotspotType, dict[str, Any]]
+            タイプ別の統計情報
+            - count: 検出数
+            - emission_per_min_min: 最小排出量 (L/min)
+            - emission_per_min_max: 最大排出量 (L/min)
+            - emission_per_min_mean: 平均排出量 (L/min)
+            - emission_per_min_median: 中央値排出量 (L/min)
+            - total_annual_emission: 年間総排出量 (L/year)
+            - mean_annual_emission: 平均年間排出量 (L/year)
+            - emission_categories: カテゴリー別の検出数
+    """
+
+    emission_data_list: list[EmissionData]
+    stats: dict[HotspotType, dict[str, Any]]
+
+    def __post_init__(self) -> None:
+        """
+        パラメータの検証を行います。
+        """
+        if not isinstance(self.emission_data_list, list):
+            raise ValueError("emission_data_list must be a list")
+        if not all(isinstance(data, EmissionData) for data in self.emission_data_list):
+            raise ValueError(
+                "All items in emission_data_list must be EmissionData instances"
+            )
+
+        if not isinstance(self.stats, dict):
+            raise ValueError("stats must be a dictionary")
+        for spot_type, stat_dict in self.stats.items():
+            if spot_type not in get_args(HotspotType):
+                raise ValueError(f"Invalid hotspot type: {spot_type}")
+            required_keys = {
+                "count",
+                "emission_per_min_min",
+                "emission_per_min_max",
+                "emission_per_min_mean",
+                "emission_per_min_median",
+                "total_annual_emission",
+                "mean_annual_emission",
+                "emission_categories",
+            }
+            if not all(key in stat_dict for key in required_keys):
+                raise ValueError(f"Missing required keys in stats for {spot_type}")
+
+
 class HotspotEmissionAnalyzer:
     @staticmethod
     def calculate_emission_rates(
         hotspots: list[HotspotData],
         config: HEAInputConfig,
         print_summary: bool = False,
-    ) -> tuple[list[EmissionData], dict[str, dict[str, float]]]:
+    ) -> EmissionAnalysisResult:
         """
         検出されたホットスポットのCH4漏出量を計算・解析し、統計情報を生成します。
 
@@ -287,7 +346,7 @@ class HotspotEmissionAnalyzer:
 
         Returns
         ----------
-            tuple[list[EmissionData], dict[str, dict[str, float]]]
+            EmissionAnalysisResult
                 - 各ホットスポットの排出量データを含むリスト
                 - タイプ別の統計情報を含む辞書
 
@@ -384,11 +443,13 @@ class HotspotEmissionAnalyzer:
                     print(f"    合計: {type_stats['total_annual_emission']:.2f}")
                     print(f"    平均: {type_stats['mean_annual_emission']:.2f}")
 
-        return emission_data_list, stats
+        return EmissionAnalysisResult(
+            emission_data_list=emission_data_list, stats=stats
+        )
 
     @staticmethod
     def plot_emission_analysis(
-        emission_data_list: list[EmissionData],
+        analysis_result: EmissionAnalysisResult,
         dpi: int = 300,
         output_dir: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
@@ -416,8 +477,8 @@ class HotspotEmissionAnalyzer:
 
         Parameters
         ----------
-            emission_data_list : list[EmissionData]
-                EmissionDataオブジェクトのリスト。
+            analysis_result : EmissionAnalysisResult
+                calculate_emission_ratesで生成された分析結果
             output_dir : str | Path | None
                 出力先ディレクトリのパス。
             output_filename : str
@@ -452,7 +513,7 @@ class HotspotEmissionAnalyzer:
                 散布図（右図）を表示するかどうか。デフォルトはTrue。
         """
         # データをDataFrameに変換
-        df = pd.DataFrame([e.to_dict() for e in emission_data_list])
+        df = pd.DataFrame([e.to_dict() for e in analysis_result.emission_data_list])
 
         # プロットの作成（散布図の有無に応じてサブプロット数を調整）
         if show_scatter:
