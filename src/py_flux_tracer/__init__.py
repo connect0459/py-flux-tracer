@@ -7,7 +7,12 @@ from .mobile.correcting_utils import (
     BiasRemovalConfig,
     H2OCorrectionConfig,
 )
-from .mobile.emission_analyzer import EmissionAnalyzer, EmissionData
+from .mobile.hotspot_emission_analyzer import (
+    EmissionData,
+    EmissionFormula,
+    HEAInputConfig,
+    HotspotEmissionAnalyzer,
+)
 from .mobile.mobile_measurement_analyzer import (
     HotspotData,
     HotspotParams,
@@ -52,8 +57,10 @@ __all__ = [
     "CorrectingUtils",
     "BiasRemovalConfig",
     "H2OCorrectionConfig",
-    "EmissionAnalyzer",
     "EmissionData",
+    "EmissionFormula",
+    "HEAInputConfig",
+    "HotspotEmissionAnalyzer",
     "HotspotData",
     "HotspotParams",
     "HotspotType",

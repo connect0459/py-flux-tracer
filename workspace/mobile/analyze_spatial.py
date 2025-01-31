@@ -1,12 +1,13 @@
 import os
-from typing import Literal
 from py_flux_tracer import (
     HotspotData,
     MobileMeasurementAnalyzer,
     MMAInputConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
-    EmissionAnalyzer,
+    EmissionFormula,
+    HEAInputConfig,
+    HotspotEmissionAnalyzer,
 )
 
 # picoデータの補正式に関するパラメータ
@@ -184,39 +185,35 @@ if __name__ == "__main__":
     msa.export_hotspots_to_csv(hotspots=unique_hotspots, output_dir=output_dir)
 
     # Emissionの分析
-    # [method, rate_lim]
-    emissions_methods_configs: list[
-        list[Literal["weller", "weitzel", "joo", "umezawa"] | tuple[float, float]]
-    ] = [
-        ["weller", (0, 5)],
-        # ["weitzel", (0, 3)],
-        # ["joo", (0, 10)],
-        ["umezawa", (0, 50)],
+    emission_configs: list[HEAInputConfig] = [
+        HEAInputConfig(
+            formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)
+        ),
+        HEAInputConfig(
+            formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)
+        ),
+        HEAInputConfig(
+            formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)
+        ),
+        HEAInputConfig(
+            formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)
+        ),
     ]
-    for configs in emissions_methods_configs:
-        method = (
-            configs[0]
-            if configs[0] in ["weller", "weitzel", "joo", "umezawa"]
-            else "weller"
-        )  # 有効な値のみを許可
-        emission_rate_lim = (
-            configs[1] if isinstance(configs[1], tuple) else (0, 5)
-        )  # タプルであることを確認
-
+    for config in emission_configs:
+        method: str = config.formula.name
         msa.logger.info(f"{method}のemission解析を開始します。")
+
         # 排出量の計算と基本統計
-        emission_data_list, _ = EmissionAnalyzer.calculate_emission_rates(
-            unique_hotspots, method=method, print_summary=True
+        emission_data_list, _ = HotspotEmissionAnalyzer.calculate_emission_rates(
+            unique_hotspots, config=config, print_summary=True
         )
 
         # 分布の可視化
-        EmissionAnalyzer.plot_emission_analysis(
+        HotspotEmissionAnalyzer.plot_emission_analysis(
             emission_data_list,
             output_dir=output_dir,
             output_filename=f"emission_plots-{method}.png",
             hist_log_y=True,
-            # hist_xlim=emission_rate_lim,
-            # scatter_xlim=emission_rate_lim,
             hist_xlim=(0, 60),
             scatter_xlim=(0, 60),
             hist_ylim=(0, 100),

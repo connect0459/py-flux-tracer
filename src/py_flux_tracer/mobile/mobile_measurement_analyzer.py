@@ -174,22 +174,22 @@ class HotspotParams:
         """
         if not 0 <= self.quantile_value <= 1:
             raise ValueError(
-                f"quantile_value must be between 0 and 1, got {self.quantile_value}"
+                f"'quantile_value' must be between 0 and 1, got {self.quantile_value}"
             )
 
         if math.isinf(self.ch4_ppm_delta_min) or math.isinf(self.c2h6_ppb_delta_min):
             raise ValueError(
-                "Lower threshold values cannot be set to infinity: ch4_ppm_delta_min, c2h6_ppb_delta_min."
+                "Lower threshold values cannot be set to infinity: 'ch4_ppm_delta_min', 'c2h6_ppb_delta_min'."
             )
 
         if self.ch4_ppm_delta_min > self.ch4_ppm_delta_max:
             raise ValueError(
-                "ch4_ppm_delta_min must be less than or equal to ch4_ppm_delta_max"
+                "'ch4_ppm_delta_min' must be less than or equal to 'ch4_ppm_delta_max'"
             )
 
         if self.c2h6_ppb_delta_min > self.c2h6_ppb_delta_max:
             raise ValueError(
-                "c2h6_ppb_delta_min must be less than or equal to c2h6_ppb_delta_max"
+                "'c2h6_ppb_delta_min' must be less than or equal to 'c2h6_ppb_delta_max'"
             )
 
 

@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from dataclasses import dataclass
-from typing import get_args, Literal
+from dataclasses import dataclass, field
+from typing import get_args
 from .mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -18,39 +18,39 @@ class EmissionData:
     ----------
         timestamp : str
             タイムスタンプ
-        type : HotspotType
-            ホットスポットの種類（`HotspotType`を参照）
-        section : str | int | float
-            セクション情報
-        latitude : float
-            緯度
-        longitude : float
-            経度
         delta_ch4 : float
             CH4の増加量 (ppm)
         delta_c2h6 : float
             C2H6の増加量 (ppb)
         delta_ratio : float
             C2H6/CH4比
-        emission_rate : float
+        emission_per_min : float
             排出量 (L/min)
-        daily_emission : float
+        emission_per_day : float
             日排出量 (L/day)
-        annual_emission : float
+        emission_per_year : float
             年間排出量 (L/year)
+        latitude : float
+            緯度
+        longitude : float
+            経度
+        section : str | int | float
+            セクション情報
+        type : HotspotType
+            ホットスポットの種類（`HotspotType`を参照）
     """
 
     timestamp: str
-    type: HotspotType
-    section: str | int | float
-    latitude: float
-    longitude: float
     delta_ch4: float
     delta_c2h6: float
     delta_ratio: float
-    emission_rate: float
-    daily_emission: float
-    annual_emission: float
+    emission_per_min: float
+    emission_per_day: float
+    emission_per_year: float
+    latitude: float
+    longitude: float
+    section: str | int | float
+    type: HotspotType
 
     def __post_init__(self) -> None:
         """
@@ -60,7 +60,7 @@ class EmissionData:
         ----------
             ValueError: 入力値が不正な場合
         """
-        # sourceのバリデーション
+        # timestamp のバリデーション
         if not isinstance(self.timestamp, str) or not self.timestamp.strip():
             raise ValueError("'timestamp' must be a non-empty string")
 
@@ -68,69 +68,73 @@ class EmissionData:
         # HotspotTypeはLiteral["bio", "gas", "comb"]として定義されているため、
         # 不正な値は型チェック時に検出されます
 
-        # sectionのバリデーション（Noneは許可）
+        # section のバリデーション（Noneは許可）
         if self.section is not None and not isinstance(self.section, (str, int, float)):
             raise ValueError("'section' must be a string, int, float, or None")
 
-        # 緯度のバリデーション
+        # latitude のバリデーション
         if (
             not isinstance(self.latitude, (int, float))
             or not -90 <= self.latitude <= 90
         ):
             raise ValueError("'latitude' must be a number between -90 and 90")
 
-        # 経度のバリデーション
+        # longitude のバリデーション
         if (
             not isinstance(self.longitude, (int, float))
             or not -180 <= self.longitude <= 180
         ):
             raise ValueError("'longitude' must be a number between -180 and 180")
 
-        # delta_ch4のバリデーション
+        # delta_ch4 のバリデーション
         if not isinstance(self.delta_ch4, (int, float)) or self.delta_ch4 < 0:
             raise ValueError("'delta_ch4' must be a non-negative number")
 
-        # delta_c2h6のバリデーション
+        # delta_c2h6 のバリデーション
         if not isinstance(self.delta_c2h6, (int, float)):
             raise ValueError("'delta_c2h6' must be a int or float")
 
-        # ratioのバリデーション
-        if not isinstance(self.delta_ratio, (int, float)) or self.delta_ratio < 0:
-            raise ValueError("'delta_ratio' must be a non-negative number")
+        # delta_ratio のバリデーション
+        if not isinstance(self.delta_ratio, (int, float)):
+            raise ValueError("'delta_ratio' must be a int or float")
 
-        # emission_rateのバリデーション
-        if not isinstance(self.emission_rate, (int, float)) or self.emission_rate < 0:
-            raise ValueError("'emission_rate' must be a non-negative number")
+        # emission_per_min のバリデーション
+        if (
+            not isinstance(self.emission_per_min, (int, float))
+            or self.emission_per_min < 0
+        ):
+            raise ValueError("'emission_per_min' must be a non-negative number")
 
-        # daily_emissionのバリデーション
-        expected_daily = self.emission_rate * 60 * 24
-        if not math.isclose(self.daily_emission, expected_daily, rel_tol=1e-10):
+        # emission_per_day のバリデーション
+        expected_daily = self.emission_per_min * 60 * 24
+        if not math.isclose(self.emission_per_day, expected_daily, rel_tol=1e-10):
             raise ValueError(
-                f"'daily_emission' ({self.daily_emission}) does not match "
+                f"'emission_per_day' ({self.emission_per_day}) does not match "
                 f"calculated value from emission rate ({expected_daily})"
             )
 
-        # annual_emissionのバリデーション
-        expected_annual = self.daily_emission * 365
-        if not math.isclose(self.annual_emission, expected_annual, rel_tol=1e-10):
+        # emission_per_year のバリデーション
+        expected_annual = self.emission_per_day * 365
+        if not math.isclose(self.emission_per_year, expected_annual, rel_tol=1e-10):
             raise ValueError(
-                f"'annual_emission' ({self.annual_emission}) does not match "
+                f"'emission_per_year' ({self.emission_per_year}) does not match "
                 f"calculated value from daily emission ({expected_annual})"
             )
 
         # NaN値のチェック
-        numeric_fields = [
-            self.latitude,
-            self.longitude,
-            self.delta_ch4,
-            self.delta_c2h6,
-            self.delta_ratio,
-            self.emission_rate,
-            self.daily_emission,
-            self.annual_emission,
-        ]
-        if any(math.isnan(x) for x in numeric_fields):
-            raise ValueError("Numeric fields cannot contain NaN values")
+        numeric_fields = {
+            "delta_ch4": self.delta_ch4,
+            "delta_c2h6": self.delta_c2h6,
+            "delta_ratio": self.delta_ratio,
+            "emission_per_min": self.emission_per_min,
+            "emission_per_day": self.emission_per_day,
+            "emission_per_year": self.emission_per_year,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+        }
+        nan_fields = [field for field, value in numeric_fields.items() if math.isnan(value)]
+        if nan_fields:
+            raise ValueError(f"Numeric fields cannot contain NaN values: {', '.join(nan_fields)}")
 
     def to_dict(self) -> dict:
         """
@@ -142,26 +146,132 @@ class EmissionData:
         """
         return {
             "timestamp": self.timestamp,
-            "type": self.type,
-            "section": self.section,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
             "delta_ch4": self.delta_ch4,
             "delta_c2h6": self.delta_c2h6,
             "delta_ratio": self.delta_ratio,
-            "emission_rate": self.emission_rate,
-            "daily_emission": self.daily_emission,
-            "annual_emission": self.annual_emission,
+            "emission_per_min": self.emission_per_min,
+            "emission_per_day": self.emission_per_day,
+            "emission_per_year": self.emission_per_year,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "section": self.section,
+            "type": self.type,
         }
 
 
-class EmissionAnalyzer:
+@dataclass
+class EmissionFormula:
+    """
+    排出量計算式の係数セットを保持するデータクラス
+    設定した`coef_a`と`coef_b`は以下のように使用される。
+
+    ```py
+    emission_per_min = np.exp((np.log(spot.delta_ch4) + coef_a) / coef_b)
+    ```
+
+    Parameters
+    ----------
+        name : str
+            計算式の名前（例: "weller", "weitzel", "joo", "umezawa"など）
+        coef_a : float
+            計算式の係数a
+        coef_b : float
+            計算式の係数b
+
+    Examples
+    --------
+    >>> # Weller et al. (2022)の係数を使用する場合
+    >>> formula = EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)
+    >>>
+    >>> # Weitzel et al. (2019)の係数を使用する場合
+    >>> formula = EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)
+    >>>
+    >>> # カスタム係数を使用する場合
+    >>> formula = EmissionFormula(name="custom", coef_a=1.0, coef_b=1.0)
+    """
+
+    name: str
+    coef_a: float
+    coef_b: float
+
+    def __post_init__(self) -> None:
+        """
+        パラメータの検証を行います。
+        """
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise ValueError("'name' must be a non-empty string")
+        if not isinstance(self.coef_a, (int, float)):
+            raise ValueError("'coef_a' must be a number")
+        if not isinstance(self.coef_b, (int, float)):
+            raise ValueError("'coef_b' must be a number")
+
+
+@dataclass
+class HEAInputConfig:
+    """
+    排出量計算の設定を保持するデータクラス
+
+    Parameters
+    ----------
+        formula : EmissionFormula
+            使用する計算式の設定
+        emission_categories : dict[str, dict[str, float]]
+            排出量カテゴリーの閾値設定
+            デフォルト値: {
+                "low": {"min": 0, "max": 6},  # < 6 L/min
+                "medium": {"min": 6, "max": 40},  # 6-40 L/min
+                "high": {"min": 40, "max": float("inf")},  # > 40 L/min
+            }
+
+    Examples
+    --------
+    >>> # Weller et al. (2022)の係数を使用する場合
+    >>> config = HEAInputConfig(
+    ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),
+    ...     emission_categories={
+    ...         "low": {"min": 0, "max": 6},  # < 6 L/min
+    ...         "medium": {"min": 6, "max": 40},  # 6-40 L/min
+    ...         "high": {"min": 40, "max": float("inf")},  # > 40 L/min
+    ...     }
+    ... )
+    >>> # 複数のconfigをリスト形式で定義する場合
+    >>> emission_configs: list[HEAInputConfig] = [
+    ...     HEAInputConfig(formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)),
+    ...     HEAInputConfig(formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)),
+    ...     HEAInputConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
+    ...     HEAInputConfig(formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)),
+    ... ]
+    """
+
+    formula: EmissionFormula
+    emission_categories: dict[str, dict[str, float]] = field(
+        default_factory=lambda: {
+            "low": {"min": 0, "max": 6},  # < 6 L/min
+            "medium": {"min": 6, "max": 40},  # 6-40 L/min
+            "high": {"min": 40, "max": float("inf")},  # > 40 L/min
+        }
+    )
+
+    def __post_init__(self) -> None:
+        """
+        パラメータの検証を行います。
+        """
+        # カテゴリーの閾値の整合性チェック
+        for category, limits in self.emission_categories.items():
+            if "min" not in limits or "max" not in limits:
+                raise ValueError(
+                    f"Category {category} must have 'min' and 'max' values"
+                )
+            if limits["min"] > limits["max"]:
+                raise ValueError(f"Category {category} has invalid range: min > max")
+
+
+class HotspotEmissionAnalyzer:
     @staticmethod
     def calculate_emission_rates(
         hotspots: list[HotspotData],
-        method: Literal["weller", "weitzel", "joo", "umezawa"] = "weller",
+        config: HEAInputConfig,
         print_summary: bool = False,
-        custom_formulas: dict[str, dict[str, float]] | None = None,
     ) -> tuple[list[EmissionData], dict[str, dict[str, float]]]:
         """
         検出されたホットスポットのCH4漏出量を計算・解析し、統計情報を生成します。
@@ -170,63 +280,60 @@ class EmissionAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 分析対象のホットスポットのリスト
-            method : Literal["weller", "weitzel", "joo", "umezawa"]
-                使用する計算式。デフォルトは"weller"。
+            config : HEAInputConfig
+                排出量計算の設定
             print_summary : bool
-                統計情報を表示するかどうか。デフォルトはTrue。
-            custom_formulas : dict[str, dict[str, float]] | None
-                カスタム計算式の係数。
-                例: {"custom_method": {"a": 1.0, "b": 1.0}}
-                Noneの場合はデフォルトの計算式を使用。
+                統計情報を表示するかどうか。デフォルトはFalse。
 
         Returns
         ----------
             tuple[list[EmissionData], dict[str, dict[str, float]]]
                 - 各ホットスポットの排出量データを含むリスト
                 - タイプ別の統計情報を含む辞書
+
+        Examples
+        --------
+        >>> # Weller et al. (2022)の係数を使用する例
+        >>> config = HEAInputConfig(
+        ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),
+        ...     emission_categories={
+        ...         "low": {"min": 0, "max": 6},
+        ...         "medium": {"min": 6, "max": 40},
+        ...         "high": {"min": 40, "max": float("inf")},
+        ...     }
+        ... )
+        >>> emission_data_list, stats = HotspotEmissionAnalyzer.calculate_emission_rates(
+        ...     hotspots,
+        ...     config=config,
+        ...     print_summary=True
+        ... )
         """
-        # デフォルトの経験式係数
-        default_formulas = {
-            "weller": {"a": 0.988, "b": 0.817},
-            "weitzel": {"a": 0.521, "b": 0.795},
-            "joo": {"a": 2.738, "b": 1.329},
-            "umezawa": {"a": 2.716, "b": 0.741},
-        }
-
-        # カスタム計算式がある場合は追加
-        emission_formulas = default_formulas.copy()
-        if custom_formulas:
-            emission_formulas.update(custom_formulas)
-
-        if method not in emission_formulas:
-            raise ValueError(f"Unknown method: {method}")
-
         # 係数の取得
-        a = emission_formulas[method]["a"]
-        b = emission_formulas[method]["b"]
+        coef_a: float = config.formula.coef_a
+        coef_b: float = config.formula.coef_b
 
         # 排出量の計算
         emission_data_list = []
         for spot in hotspots:
             # 漏出量の計算 (L/min)
-            emission_rate = np.exp((np.log(spot.delta_ch4) + a) / b)
+            emission_per_min = np.exp((np.log(spot.delta_ch4) + coef_a) / coef_b)
             # 日排出量 (L/day)
-            daily_emission = emission_rate * 60 * 24
+            emission_per_day = emission_per_min * 60 * 24
             # 年間排出量 (L/year)
-            annual_emission = daily_emission * 365
+            emission_per_year = emission_per_day * 365
 
             emission_data = EmissionData(
                 timestamp=spot.timestamp,
-                type=spot.type,
-                section=spot.section,
-                latitude=spot.avg_lat,
-                longitude=spot.avg_lon,
                 delta_ch4=spot.delta_ch4,
                 delta_c2h6=spot.delta_c2h6,
                 delta_ratio=spot.delta_ratio,
-                emission_rate=emission_rate,
-                daily_emission=daily_emission,
-                annual_emission=annual_emission,
+                emission_per_min=emission_per_min,
+                emission_per_day=emission_per_day,
+                emission_per_year=emission_per_year,
+                latitude=spot.avg_lat,
+                longitude=spot.avg_lon,
+                section=spot.section,
+                type=spot.type,
             )
             emission_data_list.append(emission_data)
 
@@ -235,12 +342,6 @@ class EmissionAnalyzer:
 
         # タイプ別の統計情報を計算
         stats = {}
-        # emission_formulas の定義の後に、排出量カテゴリーの閾値を定義
-        emission_categories = {
-            "low": {"min": 0, "max": 6},  # < 6 L/min
-            "medium": {"min": 6, "max": 40},  # 6-40 L/min
-            "high": {"min": 40, "max": float("inf")},  # > 40 L/min
-        }
         # get_args(HotspotType)を使用して型安全なリストを作成
         types = list(get_args(HotspotType))
         for spot_type in types:
@@ -249,40 +350,21 @@ class EmissionAnalyzer:
                 # 既存の統計情報を計算
                 type_stats = {
                     "count": len(df_type),
-                    "emission_rate_min": df_type["emission_rate"].min(),
-                    "emission_rate_max": df_type["emission_rate"].max(),
-                    "emission_rate_mean": df_type["emission_rate"].mean(),
-                    "emission_rate_median": df_type["emission_rate"].median(),
-                    "total_annual_emission": df_type["annual_emission"].sum(),
-                    "mean_annual_emission": df_type["annual_emission"].mean(),
+                    "emission_per_min_min": df_type["emission_per_min"].min(),
+                    "emission_per_min_max": df_type["emission_per_min"].max(),
+                    "emission_per_min_mean": df_type["emission_per_min"].mean(),
+                    "emission_per_min_median": df_type["emission_per_min"].median(),
+                    "total_annual_emission": df_type["emission_per_year"].sum(),
+                    "mean_annual_emission": df_type["emission_per_year"].mean(),
                 }
 
                 # 排出量カテゴリー別の統計を追加
-                category_counts = {
-                    "low": len(
-                        df_type[
-                            df_type["emission_rate"] < emission_categories["low"]["max"]
-                        ]
-                    ),
-                    "medium": len(
-                        df_type[
-                            (
-                                df_type["emission_rate"]
-                                >= emission_categories["medium"]["min"]
-                            )
-                            & (
-                                df_type["emission_rate"]
-                                < emission_categories["medium"]["max"]
-                            )
-                        ]
-                    ),
-                    "high": len(
-                        df_type[
-                            df_type["emission_rate"]
-                            >= emission_categories["high"]["min"]
-                        ]
-                    ),
-                }
+                category_counts = {}
+                for category, limits in config.emission_categories.items():
+                    mask = (df_type["emission_per_min"] >= limits["min"]) & (
+                        df_type["emission_per_min"] < limits["max"]
+                    )
+                    category_counts[category] = len(df_type[mask])
                 type_stats["emission_categories"] = category_counts
 
                 stats[spot_type] = type_stats
@@ -291,14 +373,13 @@ class EmissionAnalyzer:
                     print(f"\n{spot_type}タイプの統計情報:")
                     print(f"  検出数: {type_stats['count']}")
                     print("  排出量 (L/min):")
-                    print(f"    最小値: {type_stats['emission_rate_min']:.2f}")
-                    print(f"    最大値: {type_stats['emission_rate_max']:.2f}")
-                    print(f"    平均値: {type_stats['emission_rate_mean']:.2f}")
-                    print(f"    中央値: {type_stats['emission_rate_median']:.2f}")
+                    print(f"    最小値: {type_stats['emission_per_min_min']:.2f}")
+                    print(f"    最大値: {type_stats['emission_per_min_max']:.2f}")
+                    print(f"    平均値: {type_stats['emission_per_min_mean']:.2f}")
+                    print(f"    中央値: {type_stats['emission_per_min_median']:.2f}")
                     print("  排出量カテゴリー別の検出数:")
-                    print(f"    低放出 (< 6 L/min): {category_counts['low']}")
-                    print(f"    中放出 (6-40 L/min): {category_counts['medium']}")
-                    print(f"    高放出 (> 40 L/min): {category_counts['high']}")
+                    for category, count in category_counts.items():
+                        print(f"    {category}: {count}")
                     print("  年間排出量 (L/year):")
                     print(f"    合計: {type_stats['total_annual_emission']:.2f}")
                     print(f"    平均: {type_stats['mean_annual_emission']:.2f}")
@@ -394,7 +475,7 @@ class EmissionAnalyzer:
         if hist_xlim is not None:
             end = hist_xlim[1]
         else:
-            end = np.ceil(df["emission_rate"].max() * 1.05)
+            end = np.ceil(df["emission_per_min"].max() * 1.05)
 
         # ビン数を計算（end値をbin_widthで割り切れるように調整）
         n_bins = int(np.ceil(end / hist_bin_width))
@@ -408,7 +489,7 @@ class EmissionAnalyzer:
             # 積み上げ方式
             bottom = np.zeros(len(bins) - 1)
             for spot_type in existing_types:
-                data = df[df["type"] == spot_type]["emission_rate"]
+                data = df[df["type"] == spot_type]["emission_per_min"]
                 if len(data) > 0:
                     counts, _ = np.histogram(data, bins=bins)
                     ax1.bar(
@@ -424,7 +505,7 @@ class EmissionAnalyzer:
         else:
             # 重ね合わせ方式
             for spot_type in existing_types:
-                data = df[df["type"] == spot_type]["emission_rate"]
+                data = df[df["type"] == spot_type]["emission_per_min"]
                 if len(data) > 0:
                     counts, _ = np.histogram(data, bins=bins)
                     ax1.bar(
@@ -445,7 +526,7 @@ class EmissionAnalyzer:
         if hist_xlim is not None:
             ax1.set_xlim(hist_xlim)
         else:
-            ax1.set_xlim(0, np.ceil(df["emission_rate"].max() * 1.05))
+            ax1.set_xlim(0, np.ceil(df["emission_per_min"].max() * 1.05))
 
         if hist_ylim is not None:
             ax1.set_ylim(hist_ylim)
@@ -457,7 +538,7 @@ class EmissionAnalyzer:
             for spot_type in existing_types:
                 mask = df["type"] == spot_type
                 ax2.scatter(
-                    df[mask]["emission_rate"],
+                    df[mask]["emission_per_min"],
                     df[mask]["delta_ch4"],
                     alpha=0.6,
                     label=spot_type,
@@ -469,7 +550,7 @@ class EmissionAnalyzer:
             if scatter_xlim is not None:
                 ax2.set_xlim(scatter_xlim)
             else:
-                ax2.set_xlim(0, np.ceil(df["emission_rate"].max() * 1.05))
+                ax2.set_xlim(0, np.ceil(df["emission_per_min"].max() * 1.05))
 
             if scatter_ylim is not None:
                 ax2.set_ylim(scatter_ylim)
@@ -518,8 +599,8 @@ class EmissionAnalyzer:
                 for spot_type in existing_types:
                     mask = (
                         (df["type"] == spot_type)
-                        & (df["emission_rate"] >= bin_start)
-                        & (df["emission_rate"] < bin_end)
+                        & (df["emission_per_min"] >= bin_start)
+                        & (df["emission_per_min"] < bin_end)
                     )
                     count = len(df[mask])
                     counts_by_type[spot_type] = count
