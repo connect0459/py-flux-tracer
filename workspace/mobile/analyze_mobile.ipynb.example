@@ -13,15 +13,12 @@
     "import matplotlib.font_manager as fm\n",
     "from dotenv import load_dotenv\n",
     "from py_flux_tracer import (\n",
-    "    MobileMeasurementAnalyzer,\n",
-    "    MMAInputConfig,\n",
     "    HotspotData,\n",
+    "    MMAInputConfig,\n",
+    "    MobileMeasurementAnalyzer,\n",
     "    H2OCorrectionConfig,\n",
     "    BiasRemovalConfig,\n",
     ")\n",
-    "\n",
-    "print(\"Modules are successfully imported.\")\n",
-    "print(sys.version)\n",
     "\n",
     "# ローカルフォントの読み込み（必要ない場合はコメントアウト）\n",
     "font_paths: list[str] = [\n",
@@ -35,11 +32,11 @@
     "# 環境変数の設定\n",
     "dotenv_path = \"/home/connect0459/labo/py-flux-tracer/workspace/.env\"  # .envファイル\n",
     "load_dotenv(dotenv_path)\n",
-    "g_mapbox_access_token: str | None = os.getenv(\"MAPBOX_ACCESS_TOKEN\")\n",
-    "if not g_mapbox_access_token:\n",
+    "mapbox_access_token: str | None = os.getenv(\"MAPBOX_ACCESS_TOKEN\")\n",
+    "if not mapbox_access_token:\n",
     "    raise ValueError(\"MAPBOX_ACCESS_TOKEN is not set in .env file\")\n",
-    "del dotenv_path\n",
-    "\n",
+    "g_mapbox_access_token: str = mapbox_access_token\n",
+    "del dotenv_path, mapbox_access_token\n",
     "\"\"\"\n",
     "このNotebookで使いまわすグローバル変数を定義\n",
     "'g_'プレフィックスを付けて定義\n",
@@ -55,7 +52,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 16,
+   "execution_count": 2,
    "id": "82bb8a9d",
    "metadata": {},
    "outputs": [],
@@ -69,7 +66,7 @@
     "    quantile_value=0.05,\n",
     ")\n",
     "\n",
-    "# MSAInputConfigによる詳細指定\n",
+    "# MMAInputConfigによる詳細指定\n",
     "inputs: list[MMAInputConfig] = [\n",
     "    MMAInputConfig(\n",
     "        lag=7,\n",
@@ -153,7 +150,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 17,
+   "execution_count": 3,
    "id": "c33039f0",
    "metadata": {},
    "outputs": [],
@@ -177,7 +174,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 18,
+   "execution_count": 4,
    "id": "281be5f3-4925-45cc-9bd7-ba722b071315",
    "metadata": {
     "scrolled": false
@@ -229,7 +226,7 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 20,
+   "execution_count": 6,
    "id": "e56a2a2d-3c76-4138-80c4-284e4e13885d",
    "metadata": {
     "scrolled": true
