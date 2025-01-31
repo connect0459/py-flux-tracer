@@ -183,7 +183,7 @@ class EmissionFormula:
             計算式の係数b
 
     Examples
-    --------
+    ----------
     >>> # Weller et al. (2022)の係数を使用する場合
     >>> formula = EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)
     >>>
@@ -228,7 +228,7 @@ class HEAInputConfig:
             }
 
     Examples
-    --------
+    ----------
     >>> # Weller et al. (2022)の係数を使用する場合
     >>> config = HEAInputConfig(
     ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),
@@ -351,7 +351,7 @@ class HotspotEmissionAnalyzer:
                 - タイプ別の統計情報を含む辞書
 
         Examples
-        --------
+        ----------
         >>> # Weller et al. (2022)の係数を使用する例
         >>> config = HEAInputConfig(
         ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),

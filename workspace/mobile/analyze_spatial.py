@@ -205,7 +205,7 @@ if __name__ == "__main__":
         # 排出量の計算と基本統計
         emission_result: EmissionAnalysisResult = (
             HotspotEmissionAnalyzer.calculate_emission_rates(
-                unique_hotspots, config=config, print_summary=True
+                hotspots=unique_hotspots, config=config, print_summary=True
             )
         )
 
