@@ -361,7 +361,7 @@ class HotspotEmissionAnalyzer:
         ...         "high": {"min": 40, "max": float("inf")},
         ...     }
         ... )
-        >>> emission_data_list, stats = HotspotEmissionAnalyzer.calculate_emission_rates(
+        >>> analysis_result = HotspotEmissionAnalyzer.calculate_emission_rates(
         ...     hotspots,
         ...     config=config,
         ...     print_summary=True
