@@ -10,7 +10,7 @@
 ## 移動観測解析
 
 - `MobileMeasurementAnalyzer`: 移動観測データを解析するためのクラスです。
-- `MMAInputConfig`: 移動観測データの入力設定を管理するクラスです。
+- `MobileMeasurementConfig`: 移動観測データの入力設定を管理するクラスです。
 
 ## 伝達関数解析
 

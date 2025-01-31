@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, get_args
+from typing import get_args
 from .mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -121,25 +121,6 @@ class EmissionData:
                 f"calculated value from daily emission ({expected_annual})"
             )
 
-        # NaN値のチェック
-        numeric_fields = {
-            "delta_ch4": self.delta_ch4,
-            "delta_c2h6": self.delta_c2h6,
-            "delta_ratio": self.delta_ratio,
-            "emission_per_min": self.emission_per_min,
-            "emission_per_day": self.emission_per_day,
-            "emission_per_year": self.emission_per_year,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
-        }
-        nan_fields = [
-            field for field, value in numeric_fields.items() if math.isnan(value)
-        ]
-        if nan_fields:
-            raise ValueError(
-                f"Numeric fields cannot contain NaN values: {', '.join(nan_fields)}"
-            )
-
     def to_dict(self) -> dict:
         """
         データクラスの内容を辞書形式に変換します。
@@ -211,7 +192,7 @@ class EmissionFormula:
 
 
 @dataclass
-class HEAInputConfig:
+class HotspotEmissionConfig:
     """
     排出量計算の設定を保持するデータクラス
 
@@ -230,7 +211,7 @@ class HEAInputConfig:
     Examples
     ----------
     >>> # Weller et al. (2022)の係数を使用する場合
-    >>> config = HEAInputConfig(
+    >>> config = HotspotEmissionConfig(
     ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),
     ...     emission_categories={
     ...         "low": {"min": 0, "max": 6},  # < 6 L/min
@@ -239,11 +220,11 @@ class HEAInputConfig:
     ...     }
     ... )
     >>> # 複数のconfigをリスト形式で定義する場合
-    >>> emission_configs: list[HEAInputConfig] = [
-    ...     HEAInputConfig(formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)),
-    ...     HEAInputConfig(formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)),
-    ...     HEAInputConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
-    ...     HEAInputConfig(formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)),
+    >>> emission_configs: list[HotspotEmissionConfig] = [
+    ...     HotspotEmissionConfig(formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)),
+    ...     HotspotEmissionConfig(formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)),
+    ...     HotspotEmissionConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
+    ...     HotspotEmissionConfig(formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)),
     ... ]
     """
 
@@ -270,68 +251,13 @@ class HEAInputConfig:
                 raise ValueError(f"Category {category} has invalid range: min > max")
 
 
-@dataclass
-class EmissionAnalysisResult:
-    """
-    排出量分析の結果を格納するデータクラス。
-    calculate_emission_ratesの戻り値をtype-safeに管理します。
-
-    Parameters
-    ----------
-        emission_data_list : list[EmissionData]
-            各ホットスポットの排出量データのリスト
-        stats : dict[HotspotType, dict[str, Any]]
-            タイプ別の統計情報
-            - count: 検出数
-            - emission_per_min_min: 最小排出量 (L/min)
-            - emission_per_min_max: 最大排出量 (L/min)
-            - emission_per_min_mean: 平均排出量 (L/min)
-            - emission_per_min_median: 中央値排出量 (L/min)
-            - total_annual_emission: 年間総排出量 (L/year)
-            - mean_annual_emission: 平均年間排出量 (L/year)
-            - emission_categories: カテゴリー別の検出数
-    """
-
-    emission_data_list: list[EmissionData]
-    stats: dict[HotspotType, dict[str, Any]]
-
-    def __post_init__(self) -> None:
-        """
-        パラメータの検証を行います。
-        """
-        if not isinstance(self.emission_data_list, list):
-            raise ValueError("emission_data_list must be a list")
-        if not all(isinstance(data, EmissionData) for data in self.emission_data_list):
-            raise ValueError(
-                "All items in emission_data_list must be EmissionData instances"
-            )
-
-        if not isinstance(self.stats, dict):
-            raise ValueError("stats must be a dictionary")
-        for spot_type, stat_dict in self.stats.items():
-            if spot_type not in get_args(HotspotType):
-                raise ValueError(f"Invalid hotspot type: {spot_type}")
-            required_keys = {
-                "count",
-                "emission_per_min_min",
-                "emission_per_min_max",
-                "emission_per_min_mean",
-                "emission_per_min_median",
-                "total_annual_emission",
-                "mean_annual_emission",
-                "emission_categories",
-            }
-            if not all(key in stat_dict for key in required_keys):
-                raise ValueError(f"Missing required keys in stats for {spot_type}")
-
-
 class HotspotEmissionAnalyzer:
     @staticmethod
     def calculate_emission_rates(
         hotspots: list[HotspotData],
-        config: HEAInputConfig,
+        config: HotspotEmissionConfig,
         print_summary: bool = False,
-    ) -> EmissionAnalysisResult:
+    ) -> list[EmissionData]:
         """
         検出されたホットスポットのCH4漏出量を計算・解析し、統計情報を生成します。
 
@@ -339,21 +265,20 @@ class HotspotEmissionAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 分析対象のホットスポットのリスト
-            config : HEAInputConfig
+            config : HotspotEmissionConfig
                 排出量計算の設定
             print_summary : bool
                 統計情報を表示するかどうか。デフォルトはFalse。
 
         Returns
         ----------
-            EmissionAnalysisResult
+            list[EmissionData]
                 - 各ホットスポットの排出量データを含むリスト
-                - タイプ別の統計情報を含む辞書
 
         Examples
         ----------
         >>> # Weller et al. (2022)の係数を使用する例
-        >>> config = HEAInputConfig(
+        >>> config = HotspotEmissionConfig(
         ...     formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817),
         ...     emission_categories={
         ...         "low": {"min": 0, "max": 6},
@@ -361,8 +286,8 @@ class HotspotEmissionAnalyzer:
         ...         "high": {"min": 40, "max": float("inf")},
         ...     }
         ... )
-        >>> analysis_result = HotspotEmissionAnalyzer.calculate_emission_rates(
-        ...     hotspots,
+        >>> emissions_list = HotspotEmissionAnalyzer.calculate_emission_rates(
+        ...     hotspots=hotspots,
         ...     config=config,
         ...     print_summary=True
         ... )
@@ -400,7 +325,6 @@ class HotspotEmissionAnalyzer:
         emission_df = pd.DataFrame([e.to_dict() for e in emission_data_list])
 
         # タイプ別の統計情報を計算
-        stats = {}
         # get_args(HotspotType)を使用して型安全なリストを作成
         types = list(get_args(HotspotType))
         for spot_type in types:
@@ -426,8 +350,6 @@ class HotspotEmissionAnalyzer:
                     category_counts[category] = len(df_type[mask])
                 type_stats["emission_categories"] = category_counts
 
-                stats[spot_type] = type_stats
-
                 if print_summary:
                     print(f"\n{spot_type}タイプの統計情報:")
                     print(f"  検出数: {type_stats['count']}")
@@ -443,13 +365,11 @@ class HotspotEmissionAnalyzer:
                     print(f"    合計: {type_stats['total_annual_emission']:.2f}")
                     print(f"    平均: {type_stats['mean_annual_emission']:.2f}")
 
-        return EmissionAnalysisResult(
-            emission_data_list=emission_data_list, stats=stats
-        )
+        return emission_data_list
 
     @staticmethod
     def plot_emission_analysis(
-        analysis_result: EmissionAnalysisResult,
+        emissions: list[EmissionData],
         dpi: int = 300,
         output_dir: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
@@ -477,7 +397,7 @@ class HotspotEmissionAnalyzer:
 
         Parameters
         ----------
-            analysis_result : EmissionAnalysisResult
+            emissions : list[EmissionData]
                 calculate_emission_ratesで生成された分析結果
             output_dir : str | Path | None
                 出力先ディレクトリのパス。
@@ -513,7 +433,7 @@ class HotspotEmissionAnalyzer:
                 散布図（右図）を表示するかどうか。デフォルトはTrue。
         """
         # データをDataFrameに変換
-        df = pd.DataFrame([e.to_dict() for e in analysis_result.emission_data_list])
+        df = pd.DataFrame([e.to_dict() for e in emissions])
 
         # プロットの作成（散布図の有無に応じてサブプロット数を調整）
         if show_scatter:

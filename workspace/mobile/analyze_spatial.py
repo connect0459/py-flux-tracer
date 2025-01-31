@@ -2,12 +2,12 @@ import os
 from py_flux_tracer import (
     HotspotData,
     MobileMeasurementAnalyzer,
-    MMAInputConfig,
+    MobileMeasurementConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
-    EmissionAnalysisResult,
+    EmissionData,
     EmissionFormula,
-    HEAInputConfig,
+    HotspotEmissionConfig,
     HotspotEmissionAnalyzer,
 )
 
@@ -21,78 +21,78 @@ pico_bias_removal = BiasRemovalConfig(
 )
 
 # MSAInputConfigによる詳細指定
-inputs: list[MMAInputConfig] = [
-    MMAInputConfig(
+inputs: list[MobileMeasurementConfig] = [
+    MobileMeasurementConfig(
         lag=7,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
-    MMAInputConfig(
+    MobileMeasurementConfig(
         lag=13,
         fs=1,
         path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
@@ -186,15 +186,15 @@ if __name__ == "__main__":
     msa.export_hotspots_to_csv(hotspots=unique_hotspots, output_dir=output_dir)
 
     # Emissionの分析
-    emission_configs: list[HEAInputConfig] = [
-        HEAInputConfig(
+    emission_configs: list[HotspotEmissionConfig] = [
+        HotspotEmissionConfig(
             formula=EmissionFormula(name="weller", coef_a=0.988, coef_b=0.817)
         ),
-        HEAInputConfig(
+        HotspotEmissionConfig(
             formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)
         ),
-        HEAInputConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
-        HEAInputConfig(
+        HotspotEmissionConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
+        HotspotEmissionConfig(
             formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)
         ),
     ]
@@ -203,7 +203,7 @@ if __name__ == "__main__":
         msa.logger.info(f"{method}のemission解析を開始します。")
 
         # 排出量の計算と基本統計
-        emission_result: EmissionAnalysisResult = (
+        emissions_list: list[EmissionData] = (
             HotspotEmissionAnalyzer.calculate_emission_rates(
                 hotspots=unique_hotspots, config=config, print_summary=True
             )
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
         # 分布の可視化
         HotspotEmissionAnalyzer.plot_emission_analysis(
-            analysis_result=emission_result,
+            emissions=emissions_list,
             output_dir=output_dir,
             output_filename=f"emission_plots-{method}.png",
             hist_log_y=True,

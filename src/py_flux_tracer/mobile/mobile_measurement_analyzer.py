@@ -194,7 +194,7 @@ class HotspotParams:
 
 
 @dataclass
-class MMAInputConfig:
+class MobileMeasurementConfig:
     """
     MobileMeasurementAnalyzerのinputsに与える設定の値を保持するデータクラス
 
@@ -251,7 +251,7 @@ class MMAInputConfig:
         path: Path | str,
         bias_removal: BiasRemovalConfig | None = None,
         h2o_correction: H2OCorrectionConfig | None = None,
-    ) -> "MMAInputConfig":
+    ) -> "MobileMeasurementConfig":
         """
         入力値を検証し、MSAInputConfigインスタンスを生成するファクトリメソッドです。
 
@@ -273,7 +273,7 @@ class MMAInputConfig:
 
         Returns
         ----------
-            MMAInputConfig
+            MobileMeasurementConfig
                 検証された入力設定を持つMSAInputConfigオブジェクト。
         """
         return cls(
@@ -296,7 +296,7 @@ class MobileMeasurementAnalyzer:
         self,
         center_lat: float,
         center_lon: float,
-        inputs: list[MMAInputConfig] | list[tuple[float, float, str | Path]],
+        inputs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
         num_sections: int = 4,
         ch4_enhance_threshold: float = 0.1,
         correlation_threshold: float = 0.7,
@@ -324,7 +324,7 @@ class MobileMeasurementAnalyzer:
                 中心緯度
             center_lon : float
                 中心経度
-            inputs : list[MMAInputConfig] | list[tuple[float, float, str | Path]]
+            inputs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
                 入力ファイルのリスト
             num_sections : int
                 分割する区画数。デフォルトは4。
@@ -382,7 +382,7 @@ class MobileMeasurementAnalyzer:
             window_minutes
         )
         # 入力設定の標準化
-        normalized_input_configs: list[MMAInputConfig] = (
+        normalized_input_configs: list[MobileMeasurementConfig] = (
             MobileMeasurementAnalyzer._normalize_inputs(inputs)
         )
         # 複数ファイルのデータを読み込み
@@ -1853,7 +1853,7 @@ class MobileMeasurementAnalyzer:
         return self._num_sections - 1
 
     def _load_all_data(
-        self, input_configs: list[MMAInputConfig]
+        self, input_configs: list[MobileMeasurementConfig]
     ) -> dict[str, pd.DataFrame]:
         """
         全入力ファイルのデータを読み込み、データフレームの辞書を返します。
@@ -1863,7 +1863,7 @@ class MobileMeasurementAnalyzer:
 
         Parameters
         ----------
-            input_configs : list[MMAInputConfig]
+            input_configs : list[MobileMeasurementConfig]
                 読み込むファイルの設定リスト。
 
         Returns
@@ -1879,7 +1879,7 @@ class MobileMeasurementAnalyzer:
 
     def _load_data(
         self,
-        config: MMAInputConfig,
+        config: MobileMeasurementConfig,
         columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"],
         col_timestamp: str = "timestamp",
         col_latitude: str = "latitude",
@@ -1890,7 +1890,7 @@ class MobileMeasurementAnalyzer:
 
         Parameters
         ----------
-            config : MMAInputConfig
+            config : MobileMeasurementConfig
                 入力ファイルの設定を含むオブジェクト。ファイルパス、遅れ時間、サンプリング周波数、補正タイプなどの情報を持つ。
             columns_to_shift : list[str], optional
                 シフトを適用するカラム名のリスト。デフォルトは["ch4_ppm", "c2h6_ppb", "h2o_ppm"]で、これらのカラムに対して遅れ時間の補正が行われる。
@@ -2283,29 +2283,29 @@ class MobileMeasurementAnalyzer:
 
     @staticmethod
     def _normalize_inputs(
-        inputs: list[MMAInputConfig] | list[tuple[float, float, str | Path]],
-    ) -> list[MMAInputConfig]:
+        inputs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
+    ) -> list[MobileMeasurementConfig]:
         """
         入力設定を標準化
 
         Parameters
         ----------
-            inputs : list[MMAInputConfig] | list[tuple[float, float, str | Path]]
+            inputs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
                 入力設定のリスト
 
         Returns
         ----------
-            list[MMAInputConfig]
+            list[MobileMeasurementConfig]
                 標準化された入力設定のリスト
         """
-        normalized: list[MMAInputConfig] = []
+        normalized: list[MobileMeasurementConfig] = []
         for inp in inputs:
-            if isinstance(inp, MMAInputConfig):
+            if isinstance(inp, MobileMeasurementConfig):
                 normalized.append(inp)  # すでに検証済みのため、そのまま追加
             else:
                 fs, lag, path = inp
                 normalized.append(
-                    MMAInputConfig.validate_and_create(fs=fs, lag=lag, path=path)
+                    MobileMeasurementConfig.validate_and_create(fs=fs, lag=lag, path=path)
                 )
         return normalized
 

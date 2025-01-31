@@ -8,18 +8,17 @@ from .mobile.correcting_utils import (
     H2OCorrectionConfig,
 )
 from .mobile.hotspot_emission_analyzer import (
-    EmissionAnalysisResult,
     EmissionData,
     EmissionFormula,
-    HEAInputConfig,
     HotspotEmissionAnalyzer,
+    HotspotEmissionConfig,
 )
 from .mobile.mobile_measurement_analyzer import (
     HotspotData,
     HotspotParams,
     HotspotType,
-    MMAInputConfig,
     MobileMeasurementAnalyzer,
+    MobileMeasurementConfig,
 )
 from .monthly.monthly_converter import MonthlyConverter
 from .monthly.monthly_figures_generator import MonthlyFiguresGenerator
@@ -58,16 +57,15 @@ __all__ = [
     "CorrectingUtils",
     "BiasRemovalConfig",
     "H2OCorrectionConfig",
-    "EmissionAnalysisResult",
     "EmissionData",
     "EmissionFormula",
-    "HEAInputConfig",
     "HotspotEmissionAnalyzer",
+    "HotspotEmissionConfig",
     "HotspotData",
     "HotspotParams",
     "HotspotType",
-    "MMAInputConfig",
     "MobileMeasurementAnalyzer",
+    "MobileMeasurementConfig",
     "MonthlyConverter",
     "MonthlyFiguresGenerator",
     "FftFileReorganizer",
