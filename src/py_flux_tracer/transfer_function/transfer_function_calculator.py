@@ -3,7 +3,33 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+from dataclasses import dataclass
 from scipy.optimize import curve_fit
+
+
+@dataclass
+class TfCurvesFromCsvConfig:
+    """伝達関数曲線のプロット設定を保持するデータクラス"""
+
+    col_coef_a: str  # 係数のカラム名
+    label_gas: str  # ガスの表示ラベル
+    base_color: str  # 平均線の色
+    gas_name: str  # 出力ファイル用のガス名
+
+    @classmethod
+    def create_default_configs(cls) -> list["TfCurvesFromCsvConfig"]:
+        """デフォルトの設定リストを生成"""
+        return [
+            cls("a_ch4-used", "CH$_4$", "red", "ch4"),
+            cls("a_c2h6-used", "C$_2$H$_6$", "orange", "c2h6"),
+        ]
+
+    @classmethod
+    def from_tuple(
+        cls, config_tuple: tuple[str, str, str, str]
+    ) -> "TfCurvesFromCsvConfig":
+        """タプルから設定オブジェクトを生成"""
+        return cls(*config_tuple)
 
 
 class TransferFunctionCalculator:
@@ -264,11 +290,8 @@ class TransferFunctionCalculator:
     def create_plot_tf_curves_from_csv(
         cls,
         filepath: str,
+        config: TfCurvesFromCsvConfig,
         csv_encoding: str | None = "utf-8-sig",
-        gas_configs: list[tuple[str, str, str, str]] = [
-            ("a_ch4-used", "CH$_4$", "red", "ch4"),
-            ("a_c2h6-used", "C$_2$H$_6$", "orange", "c2h6"),
-        ],
         output_dir: str | Path | None = None,
         output_filename: str = "all_tf_curves.png",
         col_datetime: str = "Date",
@@ -285,7 +308,7 @@ class TransferFunctionCalculator:
         show_fig: bool = True,
     ) -> None:
         """
-        複数の伝達関数の係数をプロットし、各ガスの平均値を表示します。
+        伝達関数の係数をプロットし、平均値を表示します。
         各ガスのデータをCSVファイルから読み込み、指定された設定に基づいてプロットを生成します。
         プロットはオプションで保存することも可能です。
 
@@ -293,12 +316,8 @@ class TransferFunctionCalculator:
         ----------
             filepath : str
                 伝達関数の係数が格納されたCSVファイルのパス。
-            csv_encoding : str | None, optional
-                csvのエンコーディング形式。デフォルトは"utf-8-sig"。
-            gas_configs : list[tuple[str, str, str, str]], optional
-                ガスごとの設定のリスト。各タプルは以下の要素を含む:
-                (係数のカラム名, ガスの表示ラベル, 平均線の色, 出力ファイル用のガス名)
-                例: [("a_ch4-used", "CH$_4$", "red", "ch4")]
+            config : TfCurvesFromCsvConfig
+                プロット設定。
             output_dir : str | Path | None, optional
                 出力ディレクトリ。Noneの場合は保存しない。
             output_filename : str, optional
@@ -329,82 +348,80 @@ class TransferFunctionCalculator:
         # CSVファイルを読み込む
         df = pd.read_csv(filepath, encoding=csv_encoding)
 
-        # 各ガスについてプロット
-        for col_coef_a, label_gas, base_color, gas_name in gas_configs:
-            fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize)
 
-            # データ数に応じたデフォルトの色リストを作成
-            if line_colors is None:
-                default_colors = [
-                    "#1f77b4",
-                    "#ff7f0e",
-                    "#2ca02c",
-                    "#d62728",
-                    "#9467bd",
-                    "#8c564b",
-                    "#e377c2",
-                    "#7f7f7f",
-                    "#bcbd22",
-                    "#17becf",
-                ]
-                n_dates = len(df)
-                plot_colors = (default_colors * (n_dates // len(default_colors) + 1))[
-                    :n_dates
-                ]
-            else:
-                plot_colors = line_colors
+        # データ数に応じたデフォルトの色リストを作成
+        if line_colors is None:
+            default_colors = [
+                "#1f77b4",
+                "#ff7f0e",
+                "#2ca02c",
+                "#d62728",
+                "#9467bd",
+                "#8c564b",
+                "#e377c2",
+                "#7f7f7f",
+                "#bcbd22",
+                "#17becf",
+            ]
+            n_dates = len(df)
+            plot_colors = (default_colors * (n_dates // len(default_colors) + 1))[
+                :n_dates
+            ]
+        else:
+            plot_colors = line_colors
 
-            # 全てのa値を用いて伝達関数をプロット
-            for i, row in enumerate(df.iterrows()):
-                a = row[1][col_coef_a]
-                date = row[1][col_datetime]
-                x_fit = np.logspace(-3, 1, 1000)
-                y_fit = cls.transfer_function(x_fit, a)
-                plt.plot(
-                    x_fit,
-                    y_fit,
-                    "-",
-                    color=plot_colors[i],
-                    alpha=0.7,
-                    label=f"{date} (a = {a:.3f})",
-                )
-
-            # 平均のa値を用いた伝達関数をプロット
-            a_mean = df[col_coef_a].mean()
+        # 全てのa値を用いて伝達関数をプロット
+        for i, row in enumerate(df.iterrows()):
+            a = row[1][config.col_coef_a]
+            date = row[1][col_datetime]
             x_fit = np.logspace(-3, 1, 1000)
-            y_fit = cls.transfer_function(x_fit, a_mean)
+            y_fit = cls.transfer_function(x_fit, a)
             plt.plot(
                 x_fit,
                 y_fit,
                 "-",
-                color=base_color,
-                linewidth=3,
-                label=f"{label_avg} (a = {a_mean:.3f})",
+                color=plot_colors[i],
+                alpha=0.7,
+                label=f"{date} (a = {a:.3f})",
             )
 
-            # グラフの設定
-            label_y_formatted: str = f"{label_y}\n({label_gas} / {label_co_ref})"
-            plt.xscale("log")
-            if add_xlabel:
-                plt.xlabel(label_x)
-            plt.ylabel(label_y_formatted)
-            if add_legend:
-                plt.legend(loc="lower left", fontsize=legend_font_size)
-            plt.grid(True, which="both", ls="-", alpha=0.2)
-            plt.tight_layout()
+        # 平均のa値を用いた伝達関数をプロット
+        a_mean = df[config.col_coef_a].mean()
+        x_fit = np.logspace(-3, 1, 1000)
+        y_fit = cls.transfer_function(x_fit, a_mean)
+        plt.plot(
+            x_fit,
+            y_fit,
+            "-",
+            color=config.base_color,
+            linewidth=3,
+            label=f"{label_avg} (a = {a_mean:.3f})",
+        )
 
-            if save_fig:
-                if output_dir is None:
-                    raise ValueError(
-                        "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
-                    )
-                os.makedirs(output_dir, exist_ok=True)
-                output_path: str = os.path.join(output_dir, output_filename)
-                plt.savefig(output_path, dpi=300, bbox_inches="tight")
-            if show_fig:
-                plt.show()
-            else:
-                plt.close(fig=fig)
+        # グラフの設定
+        label_y_formatted: str = f"{label_y}\n({config.label_gas} / {label_co_ref})"
+        plt.xscale("log")
+        if add_xlabel:
+            plt.xlabel(label_x)
+        plt.ylabel(label_y_formatted)
+        if add_legend:
+            plt.legend(loc="lower left", fontsize=legend_font_size)
+        plt.grid(True, which="both", ls="-", alpha=0.2)
+        plt.tight_layout()
+
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                )
+            os.makedirs(output_dir, exist_ok=True)
+            # 出力ファイル名が指定されていない場合、gas_nameを使用
+            output_path: str = os.path.join(output_dir, output_filename)
+            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
     def create_plot_transfer_function(
         self,

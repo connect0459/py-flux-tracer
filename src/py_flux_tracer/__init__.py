@@ -23,7 +23,10 @@ from .mobile.mobile_measurement_analyzer import (
 from .monthly.monthly_converter import MonthlyConverter
 from .monthly.monthly_figures_generator import MonthlyFiguresGenerator
 from .transfer_function.fft_files_reorganizer import FftFileReorganizer
-from .transfer_function.transfer_function_calculator import TransferFunctionCalculator
+from .transfer_function.transfer_function_calculator import (
+    TfCurvesFromCsvConfig,
+    TransferFunctionCalculator,
+)
 
 """
 versionを動的に設定する。
@@ -69,5 +72,6 @@ __all__ = [
     "MonthlyConverter",
     "MonthlyFiguresGenerator",
     "FftFileReorganizer",
+    "TfCurvesFromCsvConfig",
     "TransferFunctionCalculator",
 ]

@@ -54,6 +54,8 @@ font_array: list[str] = [
 FigureUtils.setup_plot_params(
     font_family=font_array,
     font_size=24,
+    legend_size=24,
+    tick_size=24,
 )
 
 # 変数定義

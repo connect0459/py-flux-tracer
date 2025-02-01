@@ -1,5 +1,9 @@
 import matplotlib.font_manager as fm
-from py_flux_tracer import FigureUtils, TransferFunctionCalculator
+from py_flux_tracer import (
+    FigureUtils,
+    TfCurvesFromCsvConfig,
+    TransferFunctionCalculator,
+)
 
 # # フォントファイルを登録
 font_paths: list[str] = [
@@ -8,14 +12,17 @@ font_paths: list[str] = [
 ]
 for path in font_paths:
     fm.fontManager.addfont(path)
-
 # フォント名を指定
 font_array: list[str] = [
     "Arial",
     "MS Gothic",
 ]
-
-FigureUtils.setup_plot_params(font_family=font_array)
+FigureUtils.setup_plot_params(
+    font_family=font_array,
+    font_size=24,
+    legend_size=24,
+    tick_size=24,
+)
 
 # 変数定義
 tf_csv_path: str = (
@@ -39,21 +46,32 @@ custom_colors = [
 
 # ガスの設定
 gas_configs = [
-    ("a_ch4-used", "CH$_4$", "red", "ch4"),
-    ("a_c2h6-used", "C$_2$H$_6$", "orange", "c2h6"),
+    TfCurvesFromCsvConfig(
+        col_coef_a="a_ch4-used",
+        label_gas="CH$_4$",
+        base_color="red",
+        gas_name="ch4",
+    ),
+    TfCurvesFromCsvConfig(
+        col_coef_a="a_c2h6-used",
+        label_gas="C$_2$H$_6$",
+        base_color="orange",
+        gas_name="c2h6",
+    ),
 ]
 
-# メイン処理の例
 if __name__ == "__main__":
     try:
-        # 伝達関数曲線のプロット
-        TransferFunctionCalculator.create_plot_tf_curves_from_csv(
-            filepath=tf_csv_path,
-            gas_configs=gas_configs,
-            output_dir=output_dir,
-            line_colors=custom_colors,
-            show_fig=False,
-        )
+        # 各ガスについて伝達関数曲線をプロット
+        for config in gas_configs:
+            TransferFunctionCalculator.create_plot_tf_curves_from_csv(
+                filepath=tf_csv_path,
+                config=config,
+                output_dir=output_dir,
+                output_filename=f"all_tf_curves-{config.gas_name}.png",
+                line_colors=custom_colors,
+                show_fig=False,
+            )
 
     except KeyboardInterrupt:
         print("KeyboardInterrupt occurred. Abort processing.")
