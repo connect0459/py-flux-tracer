@@ -1102,9 +1102,8 @@ class FluxFootprintAnalyzer:
         # 16. 画像の表示
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
-
+        plt.close(fig=fig)
+        
     def plot_flux_footprint_with_scale_checker(
         self,
         x_list: list[float],

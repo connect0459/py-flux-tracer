@@ -561,8 +561,7 @@ class HotspotEmissionAnalyzer:
         # 図の表示
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
         if print_summary:
             # デバッグ用の出力

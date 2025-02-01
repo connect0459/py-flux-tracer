@@ -95,7 +95,6 @@ class FftFileReorganizer:
         self._read_flag_file()
         valid_files = self._get_valid_files()
         self._copy_files(valid_files)
-        self.logger.info("ファイルのコピーが完了しました。")
 
         if self._warnings:
             self.logger.warning("Warnings:")

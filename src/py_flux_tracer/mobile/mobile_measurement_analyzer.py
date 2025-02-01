@@ -1040,8 +1040,7 @@ class MobileMeasurementAnalyzer:
             self.logger.info(f"ヒストグラムを保存しました: {output_path}")
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
     def plot_mapbox(
         self,
@@ -1357,8 +1356,7 @@ class MobileMeasurementAnalyzer:
             self.logger.info(f"散布図を保存しました: {output_path}")
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
     def plot_conc_timeseries(
         self,
@@ -1503,8 +1501,7 @@ class MobileMeasurementAnalyzer:
 
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
     def plot_conc_timeseries_with_hotspots(
         self,
@@ -1757,8 +1754,7 @@ class MobileMeasurementAnalyzer:
 
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
     def _detect_hotspots(
         self,

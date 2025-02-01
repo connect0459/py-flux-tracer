@@ -3071,8 +3071,7 @@ class MonthlyFiguresGenerator:
         # グラフの表示
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
 
         # 統計情報の表示
         if print_summary:
@@ -3568,5 +3567,4 @@ class MonthlyFiguresGenerator:
             )
         if show_fig:
             plt.show()
-        else:
-            plt.close(fig=fig)
+        plt.close(fig=fig)
