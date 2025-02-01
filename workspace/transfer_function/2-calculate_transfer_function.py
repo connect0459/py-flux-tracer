@@ -12,7 +12,7 @@ class TFAnalysisConfig:
 
     Parameters
     ----------
-        input_path : str | Path
+        input_file : str | Path
             入力ファイルのパス
         output_dir : str | Path
             出力ディレクトリのパス
@@ -24,7 +24,7 @@ class TFAnalysisConfig:
             伝達関数のプロットを表示するかどうか
     """
 
-    input_path: str | Path
+    input_file: str | Path
     output_dir: str | Path
     suffix: str
     show_co_spectra: bool = False
@@ -34,10 +34,8 @@ class TFAnalysisConfig:
         """
         パスの検証を行います。
         """
-        if not os.path.exists(self.input_path):
-            raise ValueError(f"入力ファイルが存在しません: {self.input_path}")
-        if not os.path.exists(self.output_dir):
-            raise ValueError(f"出力ディレクトリが存在しません: {self.output_dir}")
+        if not os.path.exists(self.input_file):
+            raise ValueError(f"入力ファイルが存在しません: {self.input_file}")
 
 
 """ ------ config start ------ """
@@ -83,14 +81,14 @@ for date in dates_list:
     # 解析設定の定義
     configs: list[TFAnalysisConfig] = [
         TFAnalysisConfig(
-            input_path=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
+            input_file=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
             output_dir=os.path.join(output_dir, "each-raw"),
             suffix="",  # トレンド除去なし
             show_co_spectra=False,
             show_tf=False,
         ),
         TFAnalysisConfig(
-            input_path=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
+            input_file=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
             output_dir=os.path.join(output_dir, "each-detrend"),
             suffix="-detrend",  # トレンド除去あり
             show_co_spectra=False,
@@ -102,10 +100,10 @@ for date in dates_list:
     # メイン処理
     try:
         for config in configs:
-            print(f"\n{os.path.basename(config.input_path)}の処理を開始...")
+            print(f"\n{os.path.basename(config.input_file)}の処理を開始...")
 
             tfc = TransferFunctionCalculator(
-                filepath=config.input_path,
+                filepath=config.input_file,
                 col_freq=col_freq,
                 cutoff_freq_low=0.01,
                 cutoff_freq_high=1,
