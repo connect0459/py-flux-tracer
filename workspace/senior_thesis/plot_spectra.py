@@ -35,7 +35,8 @@ if __name__ == "__main__":
             mfg.plot_spectra(
                 input_dir="/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-for_turb",
                 output_dir=(os.path.join(output_dir, "spectra", "tests")),
-                output_basename=f"spectrum-test-{term_tag}",
+                output_filename_power=f"power_spectrum-test-{term_tag}.png",
+                output_filename_co=f"co_spectrum-test-{term_tag}.png",
                 fs=10,
                 lag_second=lag_sec,
                 label_ch4=None,

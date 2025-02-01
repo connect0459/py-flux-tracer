@@ -2462,9 +2462,10 @@ class MonthlyFiguresGenerator:
         self,
         fs: float,
         lag_second: float,
-        input_dir: str | Path | None,
-        output_dir: str | Path | None,
-        output_basename: str = "spectrum",
+        input_dir: str | Path,
+        output_dir: str | Path,
+        output_filename_power: str = "power_spectrum.png",
+        output_filename_co: str = "co_spectrum.png",
         col_ch4: str = "Ultra_CH4_ppm_C",
         col_c2h6: str = "Ultra_C2H6_ppb",
         col_tv: str = "Tv",
@@ -2492,10 +2493,14 @@ class MonthlyFiguresGenerator:
                 サンプリング周波数。
             lag_second : float
                 ラグ時間（秒）。
-            input_dir : str | Path | None
+            input_dir : str | Path
                 データファイルが格納されているディレクトリ。
-            output_dir : str | Path | None
+            output_dir : str | Path
                 出力先ディレクトリ。
+            output_filename_power : str
+                出力するパワースペクトルのファイル名。デフォルトは"power_spectrum.png"
+            output_filename_power : str
+                出力するコスペクトルのファイル名。デフォルトは"co_spectrum.png"
             col_ch4 : str, optional
                 CH4の濃度データが入ったカラムのキー。デフォルトは"Ultra_CH4_ppm_C"。
             col_c2h6 : str, optional
@@ -2527,10 +2532,6 @@ class MonthlyFiguresGenerator:
         """
         # 出力ディレクトリの作成
         if save_fig:
-            if output_dir is None:
-                raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
-                )
             os.makedirs(output_dir, exist_ok=True)
 
         # データの読み込みと結合
@@ -2546,7 +2547,7 @@ class MonthlyFiguresGenerator:
         file_list = glob.glob(os.path.join(input_dir, file_pattern))
         for filepath in tqdm(file_list, desc="Processing files"):
             df, _ = edp.get_resampled_df(
-                filepath=filepath, resample_in_processing=are_inputs_resampled
+                filepath=filepath, resample=are_inputs_resampled
             )
 
             # 風速成分の計算を追加
@@ -2678,9 +2679,7 @@ class MonthlyFiguresGenerator:
             plt.tight_layout()
 
             if save_fig:
-                output_path_psd: str = os.path.join(
-                    output_dir, f"power_{output_basename}.png"
-                )
+                output_path_psd: str = os.path.join(output_dir, output_filename_power)
                 plt.savefig(
                     output_path_psd,
                     dpi=300,
@@ -2737,7 +2736,7 @@ class MonthlyFiguresGenerator:
             plt.tight_layout()
             if save_fig:
                 output_path_csd: str = os.path.join(
-                    output_dir, f"co_{output_basename}.png"
+                    output_dir, output_filename_co
                 )
                 plt.savefig(
                     output_path_csd,

@@ -74,7 +74,7 @@ class FftFileReorganizer:
             if filename_patterns is None
             else filename_patterns
         )
-        self._flag_file_path: str = flag_csv_path
+        self._flag_filepath: str = flag_csv_path
         self._sort_by_rh: bool = sort_by_rh
         self._flags = {}
         self._warnings = []
@@ -211,7 +211,7 @@ class FftFileReorganizer:
         """
         フラグファイルを読み込み、self._flagsディクショナリに格納します。
         """
-        with open(self._flag_file_path, "r") as f:
+        with open(self._flag_filepath, "r") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 time = datetime.strptime(row["time"], "%Y/%m/%d %H:%M")

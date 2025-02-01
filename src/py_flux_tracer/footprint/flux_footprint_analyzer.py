@@ -1298,9 +1298,9 @@ class FluxFootprintAnalyzer:
 
         df_array: list[pd.DataFrame] = []
         for csv_file in csv_files:
-            file_path: str = os.path.join(csv_dir_path, csv_file)
+            filepath: str = os.path.join(csv_dir_path, csv_file)
             df: pd.DataFrame = self._prepare_csv(
-                file_path=file_path, col_datetime=col_datetime
+                filepath=filepath, col_datetime=col_datetime
             )
             df_array.append(df)
 
@@ -1315,13 +1315,13 @@ class FluxFootprintAnalyzer:
 
         return df_combined
 
-    def _prepare_csv(self, file_path: str, col_datetime: str) -> pd.DataFrame:
+    def _prepare_csv(self, filepath: str, col_datetime: str) -> pd.DataFrame:
         """
         フラックスデータを含むCSVファイルを読み込み、処理します。
 
         Parameters
         ----------
-            file_path : str
+            filepath : str
                 CSVファイルのパス。
             col_datetime : str
                 datetimeカラムのカラム名。
@@ -1332,12 +1332,12 @@ class FluxFootprintAnalyzer:
                 処理済みのデータフレーム。
         """
         # CSVファイルの最初の行を読み込み、ヘッダーを取得するための一時データフレームを作成
-        temp: pd.DataFrame = pd.read_csv(file_path, header=None, nrows=1, skiprows=0)
+        temp: pd.DataFrame = pd.read_csv(filepath, header=None, nrows=1, skiprows=0)
         header = temp.loc[temp.index[0]]
 
         # 実際のデータを読み込み、必要な行をスキップし、欠損値を指定
         df: pd.DataFrame = pd.read_csv(
-            file_path,
+            filepath,
             header=None,
             skiprows=2,
             na_values=self._na_values,

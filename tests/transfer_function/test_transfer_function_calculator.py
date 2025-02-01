@@ -29,7 +29,7 @@ def sample_data_file():
 def calculator(sample_data_file):
     """TransferFunctionCalculatorのインスタンスを提供するフィクスチャ"""
     return TransferFunctionCalculator(
-        file_path=sample_data_file,
+        filepath=sample_data_file,
         col_freq="freq",
         cutoff_freq_low=0.01,
         cutoff_freq_high=1.0,
@@ -142,10 +142,10 @@ def test_create_plot_transfer_function(calculator, tmp_path):
     assert os.path.exists(os.path.join(output_dir, "tf-co1_co2.png"))
 
 
-def test_invalid_file_path():
+def test_invalid_filepath():
     """無効なファイルパスのテスト"""
     with pytest.raises(FileNotFoundError):
-        TransferFunctionCalculator(file_path="nonexistent.csv", col_freq="freq")
+        TransferFunctionCalculator(filepath="nonexistent.csv", col_freq="freq")
 
 
 def test_invalid_data_processing(calculator):

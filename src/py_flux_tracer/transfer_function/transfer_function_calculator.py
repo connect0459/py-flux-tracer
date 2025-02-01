@@ -16,7 +16,7 @@ class TransferFunctionCalculator:
 
     def __init__(
         self,
-        file_path: str | Path,
+        filepath: str | Path,
         col_freq: str,
         cutoff_freq_low: float = 0.01,
         cutoff_freq_high: float = 1,
@@ -26,7 +26,7 @@ class TransferFunctionCalculator:
 
         Parameters
         ----------
-            file_path : str | Path
+            filepath : str | Path
                 分析対象のCSVファイルのパス。
             col_freq : str
                 周波数のキー。
@@ -38,7 +38,7 @@ class TransferFunctionCalculator:
         self._col_freq: str = col_freq
         self._cutoff_freq_low: float = cutoff_freq_low
         self._cutoff_freq_high: float = cutoff_freq_high
-        self._df: pd.DataFrame = TransferFunctionCalculator._load_data(file_path)
+        self._df: pd.DataFrame = TransferFunctionCalculator._load_data(filepath)
 
     def calculate_transfer_function(
         self, col_reference: str, col_target: str
@@ -87,7 +87,7 @@ class TransferFunctionCalculator:
         label1: str | None = None,
         label2: str | None = None,
         output_dir: str | Path | None = None,
-        output_basename: str = "co",
+        output_filename: str = "co.png",
         add_legend: bool = True,
         add_xy_labels: bool = True,
         legend_font_size: float = 16,
@@ -126,8 +126,8 @@ class TransferFunctionCalculator:
                 2つ目のデータのラベル名。デフォルトはNone。
             output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-            output_basename : str, optional
-                保存するファイル名のベース。デフォルトは"co"。
+            output_filename : str, optional
+                保存するファイル名。デフォルトは"co.png"。
             add_legend : bool, optional
                 凡例を追加するかどうか。デフォルトはTrue。
             legend_font_size : bool, optional
@@ -200,8 +200,7 @@ class TransferFunctionCalculator:
         if save_fig and output_dir is not None:
             os.makedirs(output_dir, exist_ok=True)
             # プロットをPNG形式で保存
-            filename: str = f"{output_basename}.png"
-            fig.savefig(os.path.join(output_dir, filename), dpi=300)
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -213,7 +212,7 @@ class TransferFunctionCalculator:
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
         output_dir: str | Path | None = None,
-        output_basename: str = "ratio",
+        output_filename: str = "ratio.png",
         save_fig: bool = True,
         show_fig: bool = True,
     ) -> None:
@@ -232,8 +231,8 @@ class TransferFunctionCalculator:
                 プロットのサイズ。デフォルトは(10, 6)。
             output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-            output_basename : str, optional
-                保存するファイル名のベース。デフォルトは"ratio"。
+            output_filename : str, optional
+                保存するファイル名。デフォルトは"ratio.png"。
             save_fig : bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
             show_fig : bool, optional
@@ -251,10 +250,12 @@ class TransferFunctionCalculator:
         ax.set_ylabel(f"{target_name} / {reference_name}")
         ax.set_title(f"{target_name}と{reference_name}の比")
 
-        if save_fig and output_dir is not None:
-            # プロットをPNG形式で保存
-            filename: str = f"{output_basename}-{reference_name}_{target_name}.png"
-            fig.savefig(os.path.join(output_dir, filename), dpi=300)
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                )
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -262,14 +263,14 @@ class TransferFunctionCalculator:
     @classmethod
     def create_plot_tf_curves_from_csv(
         cls,
-        file_path: str,
+        filepath: str,
         csv_encoding: str | None = "utf-8-sig",
         gas_configs: list[tuple[str, str, str, str]] = [
             ("a_ch4-used", "CH$_4$", "red", "ch4"),
             ("a_c2h6-used", "C$_2$H$_6$", "orange", "c2h6"),
         ],
         output_dir: str | Path | None = None,
-        output_basename: str = "all_tf_curves",
+        output_filename: str = "all_tf_curves.png",
         col_datetime: str = "Date",
         figsize: tuple[float, float] = (10, 8),
         add_legend: bool = True,
@@ -290,7 +291,7 @@ class TransferFunctionCalculator:
 
         Parameters
         ----------
-            file_path : str
+            filepath : str
                 伝達関数の係数が格納されたCSVファイルのパス。
             csv_encoding : str | None, optional
                 csvのエンコーディング形式。デフォルトは"utf-8-sig"。
@@ -300,8 +301,8 @@ class TransferFunctionCalculator:
                 例: [("a_ch4-used", "CH$_4$", "red", "ch4")]
             output_dir : str | Path | None, optional
                 出力ディレクトリ。Noneの場合は保存しない。
-            output_basename : str, optional
-                出力ファイル名のベース。デフォルトは"all_tf_curves"。
+            output_filename : str, optional
+                出力ファイル名。デフォルトは"all_tf_curves.png"。
             col_datetime : str, optional
                 日付情報が格納されているカラム名。デフォルトは"Date"。
             figsize : tuple[float, float], optional
@@ -326,7 +327,7 @@ class TransferFunctionCalculator:
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # CSVファイルを読み込む
-        df = pd.read_csv(file_path, encoding=csv_encoding)
+        df = pd.read_csv(filepath, encoding=csv_encoding)
 
         # 各ガスについてプロット
         for col_coef_a, label_gas, base_color, gas_name in gas_configs:
@@ -398,9 +399,7 @@ class TransferFunctionCalculator:
                         "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
                     )
                 os.makedirs(output_dir, exist_ok=True)
-                output_path: str = os.path.join(
-                    output_dir, f"{output_basename}-{gas_name}.png"
-                )
+                output_path: str = os.path.join(output_dir, output_filename)
                 plt.savefig(output_path, dpi=300, bbox_inches="tight")
             if show_fig:
                 plt.show()
@@ -415,7 +414,8 @@ class TransferFunctionCalculator:
         target_name: str,
         figsize: tuple[int, int] = (10, 8),
         output_dir: str | Path | None = None,
-        output_basename: str = "tf",
+        output_filename: str = "tf.png",
+        save_fig: bool = True,
         show_fig: bool = True,
         add_xlabel: bool = True,
         label_x: str = "f (Hz)",
@@ -440,8 +440,8 @@ class TransferFunctionCalculator:
                 プロットのサイズ。デフォルトは(10, 8)。
             output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
-            output_basename : str, optional
-                保存するファイル名のベース。デフォルトは"tf"。
+            output_filename : str, optional
+                保存するファイル名。デフォルトは"tf.png"。
             show_fig : bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
             add_xlabel : bool, optional
@@ -482,10 +482,14 @@ class TransferFunctionCalculator:
         plt.ylabel(label_y_formatted)
         ax.legend()
 
-        if output_dir is not None:
+        if save_fig:
+            if output_dir is None:
+                raise ValueError(
+                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                )
+            os.makedirs(output_dir, exist_ok=True)
             # プロットをPNG形式で保存
-            filename: str = f"{output_basename}-{reference_name}_{target_name}.png"
-            fig.savefig(os.path.join(output_dir, filename), dpi=300)
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -578,13 +582,13 @@ class TransferFunctionCalculator:
         return np.exp(-np.log(np.sqrt(2)) * np.power(x / a, 2))
 
     @staticmethod
-    def _load_data(file_path: str | Path) -> pd.DataFrame:
+    def _load_data(filepath: str | Path) -> pd.DataFrame:
         """
         CSVファイルからデータを読み込む。
 
         Parameters
         ----------
-            file_path : str | Path
+            filepath : str | Path
                 csvファイルのパス。
 
         Returns
@@ -592,8 +596,8 @@ class TransferFunctionCalculator:
             pd.DataFrame
                 読み込まれたデータフレーム。
         """
-        tmp = pd.read_csv(file_path, header=None, nrows=1, skiprows=0)
+        tmp = pd.read_csv(filepath, header=None, nrows=1, skiprows=0)
         header = tmp.loc[tmp.index[0]]
-        df = pd.read_csv(file_path, header=None, skiprows=1)
+        df = pd.read_csv(filepath, header=None, skiprows=1)
         df.columns = header
         return df

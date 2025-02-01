@@ -62,7 +62,7 @@
 
 #### `1-reorganize_files.py`を利用する方法
 
-1. `1-reorganize_files.py`に必要な情報を入力する（`base_path`、`input_dir_name`、`output_dir_name`、`flag_file_name`を適宜変更する）。
+1. `1-reorganize_files.py`に必要な情報を入力する（`base_path`、`input_dir_name`、`output_dir_name`、`flag_filename`を適宜変更する）。
 2. `1-reorganize_files.py`を実行する。`output_dir_name`で指定したディレクトリに仕分けされたファイルが`good_data_all`にコピーされる（使用しないデータは`bad_data`ディレクトリに保存される）。
 
 ※下記のように、`FftFileReorganizer`のコンストラクタに渡す`sort_by_rh`にTrueを指定した場合、`good_data_all`に加えてRH10～RH100のディレクトリが作成され、相対湿度（RH）によってFlgが0のデータを分別する。H2Oフラックスの計算には`sort_by_rh=True`を指定すること。
@@ -72,11 +72,11 @@
 try:
    input_dir_path = os.path.join(base_path, input_dir_name)
    output_dir_path = os.path.join(base_path, output_dir_name)
-   flag_file_path = os.path.join(base_path, flag_file_name)
+   flag_filepath = os.path.join(base_path, flag_filename)
 
    # インスタンスを作成
    reoirganizer = FftFileReorganizer(
-      input_dir_path, output_dir_path, flag_file_path, sort_by_rh=True
+      input_dir_path, output_dir_path, flag_filepath, sort_by_rh=True
    )
    reoirganizer.reorganize()
 except KeyboardInterrupt:

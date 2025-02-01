@@ -119,21 +119,21 @@ class MonthlyConverter:
                 'yyyy.MM'形式の日付リスト
         """
         dates = []
-        for file_name in self._directory.glob(self._file_pattern):
+        for filename in self._directory.glob(self._file_pattern):
             try:
-                date = self._extract_date(file_name.name)
+                date = self._extract_date(filename.name)
                 dates.append(date.strftime(self.FILE_DATE_FORMAT))
             except ValueError:
                 continue
         return sorted(dates)
 
-    def get_sheet_names(self, file_name: str) -> list[str]:
+    def get_sheet_names(self, filename: str) -> list[str]:
         """
         指定されたファイルで利用可能なシート名の一覧を返却する
 
         Parameters
         ----------
-            file_name : str
+            filename : str
                 Excelファイル名
 
         Returns
@@ -141,12 +141,12 @@ class MonthlyConverter:
             list[str]
                 シート名のリスト
         """
-        if file_name not in self._excel_files:
-            file_path = self._directory / file_name
-            if not file_path.exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
-            self._excel_files[file_name] = pd.ExcelFile(file_path)
-        return [str(name) for name in self._excel_files[file_name].sheet_names]
+        if filename not in self._excel_files:
+            filepath = self._directory / filename
+            if not filepath.exists():
+                raise FileNotFoundError(f"File not found: {filepath}")
+            self._excel_files[filename] = pd.ExcelFile(filepath)
+        return [str(name) for name in self._excel_files[filename].sheet_names]
 
     def read_sheets(
         self,
@@ -210,8 +210,8 @@ class MonthlyConverter:
         sheet_dfs = {sheet_name: [] for sheet_name in sheet_names}
 
         # 各ファイルからデータを読み込む
-        for file_name, excel_file in sorted_files:
-            file_date = self._extract_date(file_name)
+        for filename, excel_file in sorted_files:
+            file_date = self._extract_date(filename)
 
             for sheet_name in sheet_names:
                 if sheet_name in excel_file.sheet_names:
@@ -276,13 +276,13 @@ class MonthlyConverter:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
 
-    def _extract_date(self, file_name: str) -> datetime:
+    def _extract_date(self, filename: str) -> datetime:
         """
         ファイル名から日付を抽出する
 
         Parameters
         ----------
-            file_name : str
+            filename : str
                 "SA.Ultra.yyyy.MM.xlsx"または"SA.Picaro.yyyy.MM.xlsx"形式のファイル名
 
         Returns
@@ -291,7 +291,7 @@ class MonthlyConverter:
                 抽出された日付
         """
         # ファイル名から日付部分を抽出
-        date_str = ".".join(file_name.split(".")[-3:-1])  # "yyyy.MM"の部分を取得
+        date_str = ".".join(filename.split(".")[-3:-1])  # "yyyy.MM"の部分を取得
         return datetime.strptime(date_str, self.FILE_DATE_FORMAT)
 
     def _load_excel_files(
