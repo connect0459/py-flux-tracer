@@ -126,6 +126,9 @@ hotspot_custom_sizes: dict[str, tuple[tuple[float, float], float]] = {
     "small": ((0, 0.5), 50),
     "medium": ((0.5, 1.0), 150),
     "large": ((1.0, float("inf")), 250),
+    # "small": ((0, 0.5), 100),
+    # "medium": ((0.5, 1.0), 200),
+    # "large": ((1.0, float("inf")), 300),
 }
 
 # ファイルおよびディレクトリのパス
@@ -141,11 +144,11 @@ start_end_dates_list: list[list[str]] = [
 ]
 plot_ch4: bool = False
 plot_c2h6: bool = False
-plot_ratio: bool = False
-plot_ratio_legend: bool = False
+plot_ratio: bool = True
+plot_ratio_legend: bool = True
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
-plot_mono: bool = True
+plot_mono: bool = False
 plot_scale_checker: bool = False
 
 if __name__ == "__main__":
@@ -307,6 +310,31 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dir=output_dir,
                 output_filename="footprint_ratio-legend.png",
+                save_fig=True,
+                show_fig=False,
+            )
+            ffa.plot_flux_footprint_with_hotspots(
+                x_list=x_list,  # メートル単位のx座標
+                y_list=y_list,  # メートル単位のy座標
+                c_list=c_list,
+                hotspots=hotspots,
+                hotspot_labels={
+                    "bio": "生物起源",
+                    "gas": "都市ガス起源",
+                    "comb": "燃焼起源",
+                },
+                center_lat=center_lan,
+                center_lon=center_lon,
+                satellite_image=image,
+                cmap="jet",
+                vmin=0,
+                vmax=100,
+                xy_max=5000,
+                add_legend=True,
+                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
+                cbar_labelpad=20,
+                output_dir=output_dir,
+                output_filename="footprint_ratio-legend-ja.png",
                 save_fig=True,
                 show_fig=False,
             )
