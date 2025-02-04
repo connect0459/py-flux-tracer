@@ -56,10 +56,10 @@ output_dir = (
 # フラグ
 plot_turbulences: bool = False
 plot_timeseries: bool = False
-plot_comparison: bool = True
-plot_diurnals: bool = True
+plot_comparison: bool = False
+plot_diurnals: bool = False
 diurnal_subplot_fontsize: float = 36
-plot_scatter: bool = True
+plot_scatter: bool = False
 plot_sources: bool = True
 plot_wind_rose: bool = False
 plot_seasonal: bool = True
@@ -568,6 +568,7 @@ if __name__ == "__main__":
                 df=df_combined, target_months=season
             )
 
+            mfg.logger.info(f"season:'{tag}'の図を作成します。")
             # 日変化パターンを月ごとに作成
             mfg.plot_c1c2_fluxes_diurnal_patterns(
                 df=df_season,
@@ -614,6 +615,21 @@ if __name__ == "__main__":
                 y_max=110,
                 print_summary=False,
             )
+            # スライド用のサイズ
+            mfg.plot_source_contributions_diurnal(
+                df=df_season,
+                figsize=(10, 8),
+                output_dir=(os.path.join(output_dir, "sources")),
+                output_filename=f"source_contributions_seasons-slide-{tag}.png",
+                col_ch4_flux="Fch4_ultra",
+                col_c2h6_flux="Fc2h6_ultra",
+                subplot_label=subplot_label,
+                subplot_fontsize=24,
+                y_max=100,
+                label_bio="生物起源",
+                label_gas="都市ガス起源",
+                print_summary=False,
+            )
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
                 output_dir=(os.path.join(output_dir, "sources")),
@@ -638,7 +654,6 @@ if __name__ == "__main__":
                 "label_gas": "都市ガス起源",
                 "flux_alpha": 0.7,
             }
-            mfg.logger.info("図1の統計を表示します。season: " + tag)
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
                 output_dir=(os.path.join(output_dir, "sources")),

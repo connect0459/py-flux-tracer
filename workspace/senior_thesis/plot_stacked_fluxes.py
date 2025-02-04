@@ -3,37 +3,58 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
-from typing import Literal
 
 
 def plot_stacked_fluxes(
     input_filepath: str,
     output_dir: str,
     output_filename: str = "ch4_flux_stacked_bar_directions.png",
-    concentration_unit: Literal["nano", "micro"] = "nano",
     figsize: tuple[float, float] = (20, 13),
+    dpi: float | None = 350,
+    color_bio: str = "blue",
+    color_gas: str = "red",
+    label_bio: str = "bio",
+    label_gas: str = "gas",
+    xlabel: str = "Month",
+    ylabel: str = "CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
     ylim: float | None = None,
+    save_fig: bool = True,
+    show_fig: bool = False,
 ):
     """
-    CH4フラックスの積み上げ棒グラフを作成する関数
+    CH4フラックスの積み上げ棒グラフを作成する関数。
 
-    Args:
-        input_filepath (str): 入力データのCSVファイルパス
-        output_dir (str): 出力画像を保存するディレクトリ
-        output_filename (str, optional): 出力画像のファイル名。デフォルトは"ch4_flux_stacked_bar_directions.png"
-        concentration_unit (str, optional): 濃度の単位。'nano'または'micro'を指定。デフォルトは'nano'
-        figsize (tuple[float, float], optional): 図のサイズ。デフォルトは(20, 13)
-        ylim (float | None, optional): y軸の上限。Noneの場合は自動設定
-
-    Raises
-        ValueError: concentration_unitが'nano'または'micro'以外の場合
+    Parameters
+    ----------
+        input_filepath : str
+            入力データのCSVファイルパス。
+        output_dir : str
+            出力画像を保存するディレクトリのパス。
+        output_filename : str, optional
+            出力画像のファイル名。デフォルトは"ch4_flux_stacked_bar_directions.png"。
+        figsize : tuple of float, optional
+            図のサイズ。デフォルトは(20, 13)。
+        dpi : float, optional
+            出力画像の解像度。デフォルトは350。
+        color_bio : str, optional
+            生物起源CH4の色。デフォルトは"blue"。
+        color_gas : str, optional
+            ガス起源CH4の色。デフォルトは"red"。
+        label_bio : str, optional
+            生物起源CH4の凡例ラベル。デフォルトは"bio"。
+        label_gas : str, optional
+            ガス起源CH4の凡例ラベル。デフォルトは"gas"。
+        xlabel : str, optional
+            x軸のラベル。デフォルトは"Month"。
+        ylabel : str, optional
+            y軸のラベル。デフォルトは"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)"。
+        ylim : float or None, optional
+            y軸の上限。Noneの場合は自動設定される。
+        save_fig : bool, optional
+            図を保存するかどうか。デフォルトはTrue。
+        show_fig : bool, optional
+            図を表示するかどうか。デフォルトはFalse。
     """
-    flux_unit: str = "nmol m$^{-2}$ s$^{-1}$"
-    flux_magnification: float = 1
-    if concentration_unit == "micro":
-        flux_unit = "μmol m$^{-2}$ s$^{-1}$"
-        flux_magnification = 1 / 1000
-
     # データの読み込み
     df: pd.DataFrame = pd.read_csv(input_filepath, skiprows=[1])
 
@@ -53,9 +74,6 @@ def plot_stacked_fluxes(
         diurnal = pd.to_numeric(df[f"diurnal_{direction}"], errors="coerce")
         gasratio = pd.to_numeric(df[f"gasratio_{direction}"], errors="coerce")
 
-        # 単位によって倍率を補正
-        diurnal *= flux_magnification
-
         # diurnalが10以下のデータをマスク
         valid_mask = diurnal > 10
 
@@ -69,8 +87,8 @@ def plot_stacked_fluxes(
             df["month"],
             bio,
             width,
-            label="bio",
-            color="blue",
+            label=label_bio,
+            color=color_bio,
             alpha=0.6,
         )
         ax.bar(
@@ -78,8 +96,8 @@ def plot_stacked_fluxes(
             gas,
             width,
             bottom=bio,
-            label="gas",
-            color="red",
+            label=label_gas,
+            color=color_gas,
             alpha=0.6,
         )
 
@@ -101,8 +119,8 @@ def plot_stacked_fluxes(
                 )
 
         # x軸とy軸のラベルを各サブプロットに設定
-        ax.set_xlabel("Month")
-        ax.set_ylabel(f"CH$_4$ flux ({flux_unit})")
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
 
         # グラフの装飾
         ax.set_title(titles[direction])
@@ -119,13 +137,16 @@ def plot_stacked_fluxes(
     # 凡例のためのスペースを確保
     plt.subplots_adjust(bottom=0.15)
 
-    # グラフの保存
-    os.makedirs(output_dir, exist_ok=True)
-    plt.savefig(
-        os.path.join(output_dir, output_filename),
-        dpi=300,
-        bbox_inches="tight",
-    )
+    # グラフの保存と表示
+    if save_fig:
+        os.makedirs(output_dir, exist_ok=True)
+        plt.savefig(
+            os.path.join(output_dir, output_filename),
+            dpi=dpi,
+            bbox_inches="tight",
+        )
+    if show_fig:
+        plt.show()
     plt.close()
 
 
@@ -176,4 +197,12 @@ if __name__ == "__main__":
         output_dir=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}.png",
         ylim=100,
+    )
+    plot_stacked_fluxes(
+        input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
+        output_dir=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
+        output_filename=f"ch4_flux_stacked_bar_directions-{tag}-ja.png",
+        ylim=100,
+        label_bio="生物起源",
+        label_gas="都市ガス起源",
     )

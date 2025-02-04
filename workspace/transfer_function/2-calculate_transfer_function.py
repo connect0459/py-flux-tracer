@@ -77,30 +77,32 @@ dates_list: list[str] = [
     "2024.12.23",
     "2025.01.10",
 ]
-for date in dates_list:
-    base_path = f"/mnt/c/Users/nakao/workspace/sac/transfer_function/data/ultra/{date}"
+try:
+    for date in dates_list:
+        base_path = (
+            f"/mnt/c/Users/nakao/workspace/sac/transfer_function/data/ultra/{date}"
+        )
 
-    # 解析設定の定義
-    configs: list[TFAnalysisConfig] = [
-        TFAnalysisConfig(
-            input_file=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
-            output_dir=os.path.join(output_dir, "each-raw"),
-            suffix="",  # トレンド除去なし
-            show_co_spectra=False,
-            show_tf=False,
-        ),
-        TFAnalysisConfig(
-            input_file=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
-            output_dir=os.path.join(output_dir, "each-detrend"),
-            suffix="-detrend",  # トレンド除去あり
-            show_co_spectra=False,
-            show_tf=False,
-        ),
-    ]
-    """ ------ config end ------ """
+        # 解析設定の定義
+        configs: list[TFAnalysisConfig] = [
+            TFAnalysisConfig(
+                input_file=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
+                output_dir=os.path.join(output_dir, "each-raw"),
+                suffix="",  # トレンド除去なし
+                show_co_spectra=False,
+                show_tf=False,
+            ),
+            TFAnalysisConfig(
+                input_file=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
+                output_dir=os.path.join(output_dir, "each-detrend"),
+                suffix="-detrend",  # トレンド除去あり
+                show_co_spectra=False,
+                show_tf=False,
+            ),
+        ]
+        """ ------ config end ------ """
 
-    # メイン処理
-    try:
+        # メイン処理
         for config in configs:
             print(f"\n{os.path.basename(config.input_file)}の処理を開始...")
 
@@ -118,10 +120,11 @@ for date in dates_list:
                 label1=r"$fC_{wTv}$ / $\overline{w^\prime Tv^\prime}$",
                 label2=r"$fC_{wCH_{4}}$ / $\overline{w^\prime CH_{4}^\prime}$",
                 color2="red",
-                subplot_label="(a)",
+                # subplot_label="(a)",
                 show_fig=config.show_co_spectra,
                 output_dir=config.output_dir,
                 output_filename=f"co_ch4-{date}{config.suffix}.png",
+                add_legend=False,
             )
 
             tfc.create_plot_co_spectra(
@@ -130,10 +133,11 @@ for date in dates_list:
                 label1=r"$fC_{wTv}$ / $\overline{w^\prime Tv^\prime}$",
                 label2=r"$fC_{wC_{2}H_{6}}$ / $\overline{w^\prime C_{2}H_{6}^\prime}$",
                 color2="orange",
-                subplot_label="(b)",
+                # subplot_label="(b)",
                 show_fig=config.show_co_spectra,
                 output_dir=config.output_dir,
                 output_filename=f"co_c2h6-{date}{config.suffix}.png",
+                add_legend=False,
             )
 
             print("伝達関数を分析中...")
@@ -171,5 +175,5 @@ for date in dates_list:
             print(f"wCH4の係数 a: {a_wch4}")
             print(f"wC2H6の係数 a: {a_wc2h6}")
 
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt occurred. Abort processing.")
+except KeyboardInterrupt:
+    print("KeyboardInterrupt occurred. Abort processing.")

@@ -1,46 +1,55 @@
 import os
-from py_flux_tracer import (
-    FigureUtils,
-    MonthlyFiguresGenerator,
-)
+import matplotlib.font_manager as fm
+from py_flux_tracer import FigureUtils, MonthlyFiguresGenerator
 
+# フォントファイルを登録
+font_paths: list[str] = [
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
+]
+for path in font_paths:
+    fm.fontManager.addfont(path)
+# フォント名を指定
+font_array: list[str] = [
+    "Arial",
+    "MS Gothic",
+]
+FigureUtils.setup_plot_params(
+    font_family=font_array,
+    # font_size=24,
+    # legend_size=24,
+    # tick_size=24,
+)
 output_dir = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )
-input_configs: list[tuple[str, float]] = [
-    ("2024.08.06", 9.2),
-    ("2024.09.10", 10.0),
-    ("2024.10.07", 11.7),
-    ("2024.11.01", 13.2),
-    ("2024.12.04", 15.5),
+terms_tags: list[str] = [
+    "05_06",
+    # "07_08",
+    # "09_10",
+    # "11_12",
 ]
-
-# フラグ
-plot_spectra: bool = True
 
 if __name__ == "__main__":
     mfg = MonthlyFiguresGenerator()
-    FigureUtils.setup_plot_params(
-        font_size=22, tick_size=18, font_family=["Arial", "Dejavu Sans"]
-    )
 
-    for term_tag, lag_sec in input_configs:
+    for term_tag in terms_tags:
         # monthを0埋めのMM形式に変換
         month_str = str(term_tag)
         mfg.logger.info(f"{month_str}の処理を開始します。")
-        input_dir: str = f"/mnt/c/Users/nakao/workspace/sac/transfer_function/data/ultra/{term_tag}/eddy_csv-resampled"
+        input_dir: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
 
-        if plot_spectra:
-            # パワースペクトルのプロット
-            mfg.plot_spectra(
-                input_dir="/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-for_turb",
-                output_dir=(os.path.join(output_dir, "spectra", "tests")),
-                output_filename_power=f"power_spectrum-test-{term_tag}.png",
-                output_filename_co=f"co_spectrum-test-{term_tag}.png",
-                fs=10,
-                lag_second=lag_sec,
-                label_ch4=None,
-                label_c2h6=None,
-                show_fig=False,
-            )
-            mfg.logger.info("'spectra'を作成しました。")
+        # パワースペクトルのプロット
+        mfg.plot_spectra(
+            input_dir=input_dir,
+            output_dir=(os.path.join(output_dir, "spectra")),
+            output_filename_power=f"power_spectrum-{term_tag}.png",
+            output_filename_co=f"co_spectrum-{term_tag}.png",
+            fs=10,
+            lag_second=0,
+            label_ch4=None,
+            label_c2h6=None,
+            plot_co=False,
+            show_fig=False,
+        )
+        mfg.logger.info("'spectra'を作成しました。")

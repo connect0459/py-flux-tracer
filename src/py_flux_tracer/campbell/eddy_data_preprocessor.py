@@ -143,6 +143,7 @@ class EddyDataPreprocessor:
         output_tag: str = "",
         add_title: bool = True,
         figsize: tuple[float, float] = (10, 8),
+        dpi: float | None = 350,
         plot_range_tuple: tuple = (-50, 200),
         print_results: bool = True,
         xlabel: str | None = "Seconds",
@@ -202,7 +203,9 @@ class EddyDataPreprocessor:
             add_title : bool
                 プロットにタイトルを追加するかどうか。デフォルトはTrue。
             figsize : tuple[float, float]
-                プロットのサイズ（幅、高さ）。
+                プロットのサイズ。デフォルトは(10, 8)。
+            dpi : flaot | None, optional
+                プロットのdpi。デフォルトは350。
             plot_range_tuple : tuple
                 ヒストグラムの表示範囲。
             print_results : bool
@@ -302,7 +305,7 @@ class EddyDataPreprocessor:
             data: pd.Series = lags_indices_df[column]
 
             # ヒストグラムの作成
-            fig = plt.figure(figsize=figsize)
+            fig = plt.figure(figsize=figsize, dpi=dpi)
             plt.hist(data, bins=20, range=plot_range_tuple)
             if add_title:
                 plt.title(f"Delays of {column}")
@@ -317,7 +320,7 @@ class EddyDataPreprocessor:
                 os.makedirs(output_dir, exist_ok=True)
                 filename: str = f"lags_histogram-{column}{output_tag}.png"
                 filepath: str = os.path.join(output_dir, filename)
-                plt.savefig(filepath, dpi=300, bbox_inches="tight")
+                plt.savefig(filepath, dpi=dpi, bbox_inches="tight")
                 plt.close(fig=fig)
 
             # 中央値を計算し、その周辺のデータのみを使用

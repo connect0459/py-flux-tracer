@@ -1,3 +1,4 @@
+from .campbell.eddy_data_analyzer import EddyDataAnalyzer, SlopeLine, SpectralPlotConfig
 from .campbell.eddy_data_preprocessor import EddyDataPreprocessor
 from .campbell.spectrum_calculator import SpectrumCalculator
 from .commons.figure_utils import FigureUtils
@@ -53,6 +54,9 @@ private属性を適用するために再宣言してdocstringを記述してい�
 # モジュールを __all__ にセット
 __all__ = [
     "__version__",
+    "EddyDataAnalyzer",
+    "SlopeLine",
+    "SpectralPlotConfig",
     "EddyDataPreprocessor",
     "SpectrumCalculator",
     "FigureUtils",

@@ -142,7 +142,7 @@ class MonthlyFiguresGenerator:
         ax2.set_xlabel("Month")
 
         # 図の保存
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close()
 
     def plot_c1c2_concentrations_and_fluxes_timeseries(
@@ -268,7 +268,7 @@ class MonthlyFiguresGenerator:
 
         # レイアウトの調整と保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close()
 
         if print_summary:
@@ -529,7 +529,7 @@ class MonthlyFiguresGenerator:
             plt.setp(ax.xaxis.get_majorticklabels(), ha="right")
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_fluxes_comparison(
@@ -787,7 +787,7 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         if save_fig:
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.savefig(output_path, dpi=350, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig)
@@ -967,7 +967,7 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_c1c2_fluxes_diurnal_patterns_by_date(
@@ -1202,7 +1202,7 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
         # 日変化パターンの統計分析を追加
@@ -1450,7 +1450,7 @@ class MonthlyFiguresGenerator:
         plt.subplots_adjust(bottom=0.2)
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
         if print_summary:
@@ -1602,7 +1602,7 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close()
 
         # 統計情報の表示（オプション）
@@ -1789,7 +1789,7 @@ class MonthlyFiguresGenerator:
         # プロットの保存と表示
         plt.tight_layout()
         if save_fig:
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.savefig(output_path, dpi=350, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1962,7 +1962,7 @@ class MonthlyFiguresGenerator:
         # 目盛り線の設定
         ax.grid(True, alpha=0.3)
 
-        fig.savefig(output_path, dpi=300, bbox_inches="tight")
+        fig.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_source_contributions_diurnal(
@@ -2130,7 +2130,7 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2383,7 +2383,7 @@ class MonthlyFiguresGenerator:
             plt.subplots_adjust(bottom=0.2)  # 下部に30%のスペースを確保
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2473,6 +2473,7 @@ class MonthlyFiguresGenerator:
         label_c2h6: str | None = None,
         label_tv: str | None = None,
         file_pattern: str = "*.csv",
+        figsize: tuple[float, float] = (20, 6),
         markersize: float = 14,
         are_inputs_resampled: bool = True,
         save_fig: bool = True,
@@ -2654,7 +2655,7 @@ class MonthlyFiguresGenerator:
 
         # パワースペクトルの図を作成
         if plot_power:
-            fig_power, axes_psd = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
+            fig_power, axes_psd = plt.subplots(1, 2, figsize=figsize, sharex=True)
             for ax, config in zip(axes_psd, plot_configs):
                 ax.plot(
                     freqs,
@@ -2682,7 +2683,7 @@ class MonthlyFiguresGenerator:
                 output_path_psd: str = os.path.join(output_dir, output_filename_power)
                 plt.savefig(
                     output_path_psd,
-                    dpi=300,
+                    dpi=350,
                     bbox_inches="tight",
                 )
             if show_fig:
@@ -2692,7 +2693,7 @@ class MonthlyFiguresGenerator:
 
         # コスペクトルの図を作成
         if plot_co:
-            fig_co, axes_cosp = plt.subplots(1, 2, figsize=(12, 5), sharex=True)
+            fig_co, axes_cosp = plt.subplots(1, 2, figsize=figsize, sharex=True)
             for ax, config in zip(axes_cosp, plot_configs):
                 # 顕熱フラックスのコスペクトルを先に描画（背景として）
                 if add_tv_in_co and len(co_spectra[col_tv]) > 0:
@@ -2735,12 +2736,10 @@ class MonthlyFiguresGenerator:
 
             plt.tight_layout()
             if save_fig:
-                output_path_csd: str = os.path.join(
-                    output_dir, output_filename_co
-                )
+                output_path_csd: str = os.path.join(output_dir, output_filename_co)
                 plt.savefig(
                     output_path_csd,
-                    dpi=300,
+                    dpi=350,
                     bbox_inches="tight",
                 )
             if show_fig:
@@ -2842,7 +2841,7 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         # 図の保存
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=350, bbox_inches="tight")
         plt.close()
 
     def plot_wind_rose_sources(
@@ -3065,7 +3064,7 @@ class MonthlyFiguresGenerator:
             # 出力ディレクトリの作成
             os.makedirs(output_dir, exist_ok=True)
             output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.savefig(output_path, dpi=350, bbox_inches="tight")
 
         # グラフの表示
         if show_fig:
@@ -3561,7 +3560,7 @@ class MonthlyFiguresGenerator:
             os.makedirs(output_dir, exist_ok=True)
             plt.savefig(
                 os.path.join(output_dir, f"{output_filename.format(month=month)}"),
-                dpi=300,
+                dpi=350,
                 bbox_inches="tight",
             )
         if show_fig:

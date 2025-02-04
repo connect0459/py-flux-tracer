@@ -19,9 +19,9 @@ font_array: list[str] = [
 ]
 FigureUtils.setup_plot_params(
     font_family=font_array,
-    font_size=24,
-    legend_size=24,
-    tick_size=24,
+    # font_size=24,
+    # legend_size=24,
+    # tick_size=24,
 )
 
 # 変数定義
@@ -67,6 +67,7 @@ if __name__ == "__main__":
             TransferFunctionCalculator.create_plot_tf_curves_from_csv(
                 filepath=tf_csv_path,
                 config=config,
+                figsize=(10, 6),
                 output_dir=output_dir,
                 output_filename=f"all_tf_curves-{config.gas_name}.png",
                 line_colors=custom_colors,

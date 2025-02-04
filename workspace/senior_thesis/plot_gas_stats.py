@@ -89,7 +89,7 @@ def plot_gas_stats(
 
     # 図の保存と表示
     if save_fig:
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
     if show_fig:
         plt.show()
     plt.close()

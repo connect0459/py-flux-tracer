@@ -109,7 +109,8 @@ class TransferFunctionCalculator:
         col2: str,
         color1: str = "gray",
         color2: str = "red",
-        figsize: tuple[int, int] = (10, 8),
+        figsize: tuple[int, int] = (10, 6),
+        dpi: float | None = 350,
         label1: str | None = None,
         label2: str | None = None,
         output_dir: str | Path | None = None,
@@ -119,7 +120,7 @@ class TransferFunctionCalculator:
         legend_font_size: float = 16,
         save_fig: bool = True,
         show_fig: bool = True,
-        subplot_label: str | None = "(a)",
+        subplot_label: str | None = None,
         window_size: int = 5,  # 移動平均の窓サイズ
         markersize: float = 14,
         xlim: tuple[float, float] = (0.0001, 10),
@@ -145,7 +146,9 @@ class TransferFunctionCalculator:
             color2 : str, optional
                 2つ目のデータの色。デフォルトは'red'。
             figsize : tuple[int, int], optional
-                プロットのサイズ。デフォルトは(10, 8)。
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             label1 : str, optional
                 1つ目のデータのラベル名。デフォルトはNone。
             label2 : str, optional
@@ -185,7 +188,7 @@ class TransferFunctionCalculator:
         data1 = data1.rolling(window=window_size, center=True, min_periods=1).mean()
         data2 = data2.rolling(window=window_size, center=True, min_periods=1).mean()
 
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_subplot(111)
 
         # マーカーサイズを設定して見やすくする
@@ -226,7 +229,7 @@ class TransferFunctionCalculator:
         if save_fig and output_dir is not None:
             os.makedirs(output_dir, exist_ok=True)
             # プロットをPNG形式で保存
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -237,6 +240,7 @@ class TransferFunctionCalculator:
         reference_name: str,
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
+        dpi: float | None = 350,
         output_dir: str | Path | None = None,
         output_filename: str = "ratio.png",
         save_fig: bool = True,
@@ -255,6 +259,8 @@ class TransferFunctionCalculator:
                 ターゲットの名前。
             figsize : tuple[int, int], optional
                 プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
@@ -264,7 +270,7 @@ class TransferFunctionCalculator:
             show_fig : bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_subplot(111)
 
         ax.plot(
@@ -281,7 +287,7 @@ class TransferFunctionCalculator:
                 raise ValueError(
                     "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
                 )
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -295,7 +301,8 @@ class TransferFunctionCalculator:
         output_dir: str | Path | None = None,
         output_filename: str = "all_tf_curves.png",
         col_datetime: str = "Date",
-        figsize: tuple[float, float] = (10, 8),
+        figsize: tuple[float, float] = (10, 6),
+        dpi: float | None = 350,
         add_legend: bool = True,
         add_xlabel: bool = True,
         label_x: str = "f (Hz)",
@@ -325,7 +332,9 @@ class TransferFunctionCalculator:
             col_datetime : str, optional
                 日付情報が格納されているカラム名。デフォルトは"Date"。
             figsize : tuple[float, float], optional
-                図のサイズ。デフォルトは(10, 8)。
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             add_legend : bool, optional
                 凡例を追加するかどうか。デフォルトはTrue。
             add_xlabel : bool, optional
@@ -348,7 +357,7 @@ class TransferFunctionCalculator:
         # CSVファイルを読み込む
         df = pd.read_csv(filepath, encoding=csv_encoding)
 
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
 
         # データ数に応じたデフォルトの色リストを作成
         if line_colors is None:
@@ -418,7 +427,7 @@ class TransferFunctionCalculator:
             os.makedirs(output_dir, exist_ok=True)
             # 出力ファイル名が指定されていない場合、gas_nameを使用
             output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, dpi=300, bbox_inches="tight")
+            plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -429,7 +438,8 @@ class TransferFunctionCalculator:
         df_processed: pd.DataFrame,
         reference_name: str,
         target_name: str,
-        figsize: tuple[int, int] = (10, 8),
+        figsize: tuple[int, int] = (10, 6),
+        dpi: float | None = 350,
         output_dir: str | Path | None = None,
         output_filename: str = "tf.png",
         save_fig: bool = True,
@@ -454,7 +464,9 @@ class TransferFunctionCalculator:
             target_name : str
                 ターゲットの名前。
             figsize : tuple[int, int], optional
-                プロットのサイズ。デフォルトは(10, 8)。
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             output_dir : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
@@ -474,7 +486,7 @@ class TransferFunctionCalculator:
         """
         df_cutoff: pd.DataFrame = self._cutoff_df(df_processed)
 
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_subplot(111)
 
         ax.plot(
@@ -506,7 +518,7 @@ class TransferFunctionCalculator:
                 )
             os.makedirs(output_dir, exist_ok=True)
             # プロットをPNG形式で保存
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=300)
+            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
