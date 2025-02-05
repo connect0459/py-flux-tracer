@@ -28,7 +28,7 @@ sites_configs: list[dict[SiteConfigKeys, str | float]] = [
 # 画像の設定
 target_site_name: str = "SAC"
 # target_site_name: str = "YYG"
-zoom: float = 14
+zoom: float = 13
 local_image_dir: str = "/home/connect0459/labo/py-flux-tracer/storage/assets"
 
 
