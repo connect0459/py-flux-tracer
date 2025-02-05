@@ -808,6 +808,7 @@ class MonthlyFiguresGenerator:
         add_legend: bool = True,
         show_std: bool = False,  # 標準偏差表示のオプションを追加
         std_alpha: float = 0.2,  # 標準偏差の透明度
+        figsize: tuple[float, float] = (12, 5),
         subplot_fontsize: int = 20,
         subplot_label_ch4: str | None = "(a)",
         subplot_label_c2h6: str | None = "(b)",
@@ -874,7 +875,7 @@ class MonthlyFiguresGenerator:
             hourly_stds = pd.concat([hourly_stds, last_hour])
 
         # プロットの作成
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # CH4のプロット (左側)
         ch4_lines = []

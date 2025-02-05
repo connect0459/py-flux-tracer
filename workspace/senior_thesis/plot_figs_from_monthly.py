@@ -587,6 +587,25 @@ if __name__ == "__main__":
                 output_dir=(os.path.join(output_dir, "diurnal")),
                 output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
             )
+            # ultraのみ
+            mfg.plot_c1c2_fluxes_diurnal_patterns(
+                df=df_season,
+                y_cols_ch4=["Fch4_ultra"],
+                y_cols_c2h6=["Fc2h6_ultra"],
+                labels_ch4=["Ultra"],
+                labels_c2h6=["Ultra"],
+                legend_only_ch4=True,
+                # add_label=True,
+                # add_legend=True,
+                # add_label=False,
+                add_legend=False,
+                figsize=(10, 6),
+                subplot_fontsize=diurnal_subplot_fontsize,
+                colors_ch4=["red"],
+                colors_c2h6=["orange"],
+                output_dir=(os.path.join(output_dir, "diurnal")),
+                output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
+            )
 
             mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
                 df=df_season,
