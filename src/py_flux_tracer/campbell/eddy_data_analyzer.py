@@ -65,25 +65,25 @@ class SpectralPlotConfig:
 
     Parameters
     ----------
-    psd_ylabel : str
-        パワースペクトル密度のy軸ラベル。
-        LaTeXの数式表記が使用可能（例r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$"）。
-    co_ylabel : str
-        コスペクトルのy軸ラベル。
-        LaTeXの数式表記が使用可能（例:r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$"）。
-    color : str
-        プロットの色。matplotlib.colorsで定義されている色名または16進数カラーコードを指定。
-    label : str | None, optional
-        凡例に表示するラベル。Noneの場合、凡例は表示されない。デフォルトはNone。
+        psd_ylabel : str
+            パワースペクトル密度のy軸ラベル。
+            LaTeXの数式表記が使用可能（例r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$"）。
+        co_ylabel : str
+            コスペクトルのy軸ラベル。
+            LaTeXの数式表記が使用可能（例:r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$"）。
+        color : str
+            プロットの色。matplotlib.colorsで定義されている色名または16進数カラーコードを指定。
+        label : str | None, optional
+            凡例に表示するラベル。Noneの場合、凡例は表示されない。デフォルトはNone。
 
     Examples
     --------
-    >>> ch4_config = SpectralPlotConfig(
-    ...     psd_ylabel=r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$",
-    ...     co_ylabel=r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$",
-    ...     color="red",
-    ...     label="CH4"
-    ... )
+        >>> ch4_config = SpectralPlotConfig(
+        ...     psd_ylabel=r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$",
+        ...     co_ylabel=r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$",
+        ...     color="red",
+        ...     label="CH4"
+        ... )
     """
 
     psd_ylabel: str
@@ -109,8 +109,8 @@ class EddyDataAnalyzer:
 
     def plot_c1c2_spectra(
         self,
-        input_dir: str | Path,
-        output_dir: str | Path,
+        input_dirpath: str | Path,
+        output_dirpath: str | Path,
         output_filename_power: str = "power_spectrum.png",
         output_filename_co: str = "co_spectrum.png",
         col_ch4: str = "Ultra_CH4_ppm_C",
@@ -149,9 +149,9 @@ class EddyDataAnalyzer:
 
         Parameters
         ----------
-            input_dir : str | Path
+            input_dirpath : str | Path
                 データファイルが格納されているディレクトリ。
-            output_dir : str | Path
+            output_dirpath : str | Path
                 出力先ディレクトリ。
             output_filename_power : str
                 出力するパワースペクトルのファイル名。デフォルトは"power_spectrum.png"
@@ -216,7 +216,7 @@ class EddyDataAnalyzer:
         """
         # 出力ディレクトリの作成
         if save_fig:
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dirpath, exist_ok=True)
 
         # デフォルトのconfig設定
         if ch4_config is None:
@@ -253,7 +253,7 @@ class EddyDataAnalyzer:
         freqs = None
 
         # ファイルリストの取得
-        csv_files = edp._get_sorted_files(input_dir, file_pattern, file_suffix)
+        csv_files = edp._get_sorted_files(input_dirpath, file_pattern, file_suffix)
         if not csv_files:
             raise FileNotFoundError(
                 f"file_suffix:'{file_suffix}'に一致するファイルが見つかりませんでした。"
@@ -261,7 +261,7 @@ class EddyDataAnalyzer:
 
         for filename in tqdm(csv_files, desc="Processing files"):
             df, _ = edp.get_resampled_df(
-                filepath=os.path.join(input_dir, filename),
+                filepath=os.path.join(input_dirpath, filename),
                 resample=are_inputs_resampled,
             )
 
@@ -375,16 +375,15 @@ class EddyDataAnalyzer:
             plt.tight_layout()
 
             if save_fig:
-                output_path_psd: str = os.path.join(output_dir, output_filename_power)
+                output_filepath_psd: str = os.path.join(output_dirpath, output_filename_power)
                 plt.savefig(
-                    output_path_psd,
+                    output_filepath_psd,
                     dpi=dpi,
                     bbox_inches="tight",
                 )
             if show_fig:
                 plt.show()
-            else:
-                plt.close(fig=fig_power)
+            plt.close(fig=fig_power)
 
         # コスペクトルの図を作成
         if plot_co:
@@ -434,13 +433,12 @@ class EddyDataAnalyzer:
 
             plt.tight_layout()
             if save_fig:
-                output_path_csd: str = os.path.join(output_dir, output_filename_co)
+                output_filepath_csd: str = os.path.join(output_dirpath, output_filename_co)
                 plt.savefig(
-                    output_path_csd,
+                    output_filepath_csd,
                     dpi=dpi,
                     bbox_inches="tight",
                 )
             if show_fig:
                 plt.show()
-            else:
-                plt.close(fig=fig_co)
+            plt.close(fig=fig_co)

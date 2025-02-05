@@ -20,7 +20,7 @@ FigureUtils.setup_plot_params(
     # legend_size=24,
     # tick_size=24,
 )
-output_dir = (
+output_dirpath = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )
 terms_tags: list[str] = [
@@ -37,12 +37,12 @@ if __name__ == "__main__":
         # monthを0埋めのMM形式に変換
         month_str = str(term_tag)
         mfg.logger.info(f"{month_str}の処理を開始します。")
-        input_dir: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
+        input_dirpath: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
 
         # パワースペクトルのプロット
         mfg.plot_spectra(
-            input_dir=input_dir,
-            output_dir=(os.path.join(output_dir, "spectra")),
+            input_dirpath=input_dirpath,
+            output_dirpath=(os.path.join(output_dirpath, "spectra")),
             output_filename_power=f"power_spectrum-{term_tag}.png",
             output_filename_co=f"co_spectrum-{term_tag}.png",
             fs=10,

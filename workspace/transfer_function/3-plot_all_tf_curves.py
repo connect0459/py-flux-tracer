@@ -28,7 +28,7 @@ FigureUtils.setup_plot_params(
 tf_csv_path: str = (
     "/mnt/c/Users/nakao/workspace/sac/transfer_function/tf-a/TF_Ultra_a.csv"
 )
-output_dir: str = (
+output_dirpath: str = (
     "/mnt/c/Users/nakao/workspace/sac/transfer_function/outputs/all_curves"
 )
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 filepath=tf_csv_path,
                 config=config,
                 figsize=(10, 6),
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"all_tf_curves-{config.gas_name}.png",
                 line_colors=custom_colors,
                 show_fig=False,

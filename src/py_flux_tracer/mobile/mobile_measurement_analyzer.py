@@ -589,7 +589,7 @@ class MobileMeasurementAnalyzer:
     def create_hotspots_map(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "hotspots_map.html",
         center_marker_color: str = "green",
         center_marker_label: str = "Center",
@@ -604,7 +604,7 @@ class MobileMeasurementAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
-            output_dir : str | Path
+            output_dirpath : str | Path
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"hotspots_map"。
@@ -714,18 +714,18 @@ class MobileMeasurementAnalyzer:
             ).add_to(m)
 
         # 地図を保存
-        if save_fig and output_dir is None:
+        if save_fig and output_dirpath is None:
             raise ValueError(
-                "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
             )
-            output_path: str = os.path.join(output_dir, output_filename)
-            m.save(str(output_path))
-            self.logger.info(f"地図を保存しました: {output_path}")
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            m.save(str(output_filepath))
+            self.logger.info(f"地図を保存しました: {output_filepath}")
 
     def export_hotspots_to_csv(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "hotspots.csv",
     ) -> None:
         """
@@ -735,7 +735,7 @@ class MobileMeasurementAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 出力するホットスポットのリスト
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力先ディレクトリ
             output_filename : str
                 出力ファイル名
@@ -761,16 +761,16 @@ class MobileMeasurementAnalyzer:
             records.append(record)
 
         # DataFrameに変換してCSVに出力
-        if output_dir is None:
+        if output_dirpath is None:
             raise ValueError(
-                "output_dirが指定されていません。有効なディレクトリパスを指定してください。"
+                "output_dirpathが指定されていません。有効なディレクトリパスを指定してください。"
             )
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
         df: pd.DataFrame = pd.DataFrame(records)
-        df.to_csv(output_path, index=False)
+        df.to_csv(output_filepath, index=False)
         self.logger.info(
-            f"ホットスポット情報をCSVファイルに出力しました: {output_path}"
+            f"ホットスポット情報をCSVファイルに出力しました: {output_filepath}"
         )
 
     @staticmethod
@@ -889,7 +889,7 @@ class MobileMeasurementAnalyzer:
     def plot_ch4_delta_histogram(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path | None,
+        output_dirpath: str | Path | None,
         output_filename: str = "ch4_delta_histogram.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (8, 6),
@@ -915,7 +915,7 @@ class MobileMeasurementAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"ch4_delta_histogram.png"。
@@ -1030,14 +1030,14 @@ class MobileMeasurementAnalyzer:
 
         # グラフの保存または表示
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
-            output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, bbox_inches="tight")
-            self.logger.info(f"ヒストグラムを保存しました: {output_path}")
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
+            self.logger.info(f"ヒストグラムを保存しました: {output_filepath}")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1048,7 +1048,7 @@ class MobileMeasurementAnalyzer:
         col_conc: str,
         mapbox_access_token: str,
         sort_conc_column: bool = True,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "mapbox_plot.html",
         col_lat: str = "latitude",
         col_lon: str = "longitude",
@@ -1081,7 +1081,7 @@ class MobileMeasurementAnalyzer:
                 Mapboxのアクセストークン
             sort_conc_column : bool
                 value_columnをソートするか否か。デフォルトはTrue。
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名。デフォルトは"mapbox_plot.html"
@@ -1194,14 +1194,14 @@ class MobileMeasurementAnalyzer:
         # 図の保存
         if save_fig:
             # 保存時の出力ディレクトリチェック
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, output_filename)
-            pyo.plot(fig, filename=output_path, auto_open=False)
-            self.logger.info(f"Mapboxプロットを保存しました: {output_path}")
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath = os.path.join(output_dirpath, output_filename)
+            pyo.plot(fig, filename=output_filepath, auto_open=False)
+            self.logger.info(f"Mapboxプロットを保存しました: {output_filepath}")
         # 図の表示
         if show_fig:
             pyo.iplot(fig)
@@ -1209,7 +1209,7 @@ class MobileMeasurementAnalyzer:
     def plot_scatter_c2c1(
         self,
         hotspots: list[HotspotData],
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "scatter_c2c1.png",
         dpi: int = 200,
         figsize: tuple[int, int] = (4, 4),
@@ -1249,7 +1249,7 @@ class MobileMeasurementAnalyzer:
         ----------
             hotspots : list[HotspotData]
                 プロットするホットスポットのリスト
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"scatter_c2c1.png"。
@@ -1347,13 +1347,13 @@ class MobileMeasurementAnalyzer:
 
         # グラフの保存または表示
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, bbox_inches="tight")
-            self.logger.info(f"散布図を保存しました: {output_path}")
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
+            self.logger.info(f"散布図を保存しました: {output_filepath}")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1361,7 +1361,7 @@ class MobileMeasurementAnalyzer:
     def plot_conc_timeseries(
         self,
         source_name: str | None = None,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "timeseries.png",
         dpi: int = 200,
         figsize: tuple[float, float] = (8, 4),
@@ -1391,7 +1391,7 @@ class MobileMeasurementAnalyzer:
                 プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
             figsize : tuple[float, float]
                 図のサイズを指定します。デフォルトは(8, 4)です。
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 保存先のディレクトリを指定します。save_fig=Trueの場合は必須です。
             output_filename : str
                 保存するファイル名を指定します。デフォルトは"timeseries.png"です。
@@ -1491,13 +1491,13 @@ class MobileMeasurementAnalyzer:
 
         # 図の保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, bbox_inches="tight")
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
 
         if show_fig:
             plt.show()
@@ -1507,7 +1507,7 @@ class MobileMeasurementAnalyzer:
         self,
         hotspots: list[HotspotData] | None = None,
         source_name: str | None = None,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "timeseries_with_hotspots.png",
         dpi: int = 200,
         figsize: tuple[float, float] = (8, 6),
@@ -1548,7 +1548,7 @@ class MobileMeasurementAnalyzer:
                 表示するホットスポットのリスト。Noneの場合はホットスポットは表示されません。
             source_name : str | None
                 プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力先ディレクトリのパス。
             output_filename : str
                 保存するファイル名。デフォルトは"timeseries_with_hotspots.png"です。
@@ -1744,13 +1744,13 @@ class MobileMeasurementAnalyzer:
 
         # 図の保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, bbox_inches="tight", dpi=dpi)
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight", dpi=dpi)
 
         if show_fig:
             plt.show()

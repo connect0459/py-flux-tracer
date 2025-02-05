@@ -107,39 +107,39 @@ def test_cutoff_df(calculator):
 def test_create_plot_co_spectra(calculator, tmp_path):
     """コスペクトルプロット作成のテスト"""
     # プロットの保存と表示テスト
-    output_dir = str(tmp_path)
+    output_dirpath = str(tmp_path)
     calculator.create_plot_co_spectra(
-        "co1", "co2", output_dir=output_dir, show_fig=False
+        "co1", "co2", output_dirpath=output_dirpath, show_fig=False
     )
 
     # ファイルが作成されたことを確認
-    assert os.path.exists(os.path.join(output_dir, "co-co1_co2.png"))
+    assert os.path.exists(os.path.join(output_dirpath, "co-co1_co2.png"))
 
 
 def test_create_plot_ratio(calculator, tmp_path):
     """比率プロット作成のテスト"""
     df_processed = calculator.process_data("co1", "co2")
-    output_dir = str(tmp_path)
+    output_dirpath = str(tmp_path)
 
     calculator.create_plot_ratio(
-        df_processed, "co1", "co2", output_dir=output_dir, show_fig=False
+        df_processed, "co1", "co2", output_dirpath=output_dirpath, show_fig=False
     )
 
     # ファイルが作成されたことを確認
-    assert os.path.exists(os.path.join(output_dir, "ratio-co1_co2.png"))
+    assert os.path.exists(os.path.join(output_dirpath, "ratio-co1_co2.png"))
 
 
 def test_create_plot_transfer_function(calculator, tmp_path):
     """伝達関数プロット作成のテスト"""
     a, _, df_processed = calculator.calculate_transfer_function("co1", "co2")
-    output_dir = str(tmp_path)
+    output_dirpath = str(tmp_path)
 
     calculator.create_plot_transfer_function(
-        a, df_processed, "co1", "co2", output_dir=output_dir, show_fig=False
+        a, df_processed, "co1", "co2", output_dirpath=output_dirpath, show_fig=False
     )
 
     # ファイルが作成されたことを確認
-    assert os.path.exists(os.path.join(output_dir, "tf-co1_co2.png"))
+    assert os.path.exists(os.path.join(output_dirpath, "tf-co1_co2.png"))
 
 
 def test_invalid_filepath():

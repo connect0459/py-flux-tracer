@@ -49,7 +49,7 @@ subplot_labels: list[list[str | None]] = [
     ["(h)", None],
 ]
 lags_list: list[float] = [9.2, 10.0, 10.0, 10.0, 11.7, 13.2, 15.5]
-output_dir = (
+output_dirpath = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )
 
@@ -171,12 +171,12 @@ if __name__ == "__main__":
             col_ch4_flux="Fch4_ultra",
             col_c2h6_conc="C2H6_ultra_cal",
             col_c2h6_flux="Fc2h6_ultra",
-            output_dir=(os.path.join(output_dir, "timeseries")),
+            output_dirpath=(os.path.join(output_dirpath, "timeseries")),
             # print_summary=False,
         )
         mfg.plot_c1c2_timeseries(
             df=df_combined_without_fleeze,
-            output_dir=os.path.join(output_dir, "tests"),
+            output_dirpath=os.path.join(output_dirpath, "tests"),
             col_ch4_flux="Fch4_ultra",
             col_c2h6_flux="Fc2h6_ultra",
             ch4_ylim=(-1, 90),
@@ -265,7 +265,7 @@ if __name__ == "__main__":
                     col_uz="edp_wind_w",
                     col_ch4="ch4_ppm_cal",
                     col_c2h6="c2h6_ppb_cal",
-                    output_dir=(os.path.join(output_dir, "turbulences", "for_turb")),
+                    output_dirpath=(os.path.join(output_dirpath, "turbulences", "for_turb")),
                     output_filename=f"turbulence-{date}.png",
                     add_serial_labels=False,
                     figsize=(20, 10),
@@ -304,7 +304,7 @@ if __name__ == "__main__":
             )
             mfg.plot_diurnal_concentrations(
                 df=df_month_for_diurnanls,
-                output_dir=os.path.join(output_dir, "diurnal_conc"),
+                output_dirpath=os.path.join(output_dirpath, "diurnal_conc"),
                 output_filename=f"diurnal_conc-{month_str}.png",
                 col_ch4_conc="CH4_ultra_cal",
                 col_c2h6_conc="C2H6_ultra_cal",
@@ -341,7 +341,7 @@ if __name__ == "__main__":
                     # 日変化パターン
                     mfg.plot_gas_ratio_diurnal(
                         df=df_month,
-                        output_dir=os.path.join(output_dir, "gas_ratio"),
+                        output_dirpath=os.path.join(output_dirpath, "gas_ratio"),
                         col_ratio_1="gas_ratio_conc",
                         col_ratio_2="gas_ratio_flux",
                         label_1="濃度勾配",
@@ -364,7 +364,7 @@ if __name__ == "__main__":
                         y_col="gas_ratio_flux",
                         xlabel="都市ガス比率 (濃度) (%)",
                         ylabel="都市ガス比率 (フラックス) (%)",
-                        output_dir=(os.path.join(output_dir, "gas_ratio")),
+                        output_dirpath=(os.path.join(output_dirpath, "gas_ratio")),
                         output_filename=f"scatter-ultra_slopes-{month_str}.png",
                         x_axis_range=(0, 100),
                         y_axis_range=(0, 100),
@@ -389,7 +389,7 @@ if __name__ == "__main__":
                 subplot_label_c2h6=subplot_label[1],
                 colors_ch4=["red", "black", "blue"],
                 colors_c2h6=["orange"],
-                output_dir=(os.path.join(output_dir, "diurnal")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
                 output_filename=f"diurnal-{month_str}.png",  # タグ付けしたファイル名
                 ax1_ylim=(-20, 150),
                 ax2_ylim=(0, 6),
@@ -416,7 +416,7 @@ if __name__ == "__main__":
                 subplot_label_c2h6=None,
                 colors_ch4=["red", "blue"],
                 colors_c2h6=["orange"],
-                output_dir=(os.path.join(output_dir, "diurnal")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
                 output_filename=f"diurnal_g2401_ultra-{month_str}.png",  # タグ付けしたファイル名
                 ax1_ylim=(-20, 150),
                 ax2_ylim=(0, 6),
@@ -432,7 +432,7 @@ if __name__ == "__main__":
                 y_col="Fc2h6_ultra",
                 xlabel=r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 ylabel=r"C$_2$H$_6$ flux (nmol m$^{-2}$ s$^{-1}$)",
-                output_dir=(os.path.join(output_dir, "scatter")),
+                output_dirpath=(os.path.join(output_dirpath, "scatter")),
                 output_filename=f"scatter-ultra_c1c2_f-{month_str}.png",
                 x_axis_range=(-50, 400),
                 y_axis_range=(-5, 25),
@@ -446,7 +446,7 @@ if __name__ == "__main__":
                     y_col="Fch4_ultra",
                     xlabel=r"Open Path CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                     ylabel=r"Ultra CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
-                    output_dir=(os.path.join(output_dir, "scatter")),
+                    output_dirpath=(os.path.join(output_dirpath, "scatter")),
                     output_filename=f"scatter-open_ultra-{month_str}.png",
                     x_axis_range=(-50, 200),
                     y_axis_range=(-50, 200),
@@ -461,7 +461,7 @@ if __name__ == "__main__":
                 y_col="Fch4_ultra",
                 xlabel=r"G2401 CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 ylabel=r"Ultra CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
-                output_dir=(os.path.join(output_dir, "scatter")),
+                output_dirpath=(os.path.join(output_dirpath, "scatter")),
                 output_filename=f"scatter-g2401_ultra-{month_str}.png",
                 x_axis_range=(-50, 200),
                 y_axis_range=(-50, 200),
@@ -472,7 +472,7 @@ if __name__ == "__main__":
         if plot_sources:
             mfg.plot_source_contributions_diurnal(
                 df=df_month,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions-{month_str}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -493,7 +493,7 @@ if __name__ == "__main__":
 
             mfg.plot_fluxes_comparison(
                 df=df_combined,
-                output_dir=os.path.join(output_dir, "comparison"),
+                output_dirpath=os.path.join(output_dirpath, "comparison"),
                 output_filename=f"timeseries-g2401_ultra-{month_str}.png",
                 cols_flux=["Fch4_picaro", "Fch4_ultra"],
                 labels=["G2401", "Ultra"],
@@ -537,7 +537,7 @@ if __name__ == "__main__":
                 subplot_fontsize=diurnal_subplot_fontsize,
                 subplot_label_ch4=subplot_label[0],
                 subplot_label_c2h6=subplot_label[1],
-                output_dir=(os.path.join(output_dir, "diurnal_by_date")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal_by_date")),
                 output_filename=f"diurnal_by_date_dos-{month_str}.png",
                 ax1_ylim=(-20, 150),
                 ax2_ylim=(-1, 8),
@@ -545,7 +545,7 @@ if __name__ == "__main__":
             mfg.logger.info("'diurnals_by_date_dos'を作成しました。")
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_month_for_diurnanls,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions_by_date_dos-{month_str}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -584,7 +584,7 @@ if __name__ == "__main__":
                 subplot_fontsize=diurnal_subplot_fontsize,
                 colors_ch4=["black", "red", "blue"],
                 colors_c2h6=["black"],
-                output_dir=(os.path.join(output_dir, "diurnal")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
                 output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
             )
             # ultraのみ
@@ -603,7 +603,7 @@ if __name__ == "__main__":
                 subplot_fontsize=diurnal_subplot_fontsize,
                 colors_ch4=["red"],
                 colors_c2h6=["orange"],
-                output_dir=(os.path.join(output_dir, "diurnal")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
                 output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
             )
 
@@ -618,14 +618,14 @@ if __name__ == "__main__":
                 add_legend=False,
                 subplot_fontsize=diurnal_subplot_fontsize,
                 plot_holiday=False,
-                output_dir=(os.path.join(output_dir, "diurnal_by_date")),
+                output_dirpath=(os.path.join(output_dirpath, "diurnal_by_date")),
                 output_filename=f"diurnal_by_date-{tag}.png",  # タグ付けしたファイル名
             )
             mfg.logger.info("'diurnals-seasons'を作成しました。")
 
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions_seasons-{tag}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -638,7 +638,7 @@ if __name__ == "__main__":
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
                 figsize=(10, 8),
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions_seasons-slide-{tag}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -651,7 +651,7 @@ if __name__ == "__main__":
             )
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename="source_contributions-legend-ja.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -675,7 +675,7 @@ if __name__ == "__main__":
             }
             mfg.plot_source_contributions_diurnal(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions_seasons-mono-{tag}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -695,7 +695,7 @@ if __name__ == "__main__":
             )
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "sources")),
+                output_dirpath=(os.path.join(output_dirpath, "sources")),
                 output_filename=f"source_contributions_seasons_by_date-mono-{tag}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
@@ -728,7 +728,7 @@ if __name__ == "__main__":
 
             mfg.plot_wind_rose_sources(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "wind_rose")),
+                output_dirpath=(os.path.join(output_dirpath, "wind_rose")),
                 output_filename=f"wind_rose_stacked-mono-{tag}.png",
                 col_datetime="Date",
                 col_ch4_flux="Fch4_ultra",
@@ -752,7 +752,7 @@ if __name__ == "__main__":
 
             mfg.plot_wind_rose_sources(
                 df=df_season,
-                output_dir=(os.path.join(output_dir, "wind_rose")),
+                output_dirpath=(os.path.join(output_dirpath, "wind_rose")),
                 output_filename="wind_rose_stacked-mono-legend-ja.png",
                 col_datetime="Date",
                 col_ch4_flux="Fch4_ultra",
@@ -796,7 +796,7 @@ if __name__ == "__main__":
         df=df_around_year_for_diurnal,
         y_col_ch4="Fch4_ultra",
         y_col_c2h6="Fc2h6_ultra",
-        output_dir=os.path.join(output_dir, "around_year"),
+        output_dirpath=os.path.join(output_dirpath, "around_year"),
         output_filename="diurnal_by_date_around_year.png",
         add_label=True,
         subplot_label_ch4=None,
@@ -807,7 +807,7 @@ if __name__ == "__main__":
     )
     mfg.plot_source_contributions_diurnal_by_date(
         df=df_season,
-        output_dir=(os.path.join(output_dir, "around_year")),
+        output_dirpath=(os.path.join(output_dirpath, "around_year")),
         output_filename="source_contributions_by_date_around_year.png",
         col_ch4_flux="Fch4_ultra",
         col_c2h6_flux="Fc2h6_ultra",

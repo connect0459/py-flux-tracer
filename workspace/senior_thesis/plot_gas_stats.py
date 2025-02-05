@@ -8,7 +8,7 @@ from py_flux_tracer import FigureUtils
 
 def plot_gas_stats(
     input_csv: str,
-    output_dir: str,
+    output_dirpath: str,
     output_filename: str = "gas_stats.png",
     figsize: tuple[float, float] = (10, 6),
     save_fig: bool = True,
@@ -20,7 +20,7 @@ def plot_gas_stats(
     ----------
     input_csv : str, optional
         入力CSVファイルのパス, by default "workspace/senior_thesis/private/gas_stats.csv"
-    output_dir : str, optional
+    output_dirpath : str, optional
         出力ディレクトリ, by default "workspace/senior_thesis/figures/gas_stats"
     output_filename : str, optional
         出力ファイル名, by default "gas_stats.png"
@@ -84,12 +84,12 @@ def plot_gas_stats(
     plt.tight_layout()
 
     # 出力ディレクトリの作成
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, output_filename)
+    os.makedirs(output_dirpath, exist_ok=True)
+    output_filepath = os.path.join(output_dirpath, output_filename)
 
     # 図の保存と表示
     if save_fig:
-        plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
     if show_fig:
         plt.show()
     plt.close()
@@ -109,5 +109,5 @@ if __name__ == "__main__":
     )
     plot_gas_stats(
         input_csv="workspace/senior_thesis/private/gas_stats.csv",
-        output_dir="workspace/senior_thesis/private/outputs/gas_stats",
+        output_dirpath="workspace/senior_thesis/private/outputs/gas_stats",
     )

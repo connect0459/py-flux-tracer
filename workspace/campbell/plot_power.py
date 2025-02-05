@@ -20,7 +20,7 @@ FigureUtils.setup_plot_params(
     # legend_size=24,
     # tick_size=24,
 )
-output_dir = (
+output_dirpath = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
 )
 terms_tags: list[str] = [
@@ -53,13 +53,13 @@ if __name__ == "__main__":
 
     for term_tag in terms_tags:
         eda.logger.info(f"{term_tag}の処理を開始します。")
-        input_dir: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
+        input_dirpath: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
 
         # パワースペクトルのプロット
         eda.plot_c1c2_spectra(
-            input_dir=input_dir,
+            input_dirpath=input_dirpath,
             file_suffix=".csv",
-            output_dir=(os.path.join(output_dir, "spectra")),
+            output_dirpath=(os.path.join(output_dirpath, "spectra")),
             output_filename_power=f"ps-{term_tag}.png",
             output_filename_co=f"cos-{term_tag}.png",
             scaling_power="spectrum",

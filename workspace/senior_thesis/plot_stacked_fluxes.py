@@ -7,7 +7,7 @@ import matplotlib.font_manager as fm
 
 def plot_stacked_fluxes(
     input_filepath: str,
-    output_dir: str,
+    output_dirpath: str,
     output_filename: str = "ch4_flux_stacked_bar_directions.png",
     figsize: tuple[float, float] = (20, 13),
     dpi: float | None = 350,
@@ -28,7 +28,7 @@ def plot_stacked_fluxes(
     ----------
         input_filepath : str
             入力データのCSVファイルパス。
-        output_dir : str
+        output_dirpath : str
             出力画像を保存するディレクトリのパス。
         output_filename : str, optional
             出力画像のファイル名。デフォルトは"ch4_flux_stacked_bar_directions.png"。
@@ -139,9 +139,9 @@ def plot_stacked_fluxes(
 
     # グラフの保存と表示
     if save_fig:
-        os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(output_dirpath, exist_ok=True)
         plt.savefig(
-            os.path.join(output_dir, output_filename),
+            os.path.join(output_dirpath, output_filename),
             dpi=dpi,
             bbox_inches="tight",
         )
@@ -194,13 +194,13 @@ project_files_dir: str = (
 if __name__ == "__main__":
     plot_stacked_fluxes(
         input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
-        output_dir=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
+        output_dirpath=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}.png",
         ylim=100,
     )
     plot_stacked_fluxes(
         input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
-        output_dir=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
+        output_dirpath=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}-ja.png",
         ylim=100,
         label_bio="生物起源",

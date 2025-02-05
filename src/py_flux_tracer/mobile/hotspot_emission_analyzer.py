@@ -371,7 +371,7 @@ class HotspotEmissionAnalyzer:
     def plot_emission_analysis(
         emissions: list[EmissionData],
         dpi: int = 300,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
         figsize: tuple[float, float] = (12, 5),
         hotspot_colors: dict[HotspotType, str] = {
@@ -399,7 +399,7 @@ class HotspotEmissionAnalyzer:
         ----------
             emissions : list[EmissionData]
                 calculate_emission_ratesで生成された分析結果
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力先ディレクトリのパス。
             output_filename : str
                 保存するファイル名。デフォルトは"emission_analysis.png"。
@@ -551,13 +551,13 @@ class HotspotEmissionAnalyzer:
 
         # 図の保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
-            output_path = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, bbox_inches="tight", dpi=dpi)
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight", dpi=dpi)
         # 図の表示
         if show_fig:
             plt.show()

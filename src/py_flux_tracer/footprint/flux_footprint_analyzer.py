@@ -487,7 +487,7 @@ class FluxFootprintAnalyzer:
         api_key: str,
         center_lat: float,
         center_lon: float,
-        output_path: str,
+        output_filepath: str,
         scale: int = 1,
         size: tuple[int, int] = (2160, 2160),
         zoom: int = 13,
@@ -503,7 +503,7 @@ class FluxFootprintAnalyzer:
                 中心の緯度。
             center_lon : float
                 中心の経度。
-            output_path : str
+            output_filepath : str
                 画像の保存先パス。拡張子は'.png'のみ許可される。
             scale : int, optional
                 画像の解像度スケール（1か2）。デフォルトは1。
@@ -523,7 +523,7 @@ class FluxFootprintAnalyzer:
                 API呼び出しに失敗した場合
         """
         # バリデーション
-        if not output_path.endswith(".png"):
+        if not output_filepath.endswith(".png"):
             raise ValueError("出力ファイル名は'.png'で終わる必要があります。")
 
         # HTTPリクエストの定義
@@ -542,9 +542,9 @@ class FluxFootprintAnalyzer:
             response.raise_for_status()
             # 画像ファイルに変換
             image: Image.Image = Image.open(io.BytesIO(response.content))
-            image.save(output_path)
+            image.save(output_filepath)
             self._got_satellite_image = True
-            self.logger.info(f"リモート画像を取得し、保存しました: {output_path}")
+            self.logger.info(f"リモート画像を取得し、保存しました: {output_filepath}")
             return image
         except requests.RequestException as e:
             self.logger.error(f"衛星画像の取得に失敗しました: {str(e)}")
@@ -621,7 +621,7 @@ class FluxFootprintAnalyzer:
         reduce_c_function: Callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -661,7 +661,7 @@ class FluxFootprintAnalyzer:
                 経度方向の補正係数（デフォルトは1）。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -692,7 +692,7 @@ class FluxFootprintAnalyzer:
             hotspot_colors=None,
             lat_correction=lat_correction,
             lon_correction=lon_correction,
-            output_dir=output_dir,
+            output_dirpath=output_dirpath,
             output_filename=output_filename,
             save_fig=save_fig,
             show_fig=show_fig,
@@ -731,7 +731,7 @@ class FluxFootprintAnalyzer:
         legend_ncol: int | None = None,
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "footprint.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -821,7 +821,7 @@ class FluxFootprintAnalyzer:
                 緯度方向の補正係数（デフォルトは1）。
             lon_correction : float, optional
                 経度方向の補正係数（デフォルトは1）。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -1088,15 +1088,15 @@ class FluxFootprintAnalyzer:
 
         # 15. 画像の保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            output_path: str = os.path.join(output_dir, output_filename)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
             self.logger.info("プロットを保存中...")
             try:
-                fig.savefig(output_path, bbox_inches="tight")
-                self.logger.info(f"プロットが正常に保存されました: {output_path}")
+                fig.savefig(output_filepath, bbox_inches="tight")
+                self.logger.info(f"プロットが正常に保存されました: {output_filepath}")
             except Exception as e:
                 self.logger.error(f"プロットの保存中にエラーが発生しました: {str(e)}")
         # 16. 画像の表示
@@ -1121,7 +1121,7 @@ class FluxFootprintAnalyzer:
         reduce_c_function: Callable = np.mean,
         lat_correction: float = 1,
         lon_correction: float = 1,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "footprint-scale_checker.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -1169,7 +1169,7 @@ class FluxFootprintAnalyzer:
                 経度方向の補正係数（デフォルトは1）。
             lat_correction : float, optional
                 緯度方向の補正係数（デフォルトは1）。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロット画像の保存先パス。
             output_filename : str
                 プロット画像の保存ファイル名（拡張子を含む）。デフォルトは'footprint.png'。
@@ -1258,7 +1258,7 @@ class FluxFootprintAnalyzer:
             hotspot_colors=hotspot_colors,
             lat_correction=lat_correction,
             lon_correction=lon_correction,
-            output_dir=output_dir,
+            output_dirpath=output_dirpath,
             output_filename=output_filename,
             save_fig=save_fig,
             show_fig=show_fig,

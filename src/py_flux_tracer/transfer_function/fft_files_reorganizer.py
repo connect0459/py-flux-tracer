@@ -29,11 +29,11 @@ class FftFileReorganizer:
 
     def __init__(
         self,
-        input_dir: str,
-        output_dir: str,
+        input_dirpath: str,
+        output_dirpath: str,
         flag_csv_path: str,
         filename_patterns: list[str] | None = None,
-        output_dirs_struct: dict[str, str] | None = None,
+        output_dirpaths_struct: dict[str, str] | None = None,
         sort_by_rh: bool = True,
         logger: Logger | None = None,
         logging_debug: bool = False,
@@ -43,15 +43,15 @@ class FftFileReorganizer:
 
         Parameters
         ----------
-            input_dir : str
+            input_dirpath : str
                 入力ファイルが格納されているディレクトリのパス
-            output_dir : str
+            output_dirpath : str
                 出力ファイルを格納するディレクトリのパス
             flag_csv_path : str
                 フラグ情報が記載されているCSVファイルのパス
             filename_patterns : list[str] | None
                 ファイル名のパターン（正規表現）のリスト
-            output_dirs_struct : dict[str, str] | None
+            output_dirpaths_struct : dict[str, str] | None
                 出力ディレクトリの構造を定義する辞書
             sort_by_rh : bool
                 RHに基づいてサブディレクトリにファイルを分類するかどうか
@@ -60,14 +60,14 @@ class FftFileReorganizer:
             logging_debug : bool
                 ログレベルをDEBUGに設定するかどうか
         """
-        self._fft_path: str = input_dir
-        self._sorted_path: str = output_dir
-        self._output_dirs_struct = output_dirs_struct or self.DEFAULT_OUTPUT_DIRS
+        self._fft_path: str = input_dirpath
+        self._sorted_path: str = output_dirpath
+        self._output_dirpaths_struct = output_dirpaths_struct or self.DEFAULT_OUTPUT_DIRS
         self._good_data_path: str = os.path.join(
-            output_dir, self._output_dirs_struct["GOOD_DATA"]
+            output_dirpath, self._output_dirpaths_struct["GOOD_DATA"]
         )
         self._bad_data_path: str = os.path.join(
-            output_dir, self._output_dirs_struct["BAD_DATA"]
+            output_dirpath, self._output_dirpaths_struct["BAD_DATA"]
         )
         self._filename_patterns: list[str] = (
             self.DEFAULT_FILENAME_PATTERNS.copy()

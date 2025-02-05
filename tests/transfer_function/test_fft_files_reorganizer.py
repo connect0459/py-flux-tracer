@@ -9,10 +9,10 @@ def temp_dirs(tmp_path):
     """
     # テスト用の一時ディレクトリを作成し、テストデータを配置するためのフィクスチャ
     """
-    input_dir = tmp_path / "input"
-    output_dir = tmp_path / "output"
-    input_dir.mkdir()
-    return str(input_dir), str(output_dir)
+    input_dirpath = tmp_path / "input"
+    output_dirpath = tmp_path / "output"
+    input_dirpath.mkdir()
+    return str(input_dirpath), str(output_dirpath)
 
 
 @pytest.fixture
@@ -20,8 +20,8 @@ def flag_file(temp_dirs):
     """
     # テスト用のフラグファイルを作成するフィクスチャ
     """
-    input_dir, _ = temp_dirs
-    flag_path = os.path.join(input_dir, "flags.csv")
+    input_dirpath, _ = temp_dirs
+    flag_path = os.path.join(input_dirpath, "flags.csv")
 
     with open(flag_path, "w", newline="") as f:
         writer = csv.writer(f)
@@ -50,7 +50,7 @@ def test_file_reorganization(temp_dirs, flag_file):
     """
     # ファイルの再編成が正しく行われることを確認
     """
-    input_dir, output_dir = temp_dirs
+    input_dirpath, output_dirpath = temp_dirs
 
     # テスト用のFFTファイルを作成
     test_files = [
@@ -59,40 +59,40 @@ def test_file_reorganization(temp_dirs, flag_file):
     ]
 
     for file in test_files:
-        with open(os.path.join(input_dir, file), "w") as f:
+        with open(os.path.join(input_dirpath, file), "w") as f:
             f.write("test data")
 
     # FftFileReorganizerのインスタンスを作成して実行
     reorganizer = FftFileReorganizer(
-        input_dir=input_dir,
-        output_dir=output_dir,
+        input_dirpath=input_dirpath,
+        output_dirpath=output_dirpath,
         flag_csv_path=flag_file,
         sort_by_rh=True,
     )
     reorganizer.reorganize()
 
     # 期待される出力を確認
-    assert os.path.exists(os.path.join(output_dir, "good_data_all", test_files[0]))
-    assert os.path.exists(os.path.join(output_dir, "bad_data", test_files[1]))
-    assert os.path.exists(os.path.join(output_dir, "RH50", test_files[0]))
+    assert os.path.exists(os.path.join(output_dirpath, "good_data_all", test_files[0]))
+    assert os.path.exists(os.path.join(output_dirpath, "bad_data", test_files[1]))
+    assert os.path.exists(os.path.join(output_dirpath, "RH50", test_files[0]))
 
 
 def test_invalid_filename(temp_dirs, flag_file):
     """
     # 無効なファイル名が適切に処理されることを確認
     """
-    input_dir, output_dir = temp_dirs
+    input_dirpath, output_dirpath = temp_dirs
 
     # 無効なファイル名でファイルを作成
     invalid_file = "invalid_filename.csv"
-    with open(os.path.join(input_dir, invalid_file), "w") as f:
+    with open(os.path.join(input_dirpath, invalid_file), "w") as f:
         f.write("test data")
 
     reorganizer = FftFileReorganizer(
-        input_dir=input_dir, output_dir=output_dir, flag_csv_path=flag_file
+        input_dirpath=input_dirpath, output_dirpath=output_dirpath, flag_csv_path=flag_file
     )
     reorganizer.reorganize()
 
     # 警告が生成されることを確認（実装方法によって確認方法は変更が必要かもしれません）
-    assert not os.path.exists(os.path.join(output_dir, "good_data_all", invalid_file))
-    assert not os.path.exists(os.path.join(output_dir, "bad_data", invalid_file))
+    assert not os.path.exists(os.path.join(output_dirpath, "good_data_all", invalid_file))
+    assert not os.path.exists(os.path.join(output_dirpath, "bad_data", invalid_file))

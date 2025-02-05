@@ -85,7 +85,7 @@ class MonthlyFiguresGenerator:
     def plot_c1c2_fluxes_timeseries(
         self,
         df,
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "timeseries.png",
         col_datetime: str = "Date",
         col_c1_flux: str = "Fch4_ultra",
@@ -98,7 +98,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 月別データを含むDataFrame
-            output_dir : str
+            output_dirpath : str
                 出力ファイルを保存するディレクトリのパス
             output_filename : str
                 出力ファイルの名前
@@ -109,8 +109,8 @@ class MonthlyFiguresGenerator:
             col_c2_flux : str
                 C2H6フラックスを含む列の名前。デフォルトは"Fc2h6_ultra"。
         """
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # 図の作成
         _, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
@@ -142,13 +142,13 @@ class MonthlyFiguresGenerator:
         ax2.set_xlabel("Month")
 
         # 図の保存
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close()
 
     def plot_c1c2_concentrations_and_fluxes_timeseries(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "conc_flux_timeseries.png",
         col_datetime: str = "Date",
         col_ch4_conc: str = "CH4_ultra",
@@ -168,7 +168,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 月別データを含むDataFrame
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
@@ -194,8 +194,8 @@ class MonthlyFiguresGenerator:
                 解析情報をprintするかどうか
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         if print_summary:
             # 統計情報の計算と表示
@@ -268,7 +268,7 @@ class MonthlyFiguresGenerator:
 
         # レイアウトの調整と保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close()
 
         if print_summary:
@@ -346,7 +346,7 @@ class MonthlyFiguresGenerator:
     def plot_c1c2_timeseries(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
         output_filename: str = "timeseries_year.png",
@@ -369,7 +369,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
@@ -403,8 +403,8 @@ class MonthlyFiguresGenerator:
                 図のサイズ。デフォルトは(16, 6)。
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの準備
         df_copied = df.copy()
@@ -529,13 +529,13 @@ class MonthlyFiguresGenerator:
             plt.setp(ax.xaxis.get_majorticklabels(), ha="right")
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_fluxes_comparison(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         cols_flux: list[str],
         labels: list[str],
         colors: list[str],
@@ -566,7 +566,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             cols_flux : list[str]
                 比較するフラックスのカラム名リスト
@@ -616,8 +616,8 @@ class MonthlyFiguresGenerator:
                 図を表示するかどうか
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの準備
         df = df.copy()
@@ -787,7 +787,7 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         if save_fig:
-            plt.savefig(output_path, dpi=350, bbox_inches="tight")
+            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig)
@@ -801,7 +801,7 @@ class MonthlyFiguresGenerator:
         labels_c2h6: list[str],
         colors_ch4: list[str],
         colors_c2h6: list[str],
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "diurnal.png",
         legend_only_ch4: bool = False,
         add_label: bool = True,
@@ -833,7 +833,7 @@ class MonthlyFiguresGenerator:
                 CH4の各ラインに使用する色のリスト。
             colors_c2h6 : list[str]
                 C2H6の各ラインに使用する色のリスト。
-            output_dir : str
+            output_dirpath : str
                 出力先ディレクトリのパス。
             output_filename : str, optional
                 出力ファイル名。デフォルトは"diurnal.png"。
@@ -858,8 +858,8 @@ class MonthlyFiguresGenerator:
             ax2_ylim : tuple[float, float] | None, optional
                 C2H6プロットのy軸の範囲。デフォルトはNone。
         """
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの準備
         target_columns = y_cols_ch4 + y_cols_c2h6
@@ -968,7 +968,7 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_path, dpi=350, bbox_inches="tight")
+        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_c1c2_fluxes_diurnal_patterns_by_date(
@@ -976,7 +976,7 @@ class MonthlyFiguresGenerator:
         df: pd.DataFrame,
         y_col_ch4: str,
         y_col_c2h6: str,
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "diurnal_by_date.png",
         plot_all: bool = True,
         plot_weekday: bool = True,
@@ -1004,7 +1004,7 @@ class MonthlyFiguresGenerator:
                 CH4フラックスを含むカラム名。
             y_col_c2h6 : str
                 C2H6フラックスを含むカラム名。
-            output_dir : str
+            output_dirpath : str
                 出力先ディレクトリのパス。
             output_filename : str, optional
                 出力ファイル名。デフォルトは"diurnal_by_date.png"。
@@ -1039,8 +1039,8 @@ class MonthlyFiguresGenerator:
             print_summary : bool, optional
                 統計情報を表示するかどうか。デフォルトはTrue。
         """
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの準備
         target_columns = [y_col_ch4, y_col_c2h6]
@@ -1203,7 +1203,7 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_path, dpi=350, bbox_inches="tight")
+        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
         # 日変化パターンの統計分析を追加
@@ -1283,7 +1283,7 @@ class MonthlyFiguresGenerator:
     def plot_diurnal_concentrations(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ch4_conc: str = "CH4_ultra_cal",
         col_c2h6_conc: str = "C2H6_ultra_cal",
         col_datetime: str = "Date",
@@ -1305,7 +1305,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 濃度データを含むDataFrame
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             col_ch4_conc : str
                 CH4濃度のカラム名
@@ -1337,8 +1337,8 @@ class MonthlyFiguresGenerator:
                 時間間隔。"30min"または"1H"を指定
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの準備
         df = df.copy()
@@ -1451,7 +1451,7 @@ class MonthlyFiguresGenerator:
         plt.subplots_adjust(bottom=0.2)
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
         if print_summary:
@@ -1470,7 +1470,7 @@ class MonthlyFiguresGenerator:
     def plot_flux_diurnal_patterns_with_std(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ch4_flux: str = "Fch4",
         col_c2h6_flux: str = "Fc2h6",
         ch4_label: str = r"$\mathregular{CH_{4}}$フラックス",
@@ -1487,7 +1487,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
@@ -1509,8 +1509,8 @@ class MonthlyFiguresGenerator:
                 標準偏差の透明度（0-1）
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # # プロットのスタイル設定
         # plt.rcParams.update({
@@ -1603,7 +1603,7 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close()
 
         # 統計情報の表示（オプション）
@@ -1623,7 +1623,7 @@ class MonthlyFiguresGenerator:
     def plot_gas_ratio_diurnal(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ratio_1: str,
         col_ratio_2: str,
         label_1: str,
@@ -1649,7 +1649,7 @@ class MonthlyFiguresGenerator:
         ----------
         df : pd.DataFrame
             データフレーム
-        output_dir : str
+        output_dirpath : str
             出力ディレクトリ
         col_ratio_1 : str
             1つ目の比率のカラム名
@@ -1689,8 +1689,8 @@ class MonthlyFiguresGenerator:
             図を表示するかどうか, by default False
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath = os.path.join(output_dirpath, output_filename)
 
         # 時刻でグループ化して平均を計算
         hourly_means = df.groupby(df.index.hour)[[col_ratio_1, col_ratio_2]].mean()
@@ -1790,7 +1790,7 @@ class MonthlyFiguresGenerator:
         # プロットの保存と表示
         plt.tight_layout()
         if save_fig:
-            plt.savefig(output_path, dpi=350, bbox_inches="tight")
+            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1800,7 +1800,7 @@ class MonthlyFiguresGenerator:
         df: pd.DataFrame,
         x_col: str,
         y_col: str,
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "scatter.png",
         xlabel: str | None = None,
         ylabel: str | None = None,
@@ -1826,7 +1826,7 @@ class MonthlyFiguresGenerator:
                 x軸のラベル
             ylabel : str
                 y軸のラベル
-            output_dir : str
+            output_dirpath : str
                 出力先ディレクトリ
             output_filename : str, optional
                 出力ファイル名。デフォルトは"scatter.png"
@@ -1841,8 +1841,8 @@ class MonthlyFiguresGenerator:
             show_fixed_slope : bool, optional
                 固定傾きの線を表示するかどうか。デフォルトはFalse
         """
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # 有効なデータの抽出
         df = MonthlyFiguresGenerator.get_valid_data(df, x_col, y_col)
@@ -1963,13 +1963,13 @@ class MonthlyFiguresGenerator:
         # 目盛り線の設定
         ax.grid(True, alpha=0.3)
 
-        fig.savefig(output_path, dpi=350, bbox_inches="tight")
+        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig)
 
     def plot_source_contributions_diurnal(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
         col_datetime: str = "Date",
@@ -1996,7 +1996,7 @@ class MonthlyFiguresGenerator:
         ----------
             df : pd.DataFrame
                 CH4フラックスデータを含むデータフレーム
-            output_dir : str
+            output_dirpath : str
                 出力先のディレクトリ
             col_ch4_flux : str
                 CH4フラックスの列名
@@ -2038,8 +2038,8 @@ class MonthlyFiguresGenerator:
                 サブプロットラベルのフォントサイズ（デフォルトは20）
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
@@ -2131,7 +2131,7 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2208,7 +2208,7 @@ class MonthlyFiguresGenerator:
     def plot_source_contributions_diurnal_by_date(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
         col_datetime: str = "Date",
@@ -2234,7 +2234,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
@@ -2270,8 +2270,8 @@ class MonthlyFiguresGenerator:
                 y軸の上限値
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
@@ -2384,7 +2384,7 @@ class MonthlyFiguresGenerator:
             plt.subplots_adjust(bottom=0.2)  # 下部に30%のスペースを確保
 
         plt.tight_layout()
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2463,8 +2463,8 @@ class MonthlyFiguresGenerator:
         self,
         fs: float,
         lag_second: float,
-        input_dir: str | Path,
-        output_dir: str | Path,
+        input_dirpath: str | Path,
+        output_dirpath: str | Path,
         output_filename_power: str = "power_spectrum.png",
         output_filename_co: str = "co_spectrum.png",
         col_ch4: str = "Ultra_CH4_ppm_C",
@@ -2495,9 +2495,9 @@ class MonthlyFiguresGenerator:
                 サンプリング周波数。
             lag_second : float
                 ラグ時間（秒）。
-            input_dir : str | Path
+            input_dirpath : str | Path
                 データファイルが格納されているディレクトリ。
-            output_dir : str | Path
+            output_dirpath : str | Path
                 出力先ディレクトリ。
             output_filename_power : str
                 出力するパワースペクトルのファイル名。デフォルトは"power_spectrum.png"
@@ -2534,7 +2534,7 @@ class MonthlyFiguresGenerator:
         """
         # 出力ディレクトリの作成
         if save_fig:
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dirpath, exist_ok=True)
 
         # データの読み込みと結合
         edp = EddyDataPreprocessor(fs=fs)
@@ -2546,7 +2546,7 @@ class MonthlyFiguresGenerator:
         freqs = None
 
         # プログレスバーを表示しながらファイルを処理
-        file_list = glob.glob(os.path.join(input_dir, file_pattern))
+        file_list = glob.glob(os.path.join(input_dirpath, file_pattern))
         for filepath in tqdm(file_list, desc="Processing files"):
             df, _ = edp.get_resampled_df(
                 filepath=filepath, resample=are_inputs_resampled
@@ -2681,9 +2681,9 @@ class MonthlyFiguresGenerator:
             plt.tight_layout()
 
             if save_fig:
-                output_path_psd: str = os.path.join(output_dir, output_filename_power)
+                output_filepath_psd: str = os.path.join(output_dirpath, output_filename_power)
                 plt.savefig(
-                    output_path_psd,
+                    output_filepath_psd,
                     dpi=350,
                     bbox_inches="tight",
                 )
@@ -2737,9 +2737,9 @@ class MonthlyFiguresGenerator:
 
             plt.tight_layout()
             if save_fig:
-                output_path_csd: str = os.path.join(output_dir, output_filename_co)
+                output_filepath_csd: str = os.path.join(output_dirpath, output_filename_co)
                 plt.savefig(
-                    output_path_csd,
+                    output_filepath_csd,
                     dpi=350,
                     bbox_inches="tight",
                 )
@@ -2751,7 +2751,7 @@ class MonthlyFiguresGenerator:
     def plot_turbulence(
         self,
         df: pd.DataFrame,
-        output_dir: str,
+        output_dirpath: str,
         output_filename: str = "turbulence.png",
         col_uz: str = "Uz",
         col_ch4: str = "Ultra_CH4_ppm_C",
@@ -2766,7 +2766,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 プロットするデータを含むDataFrame
-            output_dir : str
+            output_dirpath : str
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
@@ -2784,8 +2784,8 @@ class MonthlyFiguresGenerator:
                 プロットのサイズを指定するタプル
         """
         # 出力ディレクトリの作成
-        os.makedirs(output_dir, exist_ok=True)
-        output_path: str = os.path.join(output_dir, output_filename)
+        os.makedirs(output_dirpath, exist_ok=True)
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
 
         # データの前処理
         df = df.copy()
@@ -2842,13 +2842,13 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         # 図の保存
-        plt.savefig(output_path, dpi=350, bbox_inches="tight")
+        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
         plt.close()
 
     def plot_wind_rose_sources(
         self,
         df: pd.DataFrame,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "edp_wind_rose.png",
         col_datetime: str = "Date",
         col_ch4_flux: str = "Fch4",
@@ -2878,7 +2878,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 風配図を作成するためのデータフレーム
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 生成された図を保存するディレクトリのパス
             output_filename : str
                 保存するファイル名（デフォルトは"edp_wind_rose.png"）
@@ -3058,14 +3058,14 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なパスを指定する必要があります。"
+                    "save_fig=Trueのとき、output_dirpathに有効なパスを指定する必要があります。"
                 )
             # 出力ディレクトリの作成
-            os.makedirs(output_dir, exist_ok=True)
-            output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, dpi=350, bbox_inches="tight")
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
 
         # グラフの表示
         if show_fig:
@@ -3431,7 +3431,7 @@ class MonthlyFiguresGenerator:
     def plot_fluxes_distributions(
         flux_data: dict[str, pd.Series],
         month: int,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "flux_distribution.png",
         colors: dict[str, str] | None = None,
         xlim: tuple[float, float] = (-50, 200),
@@ -3448,7 +3448,7 @@ class MonthlyFiguresGenerator:
                 キー: 測器名, 値: フラックスデータ
             month : int
                 測定月
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力ディレクトリ。指定しない場合はデフォルトのディレクトリに保存されます。
             output_filename : str
                 出力ファイル名。デフォルトは"flux_distribution.png"です。
@@ -3554,13 +3554,13 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dirpath, exist_ok=True)
             plt.savefig(
-                os.path.join(output_dir, f"{output_filename.format(month=month)}"),
+                os.path.join(output_dirpath, f"{output_filename.format(month=month)}"),
                 dpi=350,
                 bbox_inches="tight",
             )

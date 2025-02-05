@@ -14,7 +14,7 @@ class TFAnalysisConfig:
     ----------
         input_file : str | Path
             入力ファイルのパス
-        output_dir : str | Path
+        output_dirpath : str | Path
             出力ディレクトリのパス
         suffix : str
             ファイル名の接尾辞（例: "", "-detrend"）
@@ -25,7 +25,7 @@ class TFAnalysisConfig:
     """
 
     input_file: str | Path
-    output_dir: str | Path
+    output_dirpath: str | Path
     suffix: str
     show_co_spectra: bool = False
     show_tf: bool = False
@@ -65,7 +65,7 @@ col_wt: str = "  f*cospec_wt/wt"
 col_wch4: str = " f*cospec_wc/wc closed"
 col_wc2h6: str = " f*cospec_wq/wq closed"
 # 出力先のルートディレクトリ
-output_dir: str = "/mnt/c/Users/nakao/workspace/sac/transfer_function/outputs"
+output_dirpath: str = "/mnt/c/Users/nakao/workspace/sac/transfer_function/outputs"
 # 日付のリスト
 dates_list: list[str] = [
     "2024.06.21",
@@ -87,14 +87,14 @@ try:
         configs: list[TFAnalysisConfig] = [
             TFAnalysisConfig(
                 input_file=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
-                output_dir=os.path.join(output_dir, "each-raw"),
+                output_dirpath=os.path.join(output_dirpath, "each-raw"),
                 suffix="",  # トレンド除去なし
                 show_co_spectra=False,
                 show_tf=False,
             ),
             TFAnalysisConfig(
                 input_file=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
-                output_dir=os.path.join(output_dir, "each-detrend"),
+                output_dirpath=os.path.join(output_dirpath, "each-detrend"),
                 suffix="-detrend",  # トレンド除去あり
                 show_co_spectra=False,
                 show_tf=False,
@@ -122,7 +122,7 @@ try:
                 color2="red",
                 # subplot_label="(a)",
                 show_fig=config.show_co_spectra,
-                output_dir=config.output_dir,
+                output_dirpath=config.output_dirpath,
                 output_filename=f"co_ch4-{date}{config.suffix}.png",
                 add_legend=False,
             )
@@ -135,7 +135,7 @@ try:
                 color2="orange",
                 # subplot_label="(b)",
                 show_fig=config.show_co_spectra,
-                output_dir=config.output_dir,
+                output_dirpath=config.output_dirpath,
                 output_filename=f"co_c2h6-{date}{config.suffix}.png",
                 add_legend=False,
             )
@@ -156,7 +156,7 @@ try:
                 reference_name="wTv",
                 target_name=r"wCH$_4$",
                 show_fig=config.show_tf,
-                output_dir=config.output_dir,
+                output_dirpath=config.output_dirpath,
                 output_filename=f"tf_ch4-{date}{config.suffix}.png",
                 label_target=r"CH$_4$",
             )
@@ -167,7 +167,7 @@ try:
                 # target_name="wC2H6",
                 target_name=r"wC$_2$H$_6$",
                 show_fig=config.show_tf,
-                output_dir=config.output_dir,
+                output_dirpath=config.output_dirpath,
                 output_filename=f"tf_c2h6-{date}{config.suffix}.png",
                 label_target=r"C$_2$H$_6$",
             )

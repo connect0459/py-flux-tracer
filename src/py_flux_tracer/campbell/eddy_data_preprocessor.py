@@ -35,9 +35,12 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            fs (float): サンプリング周波数。
-            logger (Logger | None): 使用するロガー。Noneの場合は新しいロガーを作成します。
-            logging_debug (bool): ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
+            fs : float
+                サンプリング周波数。
+            logger : Logger | None
+                使用するロガー。Noneの場合は新しいロガーを作成します。
+            logging_debug : bool
+                ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
         self.fs: float = fs
 
@@ -133,13 +136,13 @@ class EddyDataPreprocessor:
 
     def analyze_lag_times(
         self,
-        input_dir: str | Path,
+        input_dirpath: str | Path,
         input_files_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
         col1: str = "edp_wind_w",
         col2_list: list[str] = ["Tv"],
         median_range: float = 20,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_tag: str = "",
         add_title: bool = True,
         figsize: tuple[float, float] = (10, 8),
@@ -184,7 +187,7 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            input_dir : str | Path
+            input_dirpath : str | Path
                 入力データファイルが格納されているディレクトリのパス。
             input_files_pattern : str
                 入力ファイル名のパターン（正規表現）。
@@ -196,7 +199,7 @@ class EddyDataPreprocessor:
                 比較変数の列名のリスト。
             median_range : float
                 中央値を中心とした範囲。
-            output_dir : str | Path | None
+            output_dirpath : str | Path | None
                 出力ディレクトリのパス。Noneの場合は保存しない。
             output_tag : str
                 出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。
@@ -241,9 +244,9 @@ class EddyDataPreprocessor:
             dict[str, float]
                 各変数の遅れ時間（平均値を採用）を含む辞書。
         """
-        if output_dir is None:
+        if output_dirpath is None:
             self.logger.warn(
-                "output_dirが指定されていません。解析結果を保存する場合は、有効なディレクトリを指定してください。"
+                "output_dirpathが指定されていません。解析結果を保存する場合は、有効なディレクトリを指定してください。"
             )
         all_lags_indices: list[list[int]] = []
         results: dict[str, float] = {}
@@ -251,15 +254,15 @@ class EddyDataPreprocessor:
         # メイン処理
         # ファイル名に含まれる数字に基づいてソート
         csv_files = EddyDataPreprocessor._get_sorted_files(
-            directory=input_dir, pattern=input_files_pattern, suffix=input_files_suffix
+            directory=input_dirpath, pattern=input_files_pattern, suffix=input_files_suffix
         )
         if not csv_files:
             raise FileNotFoundError(
-                f"There is no '{input_files_suffix}' file to process; input_dir: '{input_dir}', input_files_suffix: '{input_files_suffix}'"
+                f"There is no '{input_files_suffix}' file to process; input_dirpath: '{input_dirpath}', input_files_suffix: '{input_files_suffix}'"
             )
 
         for file in tqdm(csv_files, desc="Calculating"):
-            path: str = os.path.join(input_dir, file)
+            path: str = os.path.join(input_dirpath, file)
             df: pd.DataFrame = pd.DataFrame()  # 空のDataFrameで初期化
             if resample_in_processing:
                 df, _ = self.get_resampled_df(
@@ -316,10 +319,10 @@ class EddyDataPreprocessor:
             plt.xlim(plot_range_tuple)
 
             # ファイルとして保存するか
-            if output_dir is not None:
-                os.makedirs(output_dir, exist_ok=True)
+            if output_dirpath is not None:
+                os.makedirs(output_dirpath, exist_ok=True)
                 filename: str = f"lags_histogram-{column}{output_tag}.png"
-                filepath: str = os.path.join(output_dir, filename)
+                filepath: str = os.path.join(output_dirpath, filename)
                 plt.savefig(filepath, dpi=dpi, bbox_inches="tight")
                 plt.close(fig=fig)
 
@@ -350,10 +353,10 @@ class EddyDataPreprocessor:
                 print(f"{column:<{max_col_name_length}} : {mean_seconds:.2f} s")
 
         # 結果をCSVファイルとして出力
-        if output_dir is not None:
+        if output_dirpath is not None:
             output_df: pd.DataFrame = pd.DataFrame(output_data)
             csv_filepath: str = os.path.join(
-                output_dir, f"lags_results{output_tag}.csv"
+                output_dirpath, f"lags_results{output_tag}.csv"
             )
             output_df.to_csv(csv_filepath, index=False, encoding="utf-8")
             self.logger.info(f"解析結果をCSVファイルに保存しました: {csv_filepath}")
@@ -512,9 +515,9 @@ class EddyDataPreprocessor:
 
     def output_resampled_data(
         self,
-        input_dir: str,
-        resampled_dir: str,
-        c2c1_ratio_dir: str,
+        input_dirpath: str,
+        resampled_dirpath: str,
+        c2c1_ratio_dirpath: str,
         input_file_pattern: str = r"Eddy_(\d+)",
         input_files_suffix: str = ".dat",
         col_c1: str = "Ultra_CH4_ppm_C",
@@ -556,11 +559,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            input_dir : str
+            input_dirpath : str
                 入力CSVファイルが格納されているディレクトリのパス。
-            resampled_dir : str
+            resampled_dirpath : str
                 リサンプリングされたCSVファイルを出力するディレクトリのパス。
-            c2c1_ratio_dir : str
+            c2c1_ratio_dirpath : str
                 計算結果を保存するディレクトリのパス。
             input_file_pattern : str
                 ファイル名からソートキーを抽出する正規表現パターン。デフォルトでは、最初の数字グループでソートします。
@@ -601,31 +604,31 @@ class EddyDataPreprocessor:
                 出力ディレクトリが指定されていない、またはデータの処理中にエラーが発生した場合。
         """
         # 出力オプションとディレクトリの検証
-        if output_resampled and resampled_dir is None:
+        if output_resampled and resampled_dirpath is None:
             raise ValueError(
-                "output_resampled が True の場合、resampled_dir を指定する必要があります"
+                "output_resampled が True の場合、resampled_dirpath を指定する必要があります"
             )
-        if output_c2c1_ratio and c2c1_ratio_dir is None:
+        if output_c2c1_ratio and c2c1_ratio_dirpath is None:
             raise ValueError(
-                "output_c2c1_ratio が True の場合、c2c1_ratio_dir を指定する必要があります"
+                "output_c2c1_ratio が True の場合、c2c1_ratio_dirpath を指定する必要があります"
             )
 
         # ディレクトリの作成（必要な場合のみ）
         if output_resampled:
-            os.makedirs(resampled_dir, exist_ok=True)
+            os.makedirs(resampled_dirpath, exist_ok=True)
         if output_c2c1_ratio:
-            os.makedirs(c2c1_ratio_dir, exist_ok=True)
+            os.makedirs(c2c1_ratio_dirpath, exist_ok=True)
 
         ratio_data: list[dict[str, str | float]] = []
         latest_date: datetime = datetime.min
 
         # csvファイル名のリスト
         csv_files: list[str] = EddyDataPreprocessor._get_sorted_files(
-            input_dir, input_file_pattern, input_files_suffix
+            input_dirpath, input_file_pattern, input_files_suffix
         )
 
         for filename in tqdm(csv_files, desc="Processing files"):
-            input_filepath: str = os.path.join(input_dir, filename)
+            input_filepath: str = os.path.join(input_dirpath, filename)
             # リサンプリング＆欠損値補間
             df, metadata = self.get_resampled_df(
                 filepath=input_filepath,
@@ -647,7 +650,7 @@ class EddyDataPreprocessor:
             if output_resampled:
                 base_filename: str = re.sub(rf"\{input_files_suffix}$", "", filename)
                 output_csv_path: str = os.path.join(
-                    resampled_dir, f"{base_filename}-resampled.csv"
+                    resampled_dirpath, f"{base_filename}-resampled.csv"
                 )
                 # メタデータを先に書き込む
                 with open(output_csv_path, "w") as f:
@@ -703,7 +706,7 @@ class EddyDataPreprocessor:
             ratio_filename: str = (
                 f"{c2c1_ratio_csv_prefix}.{latest_date.strftime('%Y.%m.%d')}.ratio.csv"
             )
-            ratio_path: str = os.path.join(c2c1_ratio_dir, ratio_filename)
+            ratio_path: str = os.path.join(c2c1_ratio_dirpath, ratio_filename)
             ratio_df.to_csv(ratio_path, index=False)
 
     @staticmethod
@@ -867,13 +870,17 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            u_array (numpy.ndarray): u方向の風速
-            w_array (numpy.ndarray): w方向の風速
-            wind_inc (float): 平均風向に対する迎角（ラジアン）
+            u_array : numpy.ndarray
+                u方向の風速。
+            w_array : numpy.ndarray
+                w方向の風速。
+            wind_inc : float
+                平均風向に対する迎角（ラジアン）。
 
         Returns
-        ----------
-            tuple[numpy.ndarray, numpy.ndarray]: 回転後のu, w
+        -------
+            tuple[numpy.ndarray, numpy.ndarray]
+                回転後のuおよびwの配列。
         """
         # 迎角を用いて鉛直方向に座標回転
         u_rotated = u_array * np.cos(wind_inc) + w_array * np.sin(wind_inc)
@@ -885,17 +892,21 @@ class EddyDataPreprocessor:
         x_array: np.ndarray, y_array: np.ndarray, correction_angle: float = 0.0
     ) -> float:
         """
-        水平方向の平均風向を計算する関数
+        水平方向の平均風向を計算する関数。
 
         Parameters
         ----------
-            x_array (numpy.ndarray): 西方向の風速成分
-            y_array (numpy.ndarray): 南北方向の風速成分
-            correction_angle (float): 風向補正角度（ラジアン）。デフォルトは0.0。CSAT3の場合は0.0を指定。
+            x_array : numpy.ndarray
+                西方向の風速成分。
+            y_array : numpy.ndarray
+                南北方向の風速成分。
+            correction_angle : float, optional
+                風向補正角度（ラジアン）。デフォルトは0.0。CSAT3の場合は0.0を指定。
 
         Returns
-        ----------
-            wind_direction (float): 風向 (radians)
+        -------
+            float
+                風向（ラジアン）。
         """
         wind_direction: float = np.arctan2(np.mean(y_array), np.mean(x_array))
         # 補正角度を適用
@@ -905,16 +916,19 @@ class EddyDataPreprocessor:
     @staticmethod
     def _wind_inclination(u_array: np.ndarray, w_array: np.ndarray) -> float:
         """
-        平均風向に対する迎角を計算する関数
+        平均風向に対する迎角を計算する関数。
 
         Parameters
         ----------
-            u_array (numpy.ndarray): u方向の瞬間風速
-            w_array (numpy.ndarray): w方向の瞬間風速
+            u_array : numpy.ndarray
+                u方向の瞬間風速。
+            w_array : numpy.ndarray
+                w方向の瞬間風速。
 
         Returns
-        ----------
-            wind_inc (float): 平均風向に対する迎角（ラジアン）
+        -------
+            float
+                平均風向に対する迎角（ラジアン）。
         """
         wind_inc: float = np.arctan2(np.mean(w_array), np.mean(u_array))
         return wind_inc

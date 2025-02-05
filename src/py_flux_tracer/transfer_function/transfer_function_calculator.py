@@ -113,7 +113,7 @@ class TransferFunctionCalculator:
         dpi: float | None = 350,
         label1: str | None = None,
         label2: str | None = None,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "co.png",
         add_legend: bool = True,
         add_xy_labels: bool = True,
@@ -153,7 +153,7 @@ class TransferFunctionCalculator:
                 1つ目のデータのラベル名。デフォルトはNone。
             label2 : str, optional
                 2つ目のデータのラベル名。デフォルトはNone。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
                 保存するファイル名。デフォルトは"co.png"。
@@ -226,10 +226,10 @@ class TransferFunctionCalculator:
             ax.text(*subplot_label_pos, subplot_label)
         fig.tight_layout()
 
-        if save_fig and output_dir is not None:
-            os.makedirs(output_dir, exist_ok=True)
+        if save_fig and output_dirpath is not None:
+            os.makedirs(output_dirpath, exist_ok=True)
             # プロットをPNG形式で保存
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
+            fig.savefig(os.path.join(output_dirpath, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -241,7 +241,7 @@ class TransferFunctionCalculator:
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
         dpi: float | None = 350,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "ratio.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -261,7 +261,7 @@ class TransferFunctionCalculator:
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
                 プロットのdpi。デフォルトは350。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
                 保存するファイル名。デフォルトは"ratio.png"。
@@ -283,11 +283,11 @@ class TransferFunctionCalculator:
         ax.set_title(f"{target_name}と{reference_name}の比")
 
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
                 )
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
+            fig.savefig(os.path.join(output_dirpath, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -298,7 +298,7 @@ class TransferFunctionCalculator:
         filepath: str,
         config: TfCurvesFromCsvConfig,
         csv_encoding: str | None = "utf-8-sig",
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "all_tf_curves.png",
         col_datetime: str = "Date",
         figsize: tuple[float, float] = (10, 6),
@@ -325,7 +325,7 @@ class TransferFunctionCalculator:
                 伝達関数の係数が格納されたCSVファイルのパス。
             config : TfCurvesFromCsvConfig
                 プロット設定。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 出力ディレクトリ。Noneの場合は保存しない。
             output_filename : str, optional
                 出力ファイル名。デフォルトは"all_tf_curves.png"。
@@ -420,14 +420,14 @@ class TransferFunctionCalculator:
         plt.tight_layout()
 
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dirpath, exist_ok=True)
             # 出力ファイル名が指定されていない場合、gas_nameを使用
-            output_path: str = os.path.join(output_dir, output_filename)
-            plt.savefig(output_path, dpi=dpi, bbox_inches="tight")
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -440,7 +440,7 @@ class TransferFunctionCalculator:
         target_name: str,
         figsize: tuple[int, int] = (10, 6),
         dpi: float | None = 350,
-        output_dir: str | Path | None = None,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "tf.png",
         save_fig: bool = True,
         show_fig: bool = True,
@@ -467,7 +467,7 @@ class TransferFunctionCalculator:
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
                 プロットのdpi。デフォルトは350。
-            output_dir : str | Path | None, optional
+            output_dirpath : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
                 保存するファイル名。デフォルトは"tf.png"。
@@ -512,13 +512,13 @@ class TransferFunctionCalculator:
         ax.legend()
 
         if save_fig:
-            if output_dir is None:
+            if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
                 )
-            os.makedirs(output_dir, exist_ok=True)
+            os.makedirs(output_dirpath, exist_ok=True)
             # プロットをPNG形式で保存
-            fig.savefig(os.path.join(output_dir, output_filename), dpi=dpi)
+            fig.savefig(os.path.join(output_dirpath, output_filename), dpi=dpi)
         if show_fig:
             plt.show()
         plt.close(fig=fig)

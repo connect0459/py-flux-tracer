@@ -106,7 +106,7 @@ west_sections_list: list[int] = [
     0,
     1,
 ]  # 西側となるセクション番号（num_sectionsに応じて変更）
-output_dir: str = (
+output_dirpath: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs"
 )
 print_summary: bool = True
@@ -164,15 +164,15 @@ if __name__ == "__main__":
     # hotspots = [h for h in hotspots if h.section in west_sections_list]
 
     # 地図の作成と保存
-    msa.create_hotspots_map(unique_hotspots, output_dir=output_dir)
+    msa.create_hotspots_map(unique_hotspots, output_dirpath=output_dirpath)
 
     # ホットスポットを散布図で表示
-    msa.plot_scatter_c2c1(unique_hotspots, output_dir=output_dir, show_fig=False)
+    msa.plot_scatter_c2c1(unique_hotspots, output_dirpath=output_dirpath, show_fig=False)
 
     # ヒストグラムを作図
     msa.plot_ch4_delta_histogram(
         hotspots=unique_hotspots,
-        output_dir=output_dir,
+        output_dirpath=output_dirpath,
         figsize=(10, 6),
         xlim=(0, 1.4),
         yscale_log=False,
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     # 統計情報を表示
     msa.analyze_delta_ch4_stats(hotspots=unique_hotspots)
     # csvに出力
-    msa.export_hotspots_to_csv(hotspots=unique_hotspots, output_dir=output_dir)
+    msa.export_hotspots_to_csv(hotspots=unique_hotspots, output_dirpath=output_dirpath)
 
     # Emissionの分析
     emission_configs: list[HotspotEmissionConfig] = [
@@ -212,7 +212,7 @@ if __name__ == "__main__":
         # 分布の可視化
         HotspotEmissionAnalyzer.plot_emission_analysis(
             emissions=emissions_list,
-            output_dir=output_dir,
+            output_dirpath=output_dirpath,
             output_filename=f"emission_plots-{method}.png",
             hist_log_y=True,
             hist_xlim=(0, 60),
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     for source_name in source_names:
         msa.plot_conc_timeseries(
             source_name=source_name,
-            output_dir=os.path.join(output_dir, "timeseries"),
+            output_dirpath=os.path.join(output_dirpath, "timeseries"),
             output_filename=f"timeseries-{source_name}.png",
             save_fig=True,
             show_fig=False,

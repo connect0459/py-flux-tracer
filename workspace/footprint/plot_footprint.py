@@ -132,7 +132,7 @@ hotspot_custom_sizes: dict[str, tuple[tuple[float, float], float]] = {
 }
 
 # ファイルおよびディレクトリのパス
-output_dir: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
+output_dirpath: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
 dotenv_path: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
 )
@@ -153,7 +153,7 @@ plot_scale_checker: bool = False
 
 if __name__ == "__main__":
     # 出力先ディレクトリを作成
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dirpath, exist_ok=True)
 
     # ホットスポットの検出
     msa = MobileMeasurementAnalyzer(
@@ -220,7 +220,7 @@ if __name__ == "__main__":
                 xy_max=5000,
                 cbar_label=r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"footprint_ch4{date_tag}.png",
                 save_fig=True,
                 show_fig=False,
@@ -247,7 +247,7 @@ if __name__ == "__main__":
                 xy_max=5000,
                 cbar_label=r"C$_2$H$_6$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=35,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"footprint_c2h6{date_tag}.png",
                 save_fig=True,
                 show_fig=False,
@@ -280,7 +280,7 @@ if __name__ == "__main__":
                 add_legend=False,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"footprint_ratio{date_tag}.png",
                 save_fig=True,
                 show_fig=False,
@@ -308,7 +308,7 @@ if __name__ == "__main__":
                 add_legend=True,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename="footprint_ratio-legend.png",
                 save_fig=True,
                 show_fig=False,
@@ -333,7 +333,7 @@ if __name__ == "__main__":
                 add_legend=True,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename="footprint_ratio-legend-ja.png",
                 save_fig=True,
                 show_fig=False,
@@ -361,7 +361,7 @@ if __name__ == "__main__":
                 xy_max=5000,
                 cbar_label=r"Gas CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"footprint_ch4_gas{date_tag}.png",
                 save_fig=True,
                 show_fig=False,
@@ -389,7 +389,7 @@ if __name__ == "__main__":
                 xy_max=5000,
                 cbar_label=r"Bio CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename=f"footprint_ch4_bio{date_tag}.png",
                 save_fig=True,
                 show_fig=False,
@@ -438,7 +438,7 @@ if __name__ == "__main__":
                 add_cbar=False,
                 cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename="footprint_mono.png",
                 save_fig=True,
                 show_fig=False,
@@ -465,7 +465,7 @@ if __name__ == "__main__":
                 xy_max=5000,
                 cbar_label=r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
                 cbar_labelpad=20,
-                output_dir=output_dir,
+                output_dirpath=output_dirpath,
                 output_filename="footprint_ch4-scale_checker.png",
                 save_fig=True,
                 show_fig=False,

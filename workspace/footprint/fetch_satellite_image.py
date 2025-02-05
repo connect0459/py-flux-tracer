@@ -61,6 +61,6 @@ if __name__ == "__main__":
         api_key=gms_api_key,
         center_lat=float(site_info["center_lat"]),  # float型にキャスト
         center_lon=float(site_info["center_lon"]),  # float型にキャスト
-        output_path=local_image_path,
+        output_filepath=local_image_path,
         zoom=zoom,
     )  # API
