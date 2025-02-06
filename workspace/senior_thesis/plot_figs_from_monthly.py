@@ -184,7 +184,7 @@ if __name__ == "__main__":
         month_str = f"{month:02d}"
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
-        # 月ごとのDataFrameを作成（extract_period_dataを使用）
+        # 月ごとのDataFrameを作成(extract_period_dataを使用)
         start_date = f"2024-{month:02d}-01"
         end_date = f"2024-{month:02d}-{MonthlyConverter.get_last_day_of_month(2024, month)}"
         df_month: pd.DataFrame = MonthlyConverter.extract_period_data(
@@ -427,7 +427,7 @@ if __name__ == "__main__":
         month_str = "_".join(f"{month:02d}" for month in month_dos)
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
-        # 月ごとのDataFrameを作成（extract_period_dataを使用）
+        # 月ごとのDataFrameを作成(extract_period_dataを使用)
         start_date = f"2024-{month_dos[0]:02d}-01"
         end_date = f"2024-{month_dos[1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, month_dos[1])}"
         df_month_dos: pd.DataFrame = MonthlyConverter.extract_period_data(
@@ -477,7 +477,7 @@ if __name__ == "__main__":
         for season, tag, subplot_label in zip(
             seasons, seasons_tags, seasons_subplot_labels, strict=True
         ):
-            # 季節ごとのDataFrameを作成（extract_period_dataを使用）
+            # 季節ごとのDataFrameを作成(extract_period_dataを使用)
             start_date = f"2024-{season[0]:02d}-01"
             end_date = f"2024-{season[-1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, season[-1])}"
             df_season: pd.DataFrame = MonthlyConverter.extract_period_data(

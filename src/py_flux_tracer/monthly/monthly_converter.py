@@ -258,12 +258,12 @@ class MonthlyConverter:
             year : int
                 年を指定します。
             month : int
-                月を指定します（1から12の整数）。
+                月を指定します(1から12の整数)。
 
         Returns
         ----------
             int
-                指定された年月の最終日の日付（1から31の整数）。
+                指定された年月の最終日の日付(1から31の整数)。
         """
         next_month = (
             datetime(year, month % 12 + 1, 1)
