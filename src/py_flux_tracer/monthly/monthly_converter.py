@@ -341,7 +341,7 @@ class MonthlyConverter:
                 warnings.warn(
                     "`extract_monthly_data` is deprecated. Please use `extract_period_data` instead. This method will be removed in v1.0.0.",
                     FutureWarning,
-                    stacklevel=2,
+                    stacklevel=2,  # 警告メッセージでライブラリの内部実装ではなく、非推奨のメソッドを使用しているユーザーのコードの行を指し示すことができる
                 )
         except Exception:
             pass
