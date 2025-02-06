@@ -289,7 +289,7 @@ class MobileMeasurementConfig:
 
 class MobileMeasurementAnalyzer:
     """
-    移動観測で得られた測定データを解析するクラス
+    車載濃度観測で得られた測定データを解析するクラス
     """
 
     EARTH_RADIUS_METERS: float = 6371000  # 地球の半径(メートル)
