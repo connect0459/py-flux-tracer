@@ -19,26 +19,26 @@ class SlopeLine:
 
     Parameters
     ----------
-    coordinates : tuple[tuple[float, float], tuple[float, float]]
-        傾き線の始点と終点の座標。((x1, y1), (x2, y2))の形式で指定。
-        x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
-    text : str
-        傾き線に付随するテキスト（例："-2/3", "-4/3"など）。
-    text_pos : tuple[float, float] | None
-        テキストを表示する位置の座標(x, y)。
-        x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
-        Noneの場合、テキストは表示されない。
-    fontsize : float, optional
-        テキストのフォントサイズ。デフォルトは20。
+        coordinates : tuple[tuple[float, float], tuple[float, float]]
+            傾き線の始点と終点の座標。((x1, y1), (x2, y2))の形式で指定。
+            x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
+        text : str
+            傾き線に付随するテキスト（例："-2/3", "-4/3"など）。
+        text_pos : tuple[float, float] | None
+            テキストを表示する位置の座標(x, y)。
+            x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
+            Noneの場合、テキストは表示されない。
+        fontsize : float, optional
+            テキストのフォントサイズ。デフォルトは20。
 
     Examples
     --------
-    >>> power_slope = SlopeLine(
-    ...     coordinates=((0.01, 10), (10, 0.01)),
-    ...     text="-2/3",
-    ...     text_pos=(0.1, 0.06),
-    ...     fontsize=18
-    ... )
+        >>> power_slope = SlopeLine(
+        ...     coordinates=((0.01, 10), (10, 0.01)),
+        ...     text="-2/3",
+        ...     text_pos=(0.1, 0.06),
+        ...     fontsize=18
+        ... )
     """
 
     coordinates: tuple[tuple[float, float], tuple[float, float]]
@@ -51,8 +51,8 @@ class SlopeLine:
 
         Parameters
         ----------
-        ax : matplotlib.axes.Axes
-            描画対象のAxesオブジェクト
+            ax : matplotlib.axes.Axes
+                描画対象のAxesオブジェクト
         """
         (x1, y1), (x2, y2) = self.coordinates
         ax.plot([x1, x2], [y1, y2], "-", color="black", alpha=0.5)
@@ -96,7 +96,9 @@ class SpectralPlotConfig:
 
 
 class EddyDataFiguresGenerator:
-    """渦相関データの解析を行うクラス"""
+    """
+    データロガーの30分間データファイルから図を作成するクラス
+    """
 
     def __init__(
         self,

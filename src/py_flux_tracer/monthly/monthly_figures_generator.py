@@ -65,7 +65,7 @@ class MonthlyFiguresGenerator:
         logging_debug: bool = False,
     ) -> None:
         """
-        クラスのコンストラクタ
+        Monthlyシートから作成したDataFrameを解析して図を作成するクラス
 
         Parameters
         ------
@@ -1734,48 +1734,48 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ----------
-        df : pd.DataFrame
-            データフレーム
-        col_ratio_1 : str
-            1つ目の比率のカラム名
-        col_ratio_2 : str
-            2つ目の比率のカラム名
-        label_1 : str
-            1つ目の比率のラベル
-        label_2 : str
-            2つ目の比率のラベル
-        color_1 : str
-            1つ目の比率の色
-        color_2 : str
-            2つ目の比率の色
-        output_dirpath : str | Path | None
-            出力ディレクトリ
-        output_filename : str, optional
-            出力ファイル名, by default "gas_ratio_diurnal.png"
-        add_xlabel : bool, optional
-            x軸ラベルを追加するかどうか, by default True
-        add_ylabel : bool, optional
-            y軸ラベルを追加するかどうか, by default True
-        add_legend : bool, optional
-            凡例を追加するかどうか, by default True
-        xlabel : str, optional
-            x軸のラベル, by default "Hour"
-        ylabel : str, optional
-            y軸のラベル, by default "都市ガスが占める排出比率 (%)"
-        subplot_fontsize : int, optional
-            サブプロットのフォントサイズ, by default 20
-        subplot_label : str | None, optional
-            サブプロットのラベル, by default None
-        y_max : float | None, optional
-            y軸の最大値, by default 100
-        figsize : tuple[float, float], optional
-            図のサイズ, by default (12, 5)
-        dpi : float | None, optional
-            図のdpi。デフォルトは350。
-        save_fig : bool, optional
-            図を保存するかどうか, by default True
-        show_fig : bool, optional
-            図を表示するかどうか, by default False
+            df : pd.DataFrame
+                データフレーム
+            col_ratio_1 : str
+                1つ目の比率のカラム名
+            col_ratio_2 : str
+                2つ目の比率のカラム名
+            label_1 : str
+                1つ目の比率のラベル
+            label_2 : str
+                2つ目の比率のラベル
+            color_1 : str
+                1つ目の比率の色
+            color_2 : str
+                2つ目の比率の色
+            output_dirpath : str | Path | None
+                出力ディレクトリ
+            output_filename : str, optional
+                出力ファイル名, by default "gas_ratio_diurnal.png"
+            add_xlabel : bool, optional
+                x軸ラベルを追加するかどうか, by default True
+            add_ylabel : bool, optional
+                y軸ラベルを追加するかどうか, by default True
+            add_legend : bool, optional
+                凡例を追加するかどうか, by default True
+            xlabel : str, optional
+                x軸のラベル, by default "Hour"
+            ylabel : str, optional
+                y軸のラベル, by default "都市ガスが占める排出比率 (%)"
+            subplot_fontsize : int, optional
+                サブプロットのフォントサイズ, by default 20
+            subplot_label : str | None, optional
+                サブプロットのラベル, by default None
+            y_max : float | None, optional
+                y軸の最大値, by default 100
+            figsize : tuple[float, float], optional
+                図のサイズ, by default (12, 5)
+            dpi : float | None, optional
+                図のdpi。デフォルトは350。
+            save_fig : bool, optional
+                図を保存するかどうか, by default True
+            show_fig : bool, optional
+                図を表示するかどうか, by default False
         """
         df_internal: pd.DataFrame = df.copy()
         df_internal.index = pd.to_datetime(df_internal.index)
