@@ -1,5 +1,5 @@
 import warnings
-from datetime import datetime
+from datetime import datetime, timedelta
 from importlib.metadata import version
 from logging import DEBUG, INFO, Logger
 from pathlib import Path
@@ -247,6 +247,31 @@ class MonthlyConverter:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
+
+    @staticmethod
+    def get_last_day_of_month(year: int, month: int) -> int:
+        """
+        指定された年月の最終日を返します。
+
+        Parameters
+        ----------
+            year : int
+                年を指定します。
+            month : int
+                月を指定します（1から12の整数）。
+
+        Returns
+        ----------
+            int
+                指定された年月の最終日の日付（1から31の整数）。
+        """
+        next_month = (
+            datetime(year, month % 12 + 1, 1)
+            if month < 12
+            else datetime(year + 1, 1, 1)
+        )
+        last_day = (next_month - timedelta(days=1)).day
+        return last_day
 
     @staticmethod
     def extract_period_data(

@@ -22,7 +22,7 @@ pico_bias_removal = BiasRemovalConfig(
 )
 
 # MSAInputConfigによる詳細指定
-inputs: list[MobileMeasurementConfig] = [
+configs: list[MobileMeasurementConfig] = [
     MobileMeasurementConfig(
         lag=7,
         fs=1,
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     msa = MobileMeasurementAnalyzer(
         center_lat=34.573904320329724,
         center_lon=135.4829511120712,
-        inputs=inputs,
+        configs=configs,
         num_sections=num_sections,
         hotspot_area_meter=50,
         window_minutes=5,
@@ -209,10 +209,8 @@ if __name__ == "__main__":
         hea.logger.info(f"{method}のemission解析を開始します。")
 
         # 排出量の計算と基本統計
-        emissions_list: list[EmissionData] = (
-            hea.calculate_emission_rates(
-                hotspots=unique_hotspots, config=config, print_summary=True
-            )
+        emissions_list: list[EmissionData] = hea.calculate_emission_rates(
+            hotspots=unique_hotspots, config=config, print_summary=True
         )
 
         # 分布の可視化
@@ -235,12 +233,9 @@ if __name__ == "__main__":
         )
 
     # 各回の時系列データを可視化
-    source_names: list[str] = msa.get_source_names()
-    for source_name in source_names:
-        msa.plot_conc_timeseries(
-            source_name=source_name,
-            output_dirpath=os.path.join(output_dirpath, "timeseries"),
-            output_filename=f"timeseries-{source_name}.png",
-            save_fig=True,
-            show_fig=False,
-        )
+    msa.plot_conc_timeseries(
+        output_dirpath=os.path.join(output_dirpath, "timeseries"),
+        output_filename="timeseries.png",
+        save_fig=True,
+        show_fig=False,
+    )

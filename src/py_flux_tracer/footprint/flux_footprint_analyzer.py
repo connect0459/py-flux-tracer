@@ -30,7 +30,7 @@ class DefaultColumnNames:
     WIND_DIRECTION: str = "Wind direction"
     WIND_SPEED: str = "WS vector"
     FRICTION_VELOCITY: str = "u*"
-    SIGMA_V: str = "sigma_v"
+    SIGMA_V: str = "sigmaV"
     STABILITY: str = "z/L"
 
 

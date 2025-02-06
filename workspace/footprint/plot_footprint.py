@@ -24,7 +24,7 @@ pico_bias_removal = BiasRemovalConfig(
 )
 
 # MSAInputConfigによる詳細指定
-inputs: list[MobileMeasurementConfig] = [
+configs: list[MobileMeasurementConfig] = [
     MobileMeasurementConfig(
         lag=7,
         fs=1,
@@ -114,8 +114,8 @@ font_paths: list[str | Path] = [
 center_lan: float = 34.573904320329724  # 観測地点の緯度
 center_lon: float = 135.4829511120712  # 観測地点の経度
 num_sections: int = 4  # セクション数
-# plot_count: int = 10000
-plot_count: int = 50000
+plot_count: int = 10000
+# plot_count: int = 50000
 
 # スケールチェック用の仮地点の要素(緯度、経度、ラベル)
 check_points_for_scale_checker: list[tuple[float, float, str]] = [
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     msa = MobileMeasurementAnalyzer(
         center_lat=center_lan,
         center_lon=center_lon,
-        inputs=inputs,
+        configs=configs,
         num_sections=num_sections,
         hotspot_area_meter=50,
         window_minutes=5,

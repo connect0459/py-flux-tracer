@@ -32,13 +32,6 @@ start_date, end_date = "2024-05-15", "2024-12-31"  # yyyy-MM-ddで指定
 # months: list[int] = [5, 6, 7, 8, 9, 10, 11]
 months: list[int] = [5, 6, 7, 8, 9, 10, 11, 12]
 subplot_labels: list[list[str | None]] = [
-    # ["(a1)", "(a2)"],
-    # ["(b1)", "(b2)"],
-    # ["(c1)", "(c2)"],
-    # ["(d1)", "(d2)"],
-    # ["(e1)", "(e2)"],
-    # ["(f1)", "(f2)"],
-    # ["(g1)", "(g2)"],
     ["(a)", None],
     ["(b)", None],
     ["(c)", None],
@@ -193,7 +186,7 @@ if __name__ == "__main__":
 
         # 月ごとのDataFrameを作成（extract_period_dataを使用）
         start_date = f"2024-{month:02d}-01"
-        end_date = f"2024-{month:02d}-31"
+        end_date = f"2024-{month:02d}-{MonthlyConverter.get_last_day_of_month(2024, month)}"
         df_month: pd.DataFrame = MonthlyConverter.extract_period_data(
             df=df_combined,
             start_date=start_date,
@@ -423,14 +416,20 @@ if __name__ == "__main__":
 
     # 2ヶ月毎
     months_dos: list[list[int]] = [[5, 6], [7, 8], [9, 10], [11, 12]]
-    for month_dos, subplot_label in zip(months_dos, subplot_labels, strict=True):
+    subplot_labels_dos: list[list[str | None]] = [
+        ["(a)", None],
+        ["(b)", None],
+        ["(c)", None],
+        ["(d)", None],
+    ]
+    for month_dos, subplot_label in zip(months_dos, subplot_labels_dos, strict=True):
         # monthを0埋めのMM形式に変換
         month_str = "_".join(f"{month:02d}" for month in month_dos)
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
         # 月ごとのDataFrameを作成（extract_period_dataを使用）
         start_date = f"2024-{month_dos[0]:02d}-01"
-        end_date = f"2024-{month_dos[1]:02d}-31"
+        end_date = f"2024-{month_dos[1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, month_dos[1])}"
         df_month_dos: pd.DataFrame = MonthlyConverter.extract_period_data(
             df=df_combined,
             start_date=start_date,
@@ -480,7 +479,7 @@ if __name__ == "__main__":
         ):
             # 季節ごとのDataFrameを作成（extract_period_dataを使用）
             start_date = f"2024-{season[0]:02d}-01"
-            end_date = f"2024-{season[-1]:02d}-30"
+            end_date = f"2024-{season[-1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, season[-1])}"
             df_season: pd.DataFrame = MonthlyConverter.extract_period_data(
                 df=df_combined,
                 start_date=start_date,
@@ -725,7 +724,7 @@ if __name__ == "__main__":
         ax2_ylim=(-1, 8),
     )
     mfg.plot_source_contributions_diurnal_by_date(
-        df=df_season,
+        df=df_around_year_for_diurnal,
         output_dirpath=(os.path.join(output_dirpath, "around_year")),
         output_filename="source_contributions_by_date_around_year.png",
         col_ch4_flux="Fch4_ultra",

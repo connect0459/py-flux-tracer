@@ -391,10 +391,10 @@ class HotspotEmissionAnalyzer:
     def plot_emission_analysis(
         self,
         emissions: list[EmissionData],
-        dpi: int = 300,
         output_dirpath: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
         figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
         hotspot_colors: dict[HotspotType, str] | None = None,
         add_legend: bool = True,
         hist_log_y: bool = False,
@@ -420,10 +420,10 @@ class HotspotEmissionAnalyzer:
                 出力先ディレクトリのパス。
             output_filename : str
                 保存するファイル名。デフォルトは"emission_analysis.png"。
-            dpi : int
-                プロットの解像度。デフォルトは300。
             figsize : tuple[float, float]
                 プロットのサイズ。デフォルトは(12, 5)。
+            dpi : float | None
+                プロットの解像度。デフォルトは350。
             hotspot_colors : dict[HotspotType, str] | None
                 ホットスポットの色を定義する辞書。Noneの場合はデフォルト値を使用。
                 ```py

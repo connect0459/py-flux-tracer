@@ -198,7 +198,7 @@ class HotspotParams:
 @dataclass
 class MobileMeasurementConfig:
     """
-    MobileMeasurementAnalyzerのinputsに与える設定の値を保持するデータクラス
+    MobileMeasurementAnalyzerのconfigsに与える設定の値を保持するデータクラス
 
     Parameters
     ----------
@@ -298,7 +298,7 @@ class MobileMeasurementAnalyzer:
         self,
         center_lat: float,
         center_lon: float,
-        inputs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
+        configs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
         num_sections: int = 4,
         ch4_enhance_threshold: float = 0.1,
         correlation_threshold: float = 0.7,
@@ -319,7 +319,7 @@ class MobileMeasurementAnalyzer:
                 中心緯度
             center_lon : float
                 中心経度
-            inputs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
+            configs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
                 入力ファイルのリスト
             num_sections : int
                 分割する区画数。デフォルトは4。
@@ -390,12 +390,11 @@ class MobileMeasurementAnalyzer:
         )
         # 入力設定の標準化
         normalized_input_configs: list[MobileMeasurementConfig] = (
-            MobileMeasurementAnalyzer._normalize_inputs(inputs)
+            MobileMeasurementAnalyzer._normalize_configs(configs)
         )
-        # 複数ファイルのデータを読み込み
-        self._data: dict[str, pd.DataFrame] = self._load_all_data(
-            normalized_input_configs
-        )
+        self._configs: list[MobileMeasurementConfig] = normalized_input_configs
+        # 複数ファイルのデータを読み込み結合
+        self.df: pd.DataFrame = self._load_all_combined_data(normalized_input_configs)
 
     @property
     def hotspot_params(self) -> HotspotParams:
@@ -467,10 +466,10 @@ class MobileMeasurementAnalyzer:
         params: HotspotParams = self._hotspot_params
 
         # 各データソースに対して解析を実行
-        for _, df in self._data.items():
-            # パラメータの計算
-            df = MobileMeasurementAnalyzer._calculate_hotspots_parameters(
-                df=df,
+        # パラメータの計算
+        df_processed: pd.DataFrame = (
+            MobileMeasurementAnalyzer._calculate_hotspots_parameters(
+                df=self.df,
                 window_size=self._window_size,
                 col_ch4_ppm=params.col_ch4_ppm,
                 col_c2h6_ppb=params.col_c2h6_ppb,
@@ -483,13 +482,14 @@ class MobileMeasurementAnalyzer:
                 rolling_method=params.rolling_method,
                 quantile_value=params.quantile_value,
             )
+        )
 
-            # ホットスポットの検出
-            hotspots: list[HotspotData] = self._detect_hotspots(
-                df=df,
-                ch4_enhance_threshold=self._ch4_enhance_threshold,
-            )
-            all_hotspots.extend(hotspots)
+        # ホットスポットの検出
+        hotspots: list[HotspotData] = self._detect_hotspots(
+            df=df_processed,
+            ch4_enhance_threshold=self._ch4_enhance_threshold,
+        )
+        all_hotspots.extend(hotspots)
 
         # 重複チェックモードに応じて処理
         if duplicate_check_mode != "none":
@@ -509,24 +509,24 @@ class MobileMeasurementAnalyzer:
 
     def calculate_measurement_stats(
         self,
-        print_individual_stats: bool = True,
-        print_total_stats: bool = True,
         col_latitude: str = "latitude",
         col_longitude: str = "longitude",
+        print_summary_individual: bool = True,
+        print_summary_total: bool = True,
     ) -> tuple[float, timedelta]:
         """
         各ファイルの測定時間と走行距離を計算し、合計を返します。
 
         Parameters
         ----------
-            print_individual_stats : bool
-                個別ファイルの統計を表示するかどうか。デフォルトはTrue。
-            print_total_stats : bool
-                合計統計を表示するかどうか。デフォルトはTrue。
             col_latitude : str
                 緯度情報が格納されているカラム名。デフォルトは"latitude"。
             col_longitude : str
                 経度情報が格納されているカラム名。デフォルトは"longitude"。
+            print_summary_individual : bool
+                個別ファイルの統計を表示するかどうか。デフォルトはTrue。
+            print_summary_total : bool
+                合計統計を表示するかどうか。デフォルトはTrue。
 
         Returns
         ----------
@@ -538,9 +538,8 @@ class MobileMeasurementAnalyzer:
         individual_stats: list[dict] = []  # 個別の統計情報を保存するリスト
 
         # プログレスバーを表示しながら計算
-        for source_name, df in tqdm(
-            self._data.items(), desc="Calculating", unit="file"
-        ):
+        for config in tqdm(self._configs, desc="Calculating", unit="file"):
+            df, source_name = self._load_data(config=config)
             # 時間の計算
             time_spent = df.index[-1] - df.index[0]
 
@@ -561,7 +560,7 @@ class MobileMeasurementAnalyzer:
             total_time += time_spent
 
             # 統計情報を保存
-            if print_individual_stats:
+            if print_summary_individual:
                 average_speed = distance_km / (time_spent.total_seconds() / 3600)
                 individual_stats.append(
                     {
@@ -573,7 +572,7 @@ class MobileMeasurementAnalyzer:
                 )
 
         # 計算完了後に統計情報を表示
-        if print_individual_stats:
+        if print_summary_individual:
             self.logger.info("=== Individual Stats ===")
             for stat in individual_stats:
                 print(f"File         : {stat['source']}")
@@ -582,7 +581,7 @@ class MobileMeasurementAnalyzer:
                 print(f"  Avg. Speed : {stat['speed']:.1f} km/h\n")
 
         # 合計を表示
-        if print_total_stats:
+        if print_summary_total:
             average_speed_total: float = total_distance / (
                 total_time.total_seconds() / 3600
             )
@@ -821,36 +820,7 @@ class MobileMeasurementAnalyzer:
             pd.DataFrame
                 前処理済みの結合されたDataFrame
         """
-        processed_dfs: list[pd.DataFrame] = []
-        params: HotspotParams = self._hotspot_params
-
-        # 各データソースに対して解析を実行
-        for source_name, df in self._data.items():
-            # パラメータの計算
-            processed_df = MobileMeasurementAnalyzer._calculate_hotspots_parameters(
-                df=df,
-                window_size=self._window_size,
-                col_ch4_ppm=params.col_ch4_ppm,
-                col_c2h6_ppb=params.col_c2h6_ppb,
-                col_h2o_ppm=params.col_h2o_ppm,
-                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
-                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
-                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
-                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
-                h2o_ppm_threshold=params.h2o_ppm_min,
-                rolling_method=params.rolling_method,
-                quantile_value=params.quantile_value,
-            )
-            # ソース名を列として追加
-            processed_df["source"] = source_name
-            processed_dfs.append(processed_df)
-
-        # すべてのDataFrameを結合
-        if not processed_dfs:
-            raise ValueError("処理対象のデータが存在しません。")
-
-        combined_df: pd.DataFrame = pd.concat(processed_dfs, axis=0)
-        return combined_df
+        return self.df.copy()
 
     def get_section_size(self) -> float:
         """
@@ -865,40 +835,12 @@ class MobileMeasurementAnalyzer:
         """
         return self._section_size
 
-    def get_source_names(self, print_all: bool = False) -> list[str]:
-        """
-        データソースの名前を取得します。
-
-        Parameters
-        ----------
-        print_all : bool, optional
-            すべてのデータソース名を表示するかどうかを指定します。デフォルトはFalseです。
-
-        Returns
-        ----------
-        list[str]
-            データソース名のリスト
-
-        Raises
-        ----------
-        ValueError
-            データが読み込まれていない場合に発生します。
-        """
-        dfs_dict: dict[str, pd.DataFrame] = self._data
-        # データソースの選択
-        if not dfs_dict:
-            raise ValueError("データが読み込まれていません。")
-        source_name_list: list[str] = list(dfs_dict.keys())
-        if print_all:
-            print(source_name_list)
-        return source_name_list
-
     def plot_ch4_delta_histogram(
         self,
         hotspots: list[HotspotData],
         output_dirpath: str | Path | None,
         output_filename: str = "ch4_delta_histogram.png",
-        dpi: int = 200,
+        dpi: float | None = 350,
         figsize: tuple[float, float] = (8, 6),
         fontsize: float = 20,
         hotspot_colors: dict[HotspotType, str] | None = None,
@@ -922,7 +864,7 @@ class MobileMeasurementAnalyzer:
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"ch4_delta_histogram.png"。
-            dpi : int
+            dpi : float | None
                 解像度。デフォルトは200。
             figsize : tuple[float, float]
                 図のサイズ。デフォルトは(8, 6)。
@@ -1229,8 +1171,8 @@ class MobileMeasurementAnalyzer:
         hotspots: list[HotspotData],
         output_dirpath: str | Path | None = None,
         output_filename: str = "scatter_c2c1.png",
-        dpi: int = 200,
         figsize: tuple[float, float] = (4, 4),
+        dpi: float | None = 350,
         hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_labels: dict[HotspotType, str] | None = None,
         fontsize: float = 12,
@@ -1257,10 +1199,10 @@ class MobileMeasurementAnalyzer:
                 保存先のディレクトリパス
             output_filename : str
                 保存するファイル名。デフォルトは"scatter_c2c1.png"。
-            dpi : int
-                解像度。デフォルトは200。
             figsize : tuple[float, float]
                 図のサイズ。デフォルトは(4, 4)。
+            dpi : float | None
+                解像度。デフォルトは350。
             fontsize : float
                 フォントサイズ。デフォルトは12。
             hotspot_colors : dict[HotspotType, str] | None
@@ -1406,11 +1348,10 @@ class MobileMeasurementAnalyzer:
 
     def plot_conc_timeseries(
         self,
-        source_name: str | None = None,
         output_dirpath: str | Path | None = None,
         output_filename: str = "timeseries.png",
-        dpi: int = 200,
         figsize: tuple[float, float] = (8, 4),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
         col_ch4: str = "ch4_ppm",
@@ -1431,16 +1372,14 @@ class MobileMeasurementAnalyzer:
 
         Parameters
         ----------
-            dpi : int
-                図の解像度を指定します。デフォルトは200です。
-            source_name : str | None
-                プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
-            figsize : tuple[float, float]
-                図のサイズを指定します。デフォルトは(8, 4)です。
             output_dirpath : str | Path | None
                 保存先のディレクトリを指定します。save_fig=Trueの場合は必須です。
             output_filename : str
                 保存するファイル名を指定します。デフォルトは"timeseries.png"です。
+            figsize : tuple[float, float]
+                図のサイズを指定します。デフォルトは(8, 4)です。
+            dpi : float | None
+                図の解像度を指定します。デフォルトは350です。
             save_fig : bool
                 図を保存するかどうかを指定します。デフォルトはFalseです。
             show_fig : bool
@@ -1480,24 +1419,14 @@ class MobileMeasurementAnalyzer:
                 "ytick.labelsize": font_size,
             }
         )
-        dfs_dict: dict[str, pd.DataFrame] = self._data.copy()
-        # データソースの選択
-        if not dfs_dict:
-            raise ValueError("データが読み込まれていません。")
-
-        if source_name not in dfs_dict:
-            raise ValueError(
-                f"指定されたデータソース '{source_name}' が見つかりません。"
-            )
-
-        df = dfs_dict[source_name]
+        df_internal: pd.DataFrame = self.df.copy()
 
         # プロットの作成
         fig = plt.figure(figsize=figsize, dpi=dpi)
 
         # CH4プロット
         ax1 = fig.add_subplot(3, 1, 1)
-        ax1.plot(df.index, df[col_ch4], c=line_color)
+        ax1.plot(df_internal.index, df_internal[col_ch4], c=line_color)
         if ylim_ch4:
             ax1.set_ylim(ylim_ch4)
         if yscale_log_ch4:
@@ -1507,7 +1436,7 @@ class MobileMeasurementAnalyzer:
 
         # C2H6プロット
         ax2 = fig.add_subplot(3, 1, 2)
-        ax2.plot(df.index, df[col_c2h6], c=line_color)
+        ax2.plot(df_internal.index, df_internal[col_c2h6], c=line_color)
         if ylim_c2h6:
             ax2.set_ylim(ylim_c2h6)
         if yscale_log_c2h6:
@@ -1517,7 +1446,7 @@ class MobileMeasurementAnalyzer:
 
         # H2Oプロット
         ax3 = fig.add_subplot(3, 1, 3)
-        ax3.plot(df.index, df[col_h2o], c=line_color)
+        ax3.plot(df_internal.index, df_internal[col_h2o], c=line_color)
         if ylim_h2o:
             ax3.set_ylim(ylim_h2o)
         if yscale_log_h2o:
@@ -1552,11 +1481,10 @@ class MobileMeasurementAnalyzer:
     def plot_conc_timeseries_with_hotspots(
         self,
         hotspots: list[HotspotData] | None = None,
-        source_name: str | None = None,
         output_dirpath: str | Path | None = None,
         output_filename: str = "timeseries_with_hotspots.png",
-        dpi: int = 200,
         figsize: tuple[float, float] = (8, 6),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
         col_ch4: str = "ch4_ppm",
@@ -1592,16 +1520,14 @@ class MobileMeasurementAnalyzer:
         ----------
             hotspots : list[HotspotData] | None
                 表示するホットスポットのリスト。Noneの場合はホットスポットは表示されません。
-            source_name : str | None
-                プロットするデータソースの名前。Noneの場合は最初のデータソースを使用します。
             output_dirpath : str | Path | None
                 出力先ディレクトリのパス。
             output_filename : str
                 保存するファイル名。デフォルトは"timeseries_with_hotspots.png"です。
-            dpi : int
-                図の解像度を指定します。デフォルトは200です。
             figsize : tuple[float, float]
                 図のサイズを指定します。デフォルトは(8, 6)です。
+            dpi : float | None
+                図の解像度を指定します。デフォルトは350です。
             save_fig : bool
                 図を保存するかどうかを指定します。デフォルトはFalseです。
             show_fig : bool
@@ -1668,17 +1594,7 @@ class MobileMeasurementAnalyzer:
             }
         )
 
-        dfs_dict: dict[str, pd.DataFrame] = self._data.copy()
-        # データソースの選択
-        if not dfs_dict:
-            raise ValueError("データが読み込まれていません。")
-
-        if source_name not in dfs_dict:
-            raise ValueError(
-                f"指定されたデータソース '{source_name}' が見つかりません。"
-            )
-
-        df = dfs_dict[source_name]
+        df_internal: pd.DataFrame = self.df.copy()
 
         # プロットの作成
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -1687,15 +1603,15 @@ class MobileMeasurementAnalyzer:
         gs = gridspec.GridSpec(4, 1, height_ratios=[1, 1, 1, 1])
 
         # 時間軸の範囲を設定(余白付き)
-        time_min = df.index.min()
-        time_max = df.index.max()
+        time_min = df_internal.index.min()
+        time_max = df_internal.index.max()
         time_margin = pd.Timedelta(minutes=time_margin_minutes)
         plot_time_min = time_min - time_margin
         plot_time_max = time_max + time_margin
 
         # CH4プロット
         ax1 = fig.add_subplot(gs[0])
-        ax1.plot(df.index, df[col_ch4], c=line_color)
+        ax1.plot(df_internal.index, df_internal[col_ch4], c=line_color)
         if ylim_ch4:
             ax1.set_ylim(ylim_ch4)
         if yscale_log_ch4:
@@ -1706,7 +1622,7 @@ class MobileMeasurementAnalyzer:
 
         # C2H6プロット
         ax2 = fig.add_subplot(gs[1])
-        ax2.plot(df.index, df[col_c2h6], c=line_color)
+        ax2.plot(df_internal.index, df_internal[col_c2h6], c=line_color)
         if ylim_c2h6:
             ax2.set_ylim(ylim_c2h6)
         if yscale_log_c2h6:
@@ -1717,7 +1633,7 @@ class MobileMeasurementAnalyzer:
 
         # H2Oプロット
         ax3 = fig.add_subplot(gs[2])
-        ax3.plot(df.index, df[col_h2o], c=line_color)
+        ax3.plot(df_internal.index, df_internal[col_h2o], c=line_color)
         if ylim_h2o:
             ax3.set_ylim(ylim_h2o)
         if yscale_log_h2o:
@@ -1830,6 +1746,7 @@ class MobileMeasurementAnalyzer:
         enhanced_mask = df["ch4_ppm_delta"] >= ch4_enhance_threshold
 
         if enhanced_mask.any():
+            timestamp = df["timestamp"][enhanced_mask]
             lat = df["latitude"][enhanced_mask]
             lon = df["longitude"][enhanced_mask]
             delta_ratio = df["c2c1_ratio_delta"][enhanced_mask]
@@ -1857,7 +1774,8 @@ class MobileMeasurementAnalyzer:
                         center_lon=self._center_lon,
                     )
                     section: int = self._determine_section(angle)
-                    timestamp_raw = pd.Timestamp(str(delta_ratio.index[i]))
+                    # 値を取得してpd.Timestampに変換
+                    timestamp_raw = pd.Timestamp(str(timestamp.values[i]))
 
                     hotspots.append(
                         HotspotData(
@@ -1896,14 +1814,11 @@ class MobileMeasurementAnalyzer:
         # -180度の場合は最後の区画に含める
         return self._num_sections - 1
 
-    def _load_all_data(
+    def _load_all_combined_data(
         self, input_configs: list[MobileMeasurementConfig]
-    ) -> dict[str, pd.DataFrame]:
+    ) -> pd.DataFrame:
         """
-        全入力ファイルのデータを読み込み、データフレームの辞書を返します。
-
-        このメソッドは、指定された入力設定に基づいてすべてのデータファイルを読み込み、
-        各ファイルのデータをデータフレームとして格納した辞書を生成します。
+        全入力ファイルのデータを読み込み、結合したデータフレームを返します。
 
         Parameters
         ----------
@@ -1912,14 +1827,14 @@ class MobileMeasurementAnalyzer:
 
         Returns
         ----------
-            dict[str, pd.DataFrame]
-                読み込まれたデータフレームの辞書。キーはファイル名、値はデータフレーム。
+            pd.DataFrame
+                読み込まれたすべてのデータを結合したデータフレーム。
         """
-        all_data: dict[str, pd.DataFrame] = {}
+        dfs: list[pd.DataFrame] = []
         for config in input_configs:
-            df, source_name = self._load_data(config)
-            all_data[source_name] = df
-        return all_data
+            df, _ = self._load_data(config)
+            dfs.append(df)
+        return pd.concat(dfs, ignore_index=True)
 
     def _load_data(
         self,
@@ -2332,15 +2247,15 @@ class MobileMeasurementAnalyzer:
         return False
 
     @staticmethod
-    def _normalize_inputs(
-        inputs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
+    def _normalize_configs(
+        configs: list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]],
     ) -> list[MobileMeasurementConfig]:
         """
         入力設定を標準化
 
         Parameters
         ----------
-            inputs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
+            configs : list[MobileMeasurementConfig] | list[tuple[float, float, str | Path]]
                 入力設定のリスト
 
         Returns
@@ -2349,7 +2264,7 @@ class MobileMeasurementAnalyzer:
                 標準化された入力設定のリスト
         """
         normalized: list[MobileMeasurementConfig] = []
-        for inp in inputs:
+        for inp in configs:
             if isinstance(inp, MobileMeasurementConfig):
                 normalized.append(inp)  # すでに検証済みのため、そのまま追加
             else:

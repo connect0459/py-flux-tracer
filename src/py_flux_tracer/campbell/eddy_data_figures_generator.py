@@ -150,7 +150,7 @@ class EddyDataFiguresGenerator:
         scaling_co: str = "spectrum",
         power_slope: SlopeLine | None = None,
         co_slope: SlopeLine | None = None,
-        are_inputs_resampled: bool = True,
+        are_configs_resampled: bool = True,
         save_fig: bool = True,
         show_fig: bool = True,
         plot_power: bool = True,
@@ -216,7 +216,7 @@ class EddyDataFiguresGenerator:
                 パワースペクトルの傾き線設定。Noneの場合はデフォルト設定を使用。
             co_slope : SlopeLine | None
                 コスペクトルの傾き線設定。Noneの場合はデフォルト設定を使用。
-            are_inputs_resampled : bool, optional
+            are_configs_resampled : bool, optional
                 入力データが再サンプリングされているかどうか。デフォルトはTrue。
             save_fig : bool, optional
                 図を保存するかどうか。デフォルトはTrue。
@@ -279,7 +279,7 @@ class EddyDataFiguresGenerator:
         for filename in tqdm(csv_files, desc="Processing files"):
             df, _ = edp.get_resampled_df(
                 filepath=os.path.join(input_dirpath, filename),
-                resample=are_inputs_resampled,
+                resample=are_configs_resampled,
             )
 
             # 風速成分の計算を追加
