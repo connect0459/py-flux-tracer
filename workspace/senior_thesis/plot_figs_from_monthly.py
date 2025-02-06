@@ -186,14 +186,18 @@ if __name__ == "__main__":
         )
         mfg.logger.info("'timeseries'を作成しました。")
 
+    # 単一月のデータ抽出も同様に変更
     for month, subplot_label in zip(months, subplot_labels, strict=True):
-        # monthを0埋めのMM形式に変換
         month_str = f"{month:02d}"
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
-        # 月ごとのDataFrameを作成
-        df_month: pd.DataFrame = MonthlyConverter.extract_monthly_data(
-            df=df_combined, target_months=[month]
+        # 月ごとのDataFrameを作成（extract_period_dataを使用）
+        start_date = f"2024-{month:02d}-01"
+        end_date = f"2024-{month:02d}-31"
+        df_month: pd.DataFrame = MonthlyConverter.extract_period_data(
+            df=df_combined,
+            start_date=start_date,
+            end_date=end_date,
         )
         if month == 10 or month == 11 or month == 12:
             df_month["Fch4_open"] = np.nan
@@ -424,9 +428,13 @@ if __name__ == "__main__":
         month_str = "_".join(f"{month:02d}" for month in month_dos)
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
-        # 月ごとのDataFrameを作成
-        df_month_dos: pd.DataFrame = MonthlyConverter.extract_monthly_data(
-            df=df_combined, target_months=month_dos
+        # 月ごとのDataFrameを作成（extract_period_dataを使用）
+        start_date = f"2024-{month_dos[0]:02d}-01"
+        end_date = f"2024-{month_dos[1]:02d}-31"
+        df_month_dos: pd.DataFrame = MonthlyConverter.extract_period_data(
+            df=df_combined,
+            start_date=start_date,
+            end_date=end_date,
         )
         if month == 11 or month == 12:
             df_month_dos["Fch4_open"] = np.nan
@@ -470,9 +478,13 @@ if __name__ == "__main__":
         for season, tag, subplot_label in zip(
             seasons, seasons_tags, seasons_subplot_labels, strict=True
         ):
-            # 月ごとのDataFrameを作成
-            df_season: pd.DataFrame = MonthlyConverter.extract_monthly_data(
-                df=df_combined, target_months=season
+            # 季節ごとのDataFrameを作成（extract_period_dataを使用）
+            start_date = f"2024-{season[0]:02d}-01"
+            end_date = f"2024-{season[-1]:02d}-30"
+            df_season: pd.DataFrame = MonthlyConverter.extract_period_data(
+                df=df_combined,
+                start_date=start_date,
+                end_date=end_date,
             )
 
             mfg.logger.info(f"season:'{tag}'の図を作成します。")

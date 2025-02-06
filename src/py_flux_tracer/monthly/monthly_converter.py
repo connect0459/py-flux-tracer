@@ -150,7 +150,7 @@ class MonthlyConverter:
             start_date : str | None
                 開始日 ('yyyy-MM-dd')。この日付の'00:00:00'のデータが開始行となります。
             end_date : str | None
-                終了日 ('yyyy-MM-dd')。この日付をデータに含めるかはinclude_end_dateフラグによって変わります。
+                終了日 ('yyyy-MM-dd')。この日付をデータに含めるかは include_end_date フラグによって変わります。
             include_end_date : bool
                 終了日を含めるかどうか。デフォルトはTrueです。
             sort_by_date : bool
@@ -247,6 +247,114 @@ class MonthlyConverter:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close()
+
+    @staticmethod
+    def extract_period_data(
+        df: pd.DataFrame,
+        start_date: str | pd.Timestamp,
+        end_date: str | pd.Timestamp,
+        include_end_date: bool = True,
+        datetime_column: str = "Date",
+    ) -> pd.DataFrame:
+        """
+        指定された期間のデータを抽出します。
+
+        Parameters
+        ----------
+            df : pd.DataFrame
+                入力データフレーム
+            start_date : str | pd.Timestamp
+                開始日('YYYY-MM-DD'形式の文字列またはTimestamp)。
+            end_date : str | pd.Timestamp
+                    終了日('YYYY-MM-DD'形式の文字列またはTimestamp)。この日付をデータに含めるかは include_end_date フラグによって変わります。
+            include_end_date : bool
+                終了日を含めるかどうか。デフォルトはTrueです。
+            datetime_column : str
+                日付を含む列の名前。デフォルトは"Date"
+
+        Returns
+        ----------
+            pd.DataFrame
+                指定された期間のデータのみを含むデータフレーム
+        """
+        # データフレームのコピーを作成
+        df_internal = df.copy()
+        df_internal[datetime_column] = pd.to_datetime(df_internal[datetime_column])
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date)
+
+        # 開始日と終了日の順序チェック
+        if start_dt > end_dt:
+            raise ValueError("start_date は end_date より前である必要があります")
+
+        # 期間でフィルタリング
+        period_data = df_internal[
+            (df_internal[datetime_column] >= start_dt)
+            & (
+                df_internal[datetime_column]
+                < (end_dt + pd.Timedelta(days=1) if include_end_date else end_dt)
+            )
+        ]
+
+        return period_data
+
+    @staticmethod
+    def merge_dataframes(
+        df1: pd.DataFrame, df2: pd.DataFrame, date_column: str = "Date"
+    ) -> pd.DataFrame:
+        """
+        2つのDataFrameを結合します。重複するカラムは元の名前とサフィックス付きの両方を保持します。
+
+        Parameters
+        ----------
+            df1 : pd.DataFrame
+                ベースとなるDataFrame
+            df2 : pd.DataFrame
+                結合するDataFrame
+            date_column : str
+                日付カラムの名前。デフォルトは"Date"
+
+        Returns
+        ----------
+            pd.DataFrame
+                結合されたDataFrame
+        """
+        # インデックスをリセット
+        df1 = df1.reset_index(drop=True)
+        df2 = df2.reset_index(drop=True)
+
+        # 日付カラムを統一
+        df2[date_column] = df1[date_column]
+
+        # 重複しないカラムと重複するカラムを分離
+        duplicate_cols = [date_column, "year", "month"]  # 常に除外するカラム
+        overlapping_cols = [
+            col
+            for col in df2.columns
+            if col in df1.columns and col not in duplicate_cols
+        ]
+        unique_cols = [
+            col
+            for col in df2.columns
+            if col not in df1.columns and col not in duplicate_cols
+        ]
+
+        # 結果のDataFrameを作成
+        result = df1.copy()
+
+        # 重複しないカラムを追加
+        for col in unique_cols:
+            result[col] = df2[col]
+
+        # 重複するカラムを処理
+        for col in overlapping_cols:
+            # 元のカラムはdf1の値を保持(既に result に含まれている)
+            # _x サフィックスでdf1の値を追加
+            result[f"{col}_x"] = df1[col]
+            # _y サフィックスでdf2の値を追加
+            result[f"{col}_y"] = df2[col]
+
+        return result
 
     def _extract_date(self, filename: str) -> datetime:
         """
@@ -386,105 +494,3 @@ class MonthlyConverter:
             monthly_data = monthly_data[monthly_data[datetime_column].dt.day <= end_day]
 
         return monthly_data
-
-    @staticmethod
-    def extract_period_data(
-        df: pd.DataFrame,
-        start_date: str | pd.Timestamp,
-        end_date: str | pd.Timestamp,
-        datetime_column: str = "Date",
-    ) -> pd.DataFrame:
-        """
-        指定された期間のデータを抽出します。
-
-        Parameters
-        ----------
-            df : pd.DataFrame
-                入力データフレーム
-            start_date : str | pd.Timestamp
-                開始日('YYYY-MM-DD'形式の文字列またはTimestamp)
-            end_date : str | pd.Timestamp
-                終了日('YYYY-MM-DD'形式の文字列またはTimestamp)
-            datetime_column : str
-                日付を含む列の名前。デフォルトは"Date"
-
-        Returns
-        ----------
-            pd.DataFrame
-                指定された期間のデータのみを含むデータフレーム
-        """
-        # データフレームのコピーを作成
-        df_internal = df.copy()
-        df_internal[datetime_column] = pd.to_datetime(df_internal[datetime_column])
-        start_dt = pd.to_datetime(start_date)
-        end_dt = pd.to_datetime(end_date)
-
-        # 開始日と終了日の順序チェック
-        if start_dt > end_dt:
-            raise ValueError("start_date は end_date より前である必要があります")
-
-        # 期間でフィルタリング
-        period_data = df_internal[
-            (df_internal[datetime_column] >= start_dt)
-            & (df_internal[datetime_column] <= end_dt)
-        ]
-
-        return period_data
-
-    @staticmethod
-    def merge_dataframes(
-        df1: pd.DataFrame, df2: pd.DataFrame, date_column: str = "Date"
-    ) -> pd.DataFrame:
-        """
-        2つのDataFrameを結合します。重複するカラムは元の名前とサフィックス付きの両方を保持します。
-
-        Parameters
-        ----------
-            df1 : pd.DataFrame
-                ベースとなるDataFrame
-            df2 : pd.DataFrame
-                結合するDataFrame
-            date_column : str
-                日付カラムの名前。デフォルトは"Date"
-
-        Returns
-        ----------
-            pd.DataFrame
-                結合されたDataFrame
-        """
-        # インデックスをリセット
-        df1 = df1.reset_index(drop=True)
-        df2 = df2.reset_index(drop=True)
-
-        # 日付カラムを統一
-        df2[date_column] = df1[date_column]
-
-        # 重複しないカラムと重複するカラムを分離
-        duplicate_cols = [date_column, "year", "month"]  # 常に除外するカラム
-        overlapping_cols = [
-            col
-            for col in df2.columns
-            if col in df1.columns and col not in duplicate_cols
-        ]
-        unique_cols = [
-            col
-            for col in df2.columns
-            if col not in df1.columns and col not in duplicate_cols
-        ]
-
-        # 結果のDataFrameを作成
-        result = df1.copy()
-
-        # 重複しないカラムを追加
-        for col in unique_cols:
-            result[col] = df2[col]
-
-        # 重複するカラムを処理
-        for col in overlapping_cols:
-            # 元のカラムはdf1の値を保持(既に result に含まれている)
-            # _x サフィックスでdf1の値を追加
-            result[f"{col}_x"] = df1[col]
-            # _y サフィックスでdf2の値を追加
-            result[f"{col}_y"] = df2[col]
-
-        return result
