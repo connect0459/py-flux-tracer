@@ -10,14 +10,23 @@ class H2OCorrectionConfig:
 
     Parameters
     ----------
-        coef_b : float | None
-            補正曲線の1次係数
-        coef_c : float | None
-            補正曲線の2次係数
-        h2o_ppm_threshold : float | None
-            水蒸気濃度の下限値(この値未満のデータは除外)
-        target_h2o_ppm : float
-            換算先の水蒸気濃度(デフォルト: 10000 ppm)
+        coef_b: float | None, optional
+            補正曲線の1次係数。デフォルト値はNone。
+        coef_c: float | None, optional
+            補正曲線の2次係数。デフォルト値はNone。
+        h2o_ppm_threshold: float | None, optional
+            水蒸気濃度の下限値(この値未満のデータは除外)。デフォルト値は2000。
+        target_h2o_ppm: float, optional
+            換算先の水蒸気濃度。デフォルト値は10000 ppm。
+
+    Examples
+    --------
+    >>> config = H2OCorrectionConfig(
+    ...     coef_b=0.001,
+    ...     coef_c=0.0001,
+    ...     h2o_ppm_threshold=2000,
+    ...     target_h2o_ppm=10000
+    ... )
     """
 
     coef_b: float | None = None
@@ -32,12 +41,20 @@ class BiasRemovalConfig:
 
     Parameters
     ----------
-        quantile_value : float
-            バイアス除去に使用するクォンタイル値
-        base_ch4_ppm : float
-            補正前の値から最小値を引いた後に足すCH4濃度の基準値。
-        base_c2h6_ppb : float
-            補正前の値から最小値を引いた後に足すC2H6濃度の基準値。
+        quantile_value: float, optional
+            バイアス除去に使用するクォンタイル値。デフォルト値は0.05。
+        base_ch4_ppm: float, optional
+            補正前の値から最小値を引いた後に足すCH4濃度の基準値。デフォルト値は2.0。
+        base_c2h6_ppb: float, optional
+            補正前の値から最小値を引いた後に足すC2H6濃度の基準値。デフォルト値は0。
+
+    Examples
+    --------
+    >>> config = BiasRemovalConfig(
+    ...     quantile_value=0.05,
+    ...     base_ch4_ppm=2.0,
+    ...     base_c2h6_ppb=0
+    ... )
     """
 
     quantile_value: float = 0.05
@@ -58,6 +75,10 @@ class BiasRemovalConfig:
 
 
 class CorrectingUtils:
+    """
+    車載濃度観測で得たファイルのDataFrameを補正する関数をクラス化したものです。
+    """
+
     @staticmethod
     def correct_h2o_interference(
         df: pd.DataFrame,
@@ -74,37 +95,53 @@ class CorrectingUtils:
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 補正対象のデータフレーム
-            coef_b : float
+            coef_b: float
                 補正曲線の1次係数
-            coef_c : float
+            coef_c: float
                 補正曲線の2次係数
-            col_ch4_ppm : str
-                CH4濃度を示すカラム名
-            col_h2o_ppm : str
-                水蒸気濃度を示すカラム名
-            h2o_ppm_threshold : float | None
-                水蒸気濃度の下限値(この値未満のデータは除外)
-            target_h2o_ppm : float
-                換算先の水蒸気濃度(デフォルト: 10000 ppm)
+            col_ch4_ppm: str, optional
+                CH4濃度を示すカラム名。デフォルト値は"ch4_ppm"
+            col_h2o_ppm: str, optional
+                水蒸気濃度を示すカラム名。デフォルト値は"h2o_ppm"
+            h2o_ppm_threshold: float | None, optional
+                水蒸気濃度の下限値(この値未満のデータは除外)。デフォルト値は2000 ppm
+            target_h2o_ppm: float, optional
+                換算先の水蒸気濃度。デフォルト値は10000 ppm
 
         Returns
         ----------
             pd.DataFrame
                 水蒸気干渉が補正されたデータフレーム
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> import numpy as np
+        >>> # サンプルデータの作成
+        >>> df = pd.DataFrame({
+        ...     'ch4_ppm': [2.0, 2.1, 2.2],
+        ...     'h2o_ppm': [5000, 6000, 7000]
+        ... })
+        >>> # 水蒸気干渉の補正
+        >>> df_corrected = CorrectingUtils.correct_h2o_interference(
+        ...     df=df,
+        ...     coef_b=0.0001,
+        ...     coef_c=0.00001
+        ... )
         """
         # 元のデータを保護するためコピーを作成
         df_h2o_corrected: pd.DataFrame = df.copy()
         # 水蒸気濃度の配列を取得
         h2o: np.ndarray = np.array(df_h2o_corrected[col_h2o_ppm])
-        
+
         # 現在の水蒸気濃度での補正項
         term_ch4 = coef_b * h2o + coef_c * np.power(h2o, 2)
-        
+
         # 目標水蒸気濃度での補正項
         target_term = coef_b * target_h2o_ppm + coef_c * np.power(target_h2o_ppm, 2)
-        
+
         # CH4濃度の補正(現在の補正項を引いて、目標水蒸気濃度での補正項を足す)
         df_h2o_corrected[col_ch4_ppm] = (
             df_h2o_corrected[col_ch4_ppm] - term_ch4 + target_term
@@ -112,7 +149,9 @@ class CorrectingUtils:
 
         # 極端に低い水蒸気濃度のデータは信頼性が低いため除外
         if h2o_ppm_threshold is not None:
-            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = np.nan
+            df_h2o_corrected.loc[df[col_h2o_ppm] < h2o_ppm_threshold, col_ch4_ppm] = (
+                np.nan
+            )
             df_h2o_corrected = df_h2o_corrected.dropna(subset=[col_ch4_ppm])
 
         return df_h2o_corrected
@@ -131,23 +170,38 @@ class CorrectingUtils:
 
         Parameters
         ----------
-            df : pd.DataFrame
-                バイアスを除去する対象のデータフレーム。
-            col_ch4_ppm : str
-                CH4濃度を示すカラム名。デフォルトは"ch4_ppm"。
-            col_c2h6_ppb : str
-                C2H6濃度を示すカラム名。デフォルトは"c2h6_ppb"。
-            base_ch4_ppm : float
-                補正前の値から最小値を引いた後に足すCH4濃度。
-            base_c2h6_ppb : float
-                補正前の値から最小値を引いた後に足すC2H6濃度。
-            quantile_value : float
-                下位何クォンタイルの値を最小値として補正を行うか。
+            df: pd.DataFrame
+                バイアスを除去する対象のデータフレーム
+            col_ch4_ppm: str, optional
+                CH4濃度を示すカラム名。デフォルト値は"ch4_ppm"
+            col_c2h6_ppb: str, optional
+                C2H6濃度を示すカラム名。デフォルト値は"c2h6_ppb"
+            base_ch4_ppm: float, optional
+                補正前の値から最小値を引いた後に足すCH4濃度。デフォルト値は2.0
+            base_c2h6_ppb: float, optional
+                補正前の値から最小値を引いた後に足すC2H6濃度。デフォルト値は0
+            quantile_value: float, optional
+                下位何クォンタイルの値を最小値として補正を行うか。デフォルト値は0.05
 
         Returns
         ----------
             pd.DataFrame
-                バイアスが除去されたデータフレーム。
+                バイアスが除去されたデータフレーム
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> # サンプルデータの作成
+        >>> df = pd.DataFrame({
+        ...     'ch4_ppm': [2.1, 2.2, 2.3],
+        ...     'c2h6_ppb': [1.1, 1.2, 1.3]
+        ... })
+        >>> # バイアスの除去
+        >>> df_unbiased = CorrectingUtils.remove_bias(
+        ...     df=df,
+        ...     base_ch4_ppm=2.0,
+        ...     base_c2h6_ppb=0
+        ... )
         """
         df_internal: pd.DataFrame = df.copy()
         # CH4

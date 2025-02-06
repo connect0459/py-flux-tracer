@@ -20,27 +20,27 @@ class EmissionData:
 
     Parameters
     ----------
-        timestamp : str
+        timestamp: str
             タイムスタンプ
-        avg_lat : float
+        avg_lat: float
             平均緯度
-        avg_lon : float
+        avg_lon: float
             平均経度
-        delta_ch4 : float
+        delta_ch4: float
             CH4の増加量 (ppm)
-        delta_c2h6 : float
+        delta_c2h6: float
             C2H6の増加量 (ppb)
-        delta_ratio : float
+        delta_ratio: float
             C2H6/CH4比
-        emission_per_min : float
+        emission_per_min: float
             排出量 (L/min)
-        emission_per_day : float
+        emission_per_day: float
             日排出量 (L/day)
-        emission_per_year : float
+        emission_per_year: float
             年間排出量 (L/year)
-        section : str | int | float
+        section: str | int | float
             セクション情報
-        type : HotspotType
+        type: HotspotType
             ホットスポットの種類(`HotspotType`を参照)
     """
 
@@ -154,11 +154,11 @@ class EmissionFormula:
 
     Parameters
     ----------
-        name : str
+        name: str
             計算式の名前(例: "weller", "weitzel", "joo", "umezawa"など)
-        coef_a : float
+        coef_a: float
             計算式の係数a
-        coef_b : float
+        coef_b: float
             計算式の係数b
 
     Examples
@@ -196,9 +196,9 @@ class HotspotEmissionConfig:
 
     Parameters
     ----------
-        formula : EmissionFormula
+        formula: EmissionFormula
             使用する計算式の設定
-        emission_categories : dict[str, dict[str, float]]
+        emission_categories: dict[str, dict[str, float]]
             排出量カテゴリーの閾値設定
             デフォルト値: {
                 "low": {"min": 0, "max": 6},  # < 6 L/min
@@ -260,11 +260,11 @@ class HotspotEmissionAnalyzer:
 
         Parameters
         ----------
-            fs : float
+            fs: float
                 サンプリング周波数。
-            logger : Logger | None
+            logger: Logger | None, optional
                 使用するロガー。Noneの場合は新しいロガーを作成します。
-            logging_debug : bool
+            logging_debug: bool, optional
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
         # ロガー
@@ -284,11 +284,11 @@ class HotspotEmissionAnalyzer:
 
         Parameters
         ----------
-            hotspots : list[HotspotData]
+            hotspots: list[HotspotData]
                 分析対象のホットスポットのリスト
-            config : HotspotEmissionConfig
+            config: HotspotEmissionConfig
                 排出量計算の設定
-            print_summary : bool
+            print_summary: bool
                 統計情報を表示するかどうか。デフォルトはFalse。
 
         Returns
@@ -404,57 +404,67 @@ class HotspotEmissionAnalyzer:
         scatter_ylim: tuple[float, float] | None = None,
         hist_bin_width: float = 0.5,
         print_summary: bool = False,
-        stack_bars: bool = True,  # 追加:積み上げ方式を選択するパラメータ
+        stack_bars: bool = True,
         save_fig: bool = False,
         show_fig: bool = True,
-        show_scatter: bool = True,  # 散布図の表示を制御するオプションを追加
+        show_scatter: bool = True,
     ) -> None:
         """
         排出量分析のプロットを作成する静的メソッド。
 
         Parameters
         ----------
-            emissions : list[EmissionData]
+            emissions: list[EmissionData]
                 calculate_emission_ratesで生成された分析結果
-            output_dirpath : str | Path | None
-                出力先ディレクトリのパス。
-            output_filename : str
+            output_dirpath: str | Path | None, optional
+                出力先ディレクトリのパス。指定しない場合はカレントディレクトリに保存。
+            output_filename: str, optional
                 保存するファイル名。デフォルトは"emission_analysis.png"。
-            figsize : tuple[float, float]
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 5)。
-            dpi : float | None
+            dpi: float | None, optional
                 プロットの解像度。デフォルトは350。
-            hotspot_colors : dict[HotspotType, str] | None
-                ホットスポットの色を定義する辞書。Noneの場合はデフォルト値を使用。
-                ```py
-                {
-                    "bio": "blue",
-                    "gas": "red",
-                    "comb": "green",
-                }
-                ```
-            add_legend : bool
+            hotspot_colors: dict[HotspotType, str] | None, optional
+                ホットスポットの色を定義する辞書。指定しない場合はデフォルトの色を使用。
+            add_legend: bool, optional
                 凡例を追加するかどうか。デフォルトはTrue。
-            hist_log_y : bool
+            hist_log_y: bool, optional
                 ヒストグラムのy軸を対数スケールにするかどうか。デフォルトはFalse。
-            hist_xlim : tuple[float, float] | None
-                ヒストグラムのx軸の範囲。デフォルトはNone。
-            hist_ylim : tuple[float, float] | None
-                ヒストグラムのy軸の範囲。デフォルトはNone。
-            scatter_xlim : tuple[float, float] | None
-                散布図のx軸の範囲。デフォルトはNone。
-            scatter_ylim : tuple[float, float] | None
-                散布図のy軸の範囲。デフォルトはNone。
-            hist_bin_width : float
+            hist_xlim: tuple[float, float] | None, optional
+                ヒストグラムのx軸の範囲。指定しない場合は自動で設定。
+            hist_ylim: tuple[float, float] | None, optional
+                ヒストグラムのy軸の範囲。指定しない場合は自動で設定。
+            scatter_xlim: tuple[float, float] | None, optional
+                散布図のx軸の範囲。指定しない場合は自動で設定。
+            scatter_ylim: tuple[float, float] | None, optional
+                散布図のy軸の範囲。指定しない場合は自動で設定。
+            hist_bin_width: float, optional
                 ヒストグラムのビンの幅。デフォルトは0.5。
-            print_summary : bool
+            print_summary: bool, optional
                 集計結果を表示するかどうか。デフォルトはFalse。
-            save_fig : bool
+            stack_bars: bool, optional
+                ヒストグラムを積み上げ方式で表示するかどうか。デフォルトはTrue。
+            save_fig: bool, optional
                 図をファイルに保存するかどうか。デフォルトはFalse。
-            show_fig : bool
+            show_fig: bool, optional
                 図を表示するかどうか。デフォルトはTrue。
-            show_scatter : bool
+            show_scatter: bool, optional
                 散布図(右図)を表示するかどうか。デフォルトはTrue。
+
+        Returns
+        -------
+            None
+
+        Examples
+        --------
+        >>> analyzer = HotspotEmissionAnalyzer()
+        >>> emissions = analyzer.calculate_emission_rates(hotspots)
+        >>> analyzer.plot_emission_analysis(
+        ...     emissions,
+        ...     output_dirpath="results",
+        ...     save_fig=True,
+        ...     hist_bin_width=1.0
+        ... )
         """
         if hotspot_colors is None:
             hotspot_colors = {

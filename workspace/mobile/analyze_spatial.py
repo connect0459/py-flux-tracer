@@ -157,9 +157,9 @@ if __name__ == "__main__":
             start_angle = -180 + section * section_size
             end_angle = start_angle + section_size
             print(f"\n区画 {section} ({start_angle:.1f}° ~ {end_angle:.1f}°):")
-            print(f"  Bio  : {counts['bio']}")
-            print(f"  Gas  : {counts['gas']}")
-            print(f"  Comb : {counts['comb']}")
+            print(f"  Bio : {counts['bio']}")
+            print(f"  Gas : {counts['gas']}")
+            print(f"  Comb: {counts['comb']}")
 
     # sectionが0または1(西側)のホットスポットのみを残す
     # hotspots = [h for h in hotspots if h.section in west_sections_list]

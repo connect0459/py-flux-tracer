@@ -47,22 +47,31 @@ class FftFileReorganizer:
 
         Parameters
         ----------
-            input_dirpath : str
+            input_dirpath: str
                 入力ファイルが格納されているディレクトリのパス
-            output_dirpath : str
+            output_dirpath: str
                 出力ファイルを格納するディレクトリのパス
-            flag_csv_path : str
+            flag_csv_path: str
                 フラグ情報が記載されているCSVファイルのパス
-            filename_patterns : list[str] | None
-                ファイル名のパターン(正規表現)のリスト
-            output_dirpaths_struct : dict[str, str] | None
-                出力ディレクトリの構造を定義する辞書
-            sort_by_rh : bool
-                RHに基づいてサブディレクトリにファイルを分類するかどうか
-            logger : Logger | None
-                使用するロガー
-            logging_debug : bool
-                ログレベルをDEBUGに設定するかどうか
+            filename_patterns: list[str] | None, optional
+                ファイル名のパターン(正規表現)のリスト。指定しない場合はデフォルトのパターンが使用されます。
+            output_dirpaths_struct: dict[str, str] | None, optional
+                出力ディレクトリの構造を定義する辞書。指定しない場合はデフォルトの構造が使用されます。
+            sort_by_rh: bool, optional
+                RHに基づいてサブディレクトリにファイルを分類するかどうか。デフォルトはTrueです。
+            logger: Logger | None, optional
+                使用するロガー。指定しない場合は新規のロガーが作成されます。
+            logging_debug: bool, optional
+                ログレベルをDEBUGに設定するかどうか。デフォルトはFalseです。
+
+        Examples
+        -------
+        >>> reorganizer = FftFileReorganizer(
+        ...     input_dirpath="./raw_data",
+        ...     output_dirpath="./processed_data",
+        ...     flag_csv_path="./flags.csv"
+        ... )
+        >>> reorganizer.reorganize()  # ファイルの再編成を実行
         """
         self._fft_path: str = input_dirpath
         self._sorted_path: str = output_dirpath
@@ -93,9 +102,23 @@ class FftFileReorganizer:
     def reorganize(self):
         """
         ファイルの再編成プロセス全体を実行します。
-        ディレクトリの準備、フラグファイルの読み込み、
-        有効なファイルの取得、ファイルのコピーを順に行います。
+        
+        ディレクトリの準備、フラグファイルの読み込み、有効なファイルの取得、ファイルのコピーを順に行います。
         処理後、警告メッセージがあれば出力します。
+
+        Returns
+        ----------
+            None
+                戻り値はありません。
+
+        Examples
+        -------
+        >>> reorganizer = FftFileReorganizer(
+        ...     input_dirpath="./raw_data",
+        ...     output_dirpath="./processed_data", 
+        ...     flag_csv_path="./flags.csv"
+        ... )
+        >>> reorganizer.reorganize()  # ファイルの再編成を実行
         """
         self._prepare_directories()
         self._read_flag_file()
@@ -114,7 +137,7 @@ class FftFileReorganizer:
 
         Parameters
         ----------
-            valid_files : list
+            valid_files: list
                 コピーする有効なファイル名のリスト
         """
         with tqdm(total=len(valid_files)) as pbar:
@@ -157,7 +180,7 @@ class FftFileReorganizer:
 
         Returns
         ----------
-            valid_files : list
+            valid_files: list
                 日時でソートされた有効なファイル名のリスト
         """
         fft_files = os.listdir(self._fft_path)
@@ -176,12 +199,12 @@ class FftFileReorganizer:
 
         Parameters
         ----------
-            filename : str
+            filename: str
                 解析対象のファイル名
 
         Returns
         ----------
-            datetime : datetime
+            datetime: datetime
                 抽出された日時情報
 
         Raises
@@ -232,7 +255,29 @@ class FftFileReorganizer:
     @staticmethod
     def get_rh_directory(rh: float):
         """
-        すべての値を10刻みで切り上げる(例: 80.1 → RH90, 86.0 → RH90, 91.2 → RH100)
+        相対湿度の値に基づいて、保存先のディレクトリ名を決定します。
+        値は10刻みで切り上げられます。
+
+        Parameters
+        ----------
+            rh: float
+                相対湿度の値(0-100の範囲)
+
+        Returns
+        ----------
+            str
+                ディレクトリ名(例: "RH90")。不正な値の場合は"bad_data"
+
+        Examples
+        ----------
+        >>> FFTFilesReorganizer.get_rh_directory(80.1)
+        'RH90'
+        >>> FFTFilesReorganizer.get_rh_directory(86.0) 
+        'RH90'
+        >>> FFTFilesReorganizer.get_rh_directory(91.2)
+        'RH100'
+        >>> FFTFilesReorganizer.get_rh_directory(-1)
+        'bad_data'
         """
         if rh < 0 or rh > 100:  # 相対湿度として不正な値を除外
             return "bad_data"

@@ -20,15 +20,23 @@ def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
 
     Parameters
     ----------
-        logger : Logger | None
+        logger: Logger | None
             使用するロガー。Noneの場合は新しいロガーを作成します。
-        log_level : int
-            ロガーのログレベル。デフォルトはINFO。
+        log_level: int, optional
+            ロガーのログレベル。デフォルトはINFOで、ログの詳細度を制御します。
 
     Returns
     ----------
         Logger
             設定されたロガーオブジェクト。
+
+    Examples
+    --------
+    >>> from logging import getLogger, INFO
+    >>> logger = getLogger("my_logger")
+    >>> configured_logger = setup_logger(logger, log_level=INFO)
+    >>> configured_logger.info("ログメッセージ")
+    2024-01-01 00:00:00,000 - INFO - ログメッセージ
     """
     if logger is not None and isinstance(logger, Logger):
         return logger
@@ -59,20 +67,41 @@ def setup_plot_params(
 
     Parameters
     ----------
-        font_family : list[str] | None
-            使用するフォントファミリーのリスト。Noneの場合はデフォルト値(["Arial", "MS Gothic", "sans-serif"])を使用。
-        font_paths : list[str | Path] | None
-            フォントファイルのパスのリスト。デフォルトはNoneで、リストが指定されたときにfontManagerでフォントを登録する。
-        font_size : float
-            軸ラベルのフォントサイズ。
-        legend_size : float
-            凡例のフォントサイズ。
-        tick_size : float
-            軸目盛りのフォントサイズ。
-        title_size : float
-            タイトルのフォントサイズ。
-        plot_params : dict[str, Any] | None
-            matplotlibのプロットパラメータの辞書。
+    font_family: list[str] | None, optional
+        使用するフォントファミリーのリスト。デフォルト値は["Arial", "MS Gothic", "sans-serif"]です。
+    font_paths: list[str | Path] | None, optional
+        フォントファイルのパスのリスト。デフォルト値はNoneです。指定された場合、fontManagerでフォントを登録します。
+    font_size: float, optional
+        軸ラベルのフォントサイズ。デフォルト値は20です。
+    legend_size: float, optional
+        凡例のフォントサイズ。デフォルト値は20です。
+    tick_size: float, optional
+        軸目盛りのフォントサイズ。デフォルト値は20です。
+    title_size: float, optional
+        タイトルのフォントサイズ。デフォルト値は20です。
+    plot_params: dict[str, Any] | None, optional
+        matplotlibのプロットパラメータの辞書。デフォルト値はNoneです。指定された場合、デフォルトのパラメータに上書きされます。
+
+    Returns
+    -------
+    None
+        戻り値はありません。
+
+    Examples
+    --------
+    >>> # デフォルト設定でプロットパラメータを設定
+    >>> setup_plot_params()
+    
+    >>> # カスタムフォントとサイズを指定
+    >>> setup_plot_params(
+    ...     font_family=["Helvetica", "sans-serif"],
+    ...     font_size=16,
+    ...     legend_size=14
+    ... )
+    
+    >>> # カスタムプロットパラメータを追加
+    >>> custom_params = {"figure.figsize": (10, 6), "lines.linewidth": 2}
+    >>> setup_plot_params(plot_params=custom_params)
     """
     # フォントファイルの登録
     if font_paths:

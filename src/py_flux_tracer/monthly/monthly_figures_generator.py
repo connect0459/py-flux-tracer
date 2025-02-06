@@ -22,9 +22,9 @@ def calculate_rolling_stats(data: pd.Series, window: int, confidence_interval) -
 
     Parameters
     ------
-        data : pd.Series
+        data: pd.Series
             入力データ系列
-        window : int
+        window: int
             移動平均の窓サイズ
 
     Returns
@@ -71,9 +71,9 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            logger : Logger | None
+            logger: Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
-            logging_debug : bool
+            logging_debug: bool
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
         # ロガー
@@ -107,39 +107,39 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 月別データを含むDataFrame
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            col_datetime : str
+            col_datetime: str
                 日付列の名前
-            col_ch4_conc : str
+            col_ch4_conc: str
                 CH4濃度列の名前
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックス列の名前
-            col_c2h6_conc : str
+            col_c2h6_conc: str
                 C2H6濃度列の名前
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックス列の名前
-            ylim_ch4_conc : tuple
+            ylim_ch4_conc: tuple
                 CH4濃度のy軸範囲
-            ylim_ch4_flux : tuple
+            ylim_ch4_flux: tuple
                 CH4フラックスのy軸範囲
-            ylim_c2h6_conc : tuple
+            ylim_c2h6_conc: tuple
                 C2H6濃度のy軸範囲
-            ylim_c2h6_flux : tuple
+            ylim_c2h6_flux: tuple
                 C2H6フラックスのy軸範囲
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 16)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 図を保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 図を表示するかどうか。デフォルトはTrue。
-            print_summary : bool
+            print_summary: bool
                 解析情報をprintするかどうか
         """
         # dfのコピー
@@ -348,45 +348,45 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスのカラム名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスのカラム名
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            col_datetime : str
+            col_datetime: str
                 日時カラムの名前
-            window_size : int
+            window_size: int
                 移動平均の窓サイズ
-            confidence_interval : float
+            confidence_interval: float
                 信頼区間(0-1)
-            subplot_label_ch4 : str | None
+            subplot_label_ch4: str | None
                 CH4プロットのラベル
-            subplot_label_c2h6 : str | None
+            subplot_label_c2h6: str | None
                 C2H6プロットのラベル
-            subplot_fontsize : int
+            subplot_fontsize: int
                 サブプロットのフォントサイズ
-            show_ci : bool
+            show_ci: bool
                 信頼区間を表示するか
-            ch4_ylim : tuple[float, float] | None
+            ch4_ylim: tuple[float, float] | None
                 CH4のy軸範囲
-            c2h6_ylim : tuple[float, float] | None
+            c2h6_ylim: tuple[float, float] | None
                 C2H6のy軸範囲
-            start_date : str | None
+            start_date: str | None
                 開始日(YYYY-MM-DD形式)
-            end_date : str | None
+            end_date: str | None
                 終了日(YYYY-MM-DD形式)
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(16, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # データの準備
@@ -559,57 +559,57 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            cols_flux : list[str]
+            cols_flux: list[str]
                 比較するフラックスのカラム名リスト
-            labels : list[str]
+            labels: list[str]
                 凡例に表示する各フラックスのラベルリスト
-            colors : list[str]
+            colors: list[str]
                 各フラックスの色リスト
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            col_datetime : str
+            col_datetime: str
                 日時カラムの名前
-            window_size : int
+            window_size: int
                 移動平均の窓サイズ
-            confidence_interval : float
+            confidence_interval: float
                 信頼区間(0-1)
-            subplot_label : str | None
+            subplot_label: str | None
                 プロットのラベル
-            subplot_fontsize : int
+            subplot_fontsize: int
                 サブプロットのフォントサイズ
-            show_ci : bool
+            show_ci: bool
                 信頼区間を表示するか
-            y_lim : tuple[float, float] | None
+            y_lim: tuple[float, float] | None
                 y軸の範囲
-            start_date : str | None
+            start_date: str | None
                 開始日(YYYY-MM-DD形式)
-            end_date : str | None
+            end_date: str | None
                 終了日(YYYY-MM-DD形式)
-            include_end_date : bool
+            include_end_date: bool
                 終了日を含めるかどうか。Falseの場合、終了日の前日までを表示
-            legend_loc : str
+            legend_loc: str
                 凡例の位置
-            apply_ma : bool
+            apply_ma: bool
                 移動平均を適用するかどうか
-            hourly_mean : bool
+            hourly_mean: bool
                 1時間平均を適用するかどうか
-            x_interval : Literal['month', '10days']
+            x_interval: Literal['month', '10days']
                 x軸の目盛り間隔。"month"(月初めのみ)または"10days"(10日刻み)
-            xlabel : str
+            xlabel: str
                 x軸のラベル(通常は"Month")
-            ylabel : str
+            ylabel: str
                 y軸のラベル(通常は"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool
+            save_fig: bool
                 図を保存するかどうか
-            show_fig : bool
+            show_fig: bool
                 図を表示するかどうか
         """
         # データの準備
@@ -832,51 +832,51 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 入力データフレーム。
-            y_cols_ch4 : list[str]
+            y_cols_ch4: list[str]
                 CH4のプロットに使用するカラム名のリスト。
-            y_cols_c2h6 : list[str]
+            y_cols_c2h6: list[str]
                 C2H6のプロットに使用するカラム名のリスト。
-            labels_ch4 : list[str]
+            labels_ch4: list[str]
                 CH4の各ラインに対応するラベルのリスト。
-            labels_c2h6 : list[str]
+            labels_c2h6: list[str]
                 C2H6の各ラインに対応するラベルのリスト。
-            colors_ch4 : list[str]
+            colors_ch4: list[str]
                 CH4の各ラインに使用する色のリスト。
-            colors_c2h6 : list[str]
+            colors_c2h6: list[str]
                 C2H6の各ラインに使用する色のリスト。
-            output_dirpath : str
+            output_dirpath: str
                 出力先ディレクトリのパス。
-            output_filename : str, optional
+            output_filename: str, optional
                 出力ファイル名。デフォルトは"diurnal.png"。
-            legend_only_ch4 : bool, optional
+            legend_only_ch4: bool, optional
                 CH4の凡例のみを表示するかどうか。デフォルトはFalse。
-            add_label : bool, optional
+            add_label: bool, optional
                 サブプロットラベルを表示するかどうか。デフォルトはTrue。
-            add_legend : bool, optional
+            add_legend: bool, optional
                 凡例を表示するかどうか。デフォルトはTrue。
-            show_std : bool, optional
+            show_std: bool, optional
                 標準偏差を表示するかどうか。デフォルトはFalse。
-            std_alpha : float, optional
+            std_alpha: float, optional
                 標準偏差の透明度。デフォルトは0.2。
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 5)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            subplot_fontsize : int, optional
+            subplot_fontsize: int, optional
                 サブプロットのフォントサイズ。デフォルトは20。
-            subplot_label_ch4 : str | None, optional
+            subplot_label_ch4: str | None, optional
                 CH4プロットのラベル。デフォルトは"(a)"。
-            subplot_label_c2h6 : str | None, optional
+            subplot_label_c2h6: str | None, optional
                 C2H6プロットのラベル。デフォルトは"(b)"。
-            ax1_ylim : tuple[float, float] | None, optional
+            ax1_ylim: tuple[float, float] | None, optional
                 CH4プロットのy軸の範囲。デフォルトはNone。
-            ax2_ylim : tuple[float, float] | None, optional
+            ax2_ylim: tuple[float, float] | None, optional
                 C2H6プロットのy軸の範囲。デフォルトはNone。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # データの準備
@@ -1035,53 +1035,53 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 入力データフレーム。
-            y_col_ch4 : str
+            y_col_ch4: str
                 CH4フラックスを含むカラム名。
-            y_col_c2h6 : str
+            y_col_c2h6: str
                 C2H6フラックスを含むカラム名。
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力先ディレクトリのパス。
-            output_filename : str, optional
+            output_filename: str, optional
                 出力ファイル名。デフォルトは"diurnal_by_date.png"。
-            plot_all : bool, optional
+            plot_all: bool, optional
                 すべての日をプロットするかどうか。デフォルトはTrue。
-            plot_weekday : bool, optional
+            plot_weekday: bool, optional
                 平日をプロットするかどうか。デフォルトはTrue。
-            plot_weekend : bool, optional
+            plot_weekend: bool, optional
                 週末をプロットするかどうか。デフォルトはTrue。
-            plot_holiday : bool, optional
+            plot_holiday: bool, optional
                 祝日をプロットするかどうか。デフォルトはTrue。
-            add_label : bool, optional
+            add_label: bool, optional
                 サブプロットラベルを表示するかどうか。デフォルトはTrue。
-            add_legend : bool, optional
+            add_legend: bool, optional
                 凡例を表示するかどうか。デフォルトはTrue。
-            show_std : bool, optional
+            show_std: bool, optional
                 標準偏差を表示するかどうか。デフォルトはFalse。
-            std_alpha : float, optional
+            std_alpha: float, optional
                 標準偏差の透明度。デフォルトは0.2。
-            legend_only_ch4 : bool, optional
+            legend_only_ch4: bool, optional
                 CH4の凡例のみを表示するかどうか。デフォルトはFalse。
-            subplot_fontsize : int, optional
+            subplot_fontsize: int, optional
                 サブプロットのフォントサイズ。デフォルトは20。
-            subplot_label_ch4 : str | None, optional
+            subplot_label_ch4: str | None, optional
                 CH4プロットのラベル。デフォルトは"(a)"。
-            subplot_label_c2h6 : str | None, optional
+            subplot_label_c2h6: str | None, optional
                 C2H6プロットのラベル。デフォルトは"(b)"。
-            ax1_ylim : tuple[float, float] | None, optional
+            ax1_ylim: tuple[float, float] | None, optional
                 CH4プロットのy軸の範囲。デフォルトはNone。
-            ax2_ylim : tuple[float, float] | None, optional
+            ax2_ylim: tuple[float, float] | None, optional
                 C2H6プロットのy軸の範囲。デフォルトはNone。
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
-            print_summary : bool, optional
+            print_summary: bool, optional
                 統計情報を表示するかどうか。デフォルトはFalse。
         """
         # データの準備
@@ -1364,45 +1364,45 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 濃度データを含むDataFrame
-            output_dirpath : str
+            output_dirpath: str
                 出力ディレクトリのパス
-            col_ch4_conc : str
+            col_ch4_conc: str
                 CH4濃度のカラム名
-            col_c2h6_conc : str
+            col_c2h6_conc: str
                 C2H6濃度のカラム名
-            col_datetime : str
+            col_datetime: str
                 日時カラム名
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            show_std : bool
+            show_std: bool
                 標準偏差を表示するかどうか
-            alpha_std : float
+            alpha_std: float
                 標準偏差の透明度
-            add_legend : bool
+            add_legend: bool
                 凡例を追加するかどうか
-            print_summary : bool
+            print_summary: bool
                 統計情報を表示するかどうか
-            subplot_label_ch4 : str | None
+            subplot_label_ch4: str | None
                 CH4プロットのラベル
-            subplot_label_c2h6 : str | None
+            subplot_label_c2h6: str | None
                 C2H6プロットのラベル
-            subplot_fontsize : int
+            subplot_fontsize: int
                 サブプロットのフォントサイズ
-            ch4_ylim : tuple[float, float] | None
+            ch4_ylim: tuple[float, float] | None
                 CH4のy軸範囲
-            c2h6_ylim : tuple[float, float] | None
+            c2h6_ylim: tuple[float, float] | None
                 C2H6のy軸範囲
-            interval : str
+            interval: str
                 時間間隔。"30min"または"1H"を指定
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # データの準備
@@ -1562,37 +1562,37 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスのカラム名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスのカラム名
-            ch4_label : str
+            ch4_label: str
                 CH4フラックスのラベル
-            c2h6_label : str
+            c2h6_label: str
                 C2H6フラックスのラベル
-            col_datetime : str
+            col_datetime: str
                 日時カラムの名前
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            window_size : int
+            window_size: int
                 移動平均の窓サイズ(デフォルト6)
-            show_std : bool
+            show_std: bool
                 標準偏差を表示するかどうか
-            alpha_std : float
+            alpha_std: float
                 標準偏差の透明度(0-1)
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 5)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
-            print_summary : bool, optional
+            print_summary: bool, optional
                 統計情報を表示するかどうか。デフォルトはFalse。
         """
         # 日時インデックスの処理
@@ -1733,47 +1733,47 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            col_ratio_1 : str
+            col_ratio_1: str
                 1つ目の比率のカラム名
-            col_ratio_2 : str
+            col_ratio_2: str
                 2つ目の比率のカラム名
-            label_1 : str
+            label_1: str
                 1つ目の比率のラベル
-            label_2 : str
+            label_2: str
                 2つ目の比率のラベル
-            color_1 : str
+            color_1: str
                 1つ目の比率の色
-            color_2 : str
+            color_2: str
                 2つ目の比率の色
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリ
-            output_filename : str, optional
+            output_filename: str, optional
                 出力ファイル名, by default "gas_ratio_diurnal.png"
-            add_xlabel : bool, optional
+            add_xlabel: bool, optional
                 x軸ラベルを追加するかどうか, by default True
-            add_ylabel : bool, optional
+            add_ylabel: bool, optional
                 y軸ラベルを追加するかどうか, by default True
-            add_legend : bool, optional
+            add_legend: bool, optional
                 凡例を追加するかどうか, by default True
-            xlabel : str, optional
+            xlabel: str, optional
                 x軸のラベル, by default "Hour"
-            ylabel : str, optional
+            ylabel: str, optional
                 y軸のラベル, by default "都市ガスが占める排出比率 (%)"
-            subplot_fontsize : int, optional
+            subplot_fontsize: int, optional
                 サブプロットのフォントサイズ, by default 20
-            subplot_label : str | None, optional
+            subplot_label: str | None, optional
                 サブプロットのラベル, by default None
-            y_max : float | None, optional
+            y_max: float | None, optional
                 y軸の最大値, by default 100
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 図のサイズ, by default (12, 5)
-            dpi : float | None, optional
+            dpi: float | None, optional
                 図のdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 図を保存するかどうか, by default True
-            show_fig : bool, optional
+            show_fig: bool, optional
                 図を表示するかどうか, by default False
         """
         df_internal: pd.DataFrame = df.copy()
@@ -1923,37 +1923,37 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 プロットに使用するデータフレーム
-            col_x : str
+            col_x: str
                 x軸に使用する列名
-            col_y : str
+            col_y: str
                 y軸に使用する列名
-            xlabel : str
+            xlabel: str
                 x軸のラベル
-            ylabel : str
+            ylabel: str
                 y軸のラベル
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力先ディレクトリ
-            output_filename : str, optional
+            output_filename: str, optional
                 出力ファイル名。デフォルトは"scatter.png"
-            add_label : bool, optional
+            add_label: bool, optional
                 軸ラベルを表示するかどうか。デフォルトはTrue
-            x_axis_range : tuple, optional
+            x_axis_range: tuple, optional
                 x軸の範囲。デフォルトはNone。
-            y_axis_range : tuple, optional
+            y_axis_range: tuple, optional
                 y軸の範囲。デフォルトはNone。
-            fixed_slope : float, optional
+            fixed_slope: float, optional
                 固定傾きを指定するための値。デフォルトは0.076
-            show_fixed_slope : bool, optional
+            show_fixed_slope: bool, optional
                 固定傾きの線を表示するかどうか。デフォルトはFalse
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(6, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # 有効なデータの抽出
@@ -2122,55 +2122,55 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 CH4フラックスデータを含むデータフレーム
-            output_dirpath : str
+            output_dirpath: str
                 出力先のディレクトリ
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスの列名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスの列名
-            col_datetime : str, optional
+            col_datetime: str, optional
                 日時の列名(デフォルトは"Date")
-            color_bio : str, optional
+            color_bio: str, optional
                 生物起源の色(デフォルトは青)
-            color_gas : str, optional
+            color_gas: str, optional
                 都市ガス起源の色(デフォルトは赤)
-            label_bio : str, optional
+            label_bio: str, optional
                 生物起源のラベル(デフォルトは"bio")
-            label_gas : str, optional
+            label_gas: str, optional
                 都市ガスのラベル(デフォルトは"gas")
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ(デフォルトは(10, 6))
-            flux_alpha : float, optional
+            flux_alpha: float, optional
                 フラックスの透明度(デフォルトは0.6)
-            output_filename : str, optional
+            output_filename: str, optional
                 出力ファイル名(デフォルトは"source_contributions.png")
-            window_size : int, optional
+            window_size: int, optional
                 移動平均の窓サイズ(デフォルトは6)
-            print_summary : bool, optional
+            print_summary: bool, optional
                 統計情報を表示するかどうか(デフォルトはTrue)
-            add_xlabel : bool, optional
+            add_xlabel: bool, optional
                 x軸のラベルを追加するかどうか(デフォルトはTrue)
-            add_ylabel : bool, optional
+            add_ylabel: bool, optional
                 y軸のラベルを追加するかどうか(デフォルトはTrue)
-            add_legend : bool, optional
+            add_legend: bool, optional
                 凡例を追加するかどうか(デフォルトはTrue)
-            smooth : bool, optional
+            smooth: bool, optional
                 移動平均を適用するかどうか(デフォルトはFalse)
-            y_max : float, optional
+            y_max: float, optional
                 y軸の上限値(デフォルトは100)
-            subplot_label : str | None, optional
+            subplot_label: str | None, optional
                 サブプロットのラベル(デフォルトはNone)
-            subplot_fontsize : int, optional
+            subplot_fontsize: int, optional
                 サブプロットラベルのフォントサイズ(デフォルトは20)
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # 起源の計算
@@ -2382,47 +2382,47 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスのカラム名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスのカラム名
-            col_datetime : str
+            col_datetime: str
                 日時カラムの名前
-            color_bio : str, optional
+            color_bio: str, optional
                 生物起源の色(デフォルトは青)
-            color_gas : str, optional
+            color_gas: str, optional
                 都市ガス起源の色(デフォルトは赤)
-            label_bio : str, optional
+            label_bio: str, optional
                 生物起源のラベル(デフォルトは"bio")
-            label_gas : str, optional
+            label_gas: str, optional
                 都市ガスのラベル(デフォルトは"gas")
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            add_xlabel : bool, optional
+            add_xlabel: bool, optional
                 x軸のラベルを追加するかどうか(デフォルトはTrue)
-            add_ylabel : bool, optional
+            add_ylabel: bool, optional
                 y軸のラベルを追加するかどうか(デフォルトはTrue)
-            add_legend : bool
+            add_legend: bool
                 凡例を表示するか
-            subplot_fontsize : int
+            subplot_fontsize: int
                 サブプロットのフォントサイズ
-            subplot_label_weekday : str | None
+            subplot_label_weekday: str | None
                 平日グラフのラベル
-            subplot_label_weekend : str | None
+            subplot_label_weekend: str | None
                 休日グラフのラベル
-            y_max : float | None
+            y_max: float | None
                 y軸の上限値
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # 起源の計算
@@ -2651,29 +2651,29 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 プロットするデータを含むDataFrame
-            output_dirpath : str
+            output_dirpath: str
                 出力ディレクトリのパス
-            output_filename : str
+            output_filename: str
                 出力ファイル名
-            col_uz : str
+            col_uz: str
                 鉛直風速データのカラム名
-            col_ch4 : str
+            col_ch4: str
                 メタンデータのカラム名
-            col_c2h6 : str
+            col_c2h6: str
                 エタンデータのカラム名
-            col_timestamp : str
+            col_timestamp: str
                 タイムスタンプのカラム名
-            add_serial_labels : bool
+            add_serial_labels: bool
                 シリアルラベルを追加するかどうかのフラグ
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 10)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # データの前処理
@@ -2776,56 +2776,56 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 風配図を作成するためのデータフレーム
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 生成された図を保存するディレクトリのパス
-            output_filename : str
+            output_filename: str
                 保存するファイル名(デフォルトは"edp_wind_rose.png")
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスを示すカラム名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスを示すカラム名
-            col_wind_dir : str
+            col_wind_dir: str
                 風向を示すカラム名
-            color_bio : str
+            color_bio: str
                 生物起源のフラックスに対する色
-            color_gas : str
+            color_gas: str
                 都市ガス起源のフラックスに対する色
                 風向を示すカラム名
-            label_bio : str
+            label_bio: str
                 生物起源のフラックスに対するラベル
-            label_gas : str
+            label_gas: str
                 都市ガス起源のフラックスに対するラベル
-            col_datetime : str
+            col_datetime: str
                 日時を示すカラム名
-            num_directions : int
+            num_directions: int
                 風向の数(デフォルトは8)
-            gap_degrees : float
+            gap_degrees: float
                 セクター間の隙間の大きさ(度数)。0の場合は隙間なし。
             center_on_angles: bool
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
                 Falseの場合、45度の中間(22.5度)を中心として扇形を描画します。
-            subplot_label : str
+            subplot_label: str
                 サブプロットに表示するラベル
-            print_summary : bool
+            print_summary: bool
                 統計情報を表示するかどうかのフラグ
-            flux_unit : str
+            flux_unit: str
                 フラックスの単位
-            ymax : float | None
+            ymax: float | None
                 y軸の上限値(指定しない場合はデータの最大値に基づいて自動設定)
-            flux_alpha : float
+            flux_alpha: float
                 フラックスの透明度
-            stack_bars : bool, optional
+            stack_bars: bool, optional
                 Trueの場合、生物起源の上に都市ガス起源を積み上げます(デフォルト)。
                 Falseの場合、両方を0から積み上げます。
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(8, 8)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool
+            save_fig: bool
                 図を保存するかどうかのフラグ
-            show_fig : bool
+            show_fig: bool
                 図を表示するかどうかのフラグ
         """
         # 起源の計算
@@ -2997,9 +2997,9 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            num_directions : int
+            num_directions: int
                 方位の数(デフォルトは8)
-            center_on_angles : bool
+            center_on_angles: bool
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
                 Falseの場合、45度の中間(22.5度)を中心として扇形を描画します。
 
@@ -3066,11 +3066,11 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 ソース分離済みのデータフレーム
-            col_wind_dir : str
+            col_wind_dir: str
                 風向のカラム名
-            direction_ranges : pd.DataFrame
+            direction_ranges: pd.DataFrame
                 方位の定義
 
         Returns
@@ -3115,15 +3115,15 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 入力データフレーム
-            col_ch4_flux : str
+            col_ch4_flux: str
                 CH4フラックスのカラム名
-            col_c2h6_flux : str
+            col_c2h6_flux: str
                 C2H6フラックスのカラム名
-            gas_ratio_c1c2 : float
+            gas_ratio_c1c2: float
                 ガスのC2H6/CH4比(無次元)
-            col_datetime : str
+            col_datetime: str
                 日時カラムの名前
 
         Returns
@@ -3167,11 +3167,11 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 入力データフレーム
-            target_columns : list[str]
+            target_columns: list[str]
                 計算対象の列名のリスト
-            include_date_types : bool
+            include_date_types: bool
                 日付タイプ(平日/休日など)の分類を含めるかどうか
 
         Returns
@@ -3236,19 +3236,19 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            ax : plt.Axes
+            ax: plt.Axes
                 設定対象の軸
-            time_points : pd.DatetimeIndex
+            time_points: pd.DatetimeIndex
                 時間軸のポイント
-            ylabel : str
+            ylabel: str
                 y軸のラベル
-            subplot_label : str | None
+            subplot_label: str | None
                 サブプロットのラベル
-            add_label : bool
+            add_label: bool
                 軸ラベルを表示するかどうか
-            add_legend : bool
+            add_legend: bool
                 凡例を表示するかどうか
-            subplot_fontsize : int
+            subplot_fontsize: int
                 サブプロットのフォントサイズ
         """
         if add_label:
@@ -3284,11 +3284,11 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 データフレーム
-            col_x : str
+            col_x: str
                 X軸の列名
-            col_y : str
+            col_y: str
                 Y軸の列名
 
         Returns
@@ -3316,28 +3316,28 @@ class MonthlyFiguresGenerator:
 
         Parameters
         ------
-            flux_data : dict[str, pd.Series]
+            flux_data: dict[str, pd.Series]
                 各測器のフラックスデータを格納した辞書
                 キー: 測器名, 値: フラックスデータ
-            month : int
+            month: int
                 測定月
-            output_dirpath : str | Path | None
+            output_dirpath: str | Path | None
                 出力ディレクトリ。指定しない場合はデフォルトのディレクトリに保存されます。
-            output_filename : str
+            output_filename: str
                 出力ファイル名。デフォルトは"flux_distribution.png"です。
-            colors : dict[str, str] | None
+            colors: dict[str, str] | None
                 各測器の色を指定する辞書。指定がない場合は自動で色を割り当てます。
-            xlim : tuple[float, float]
+            xlim: tuple[float, float]
                 x軸の範囲。デフォルトは(-50, 200)です。
-            bandwidth : float
+            bandwidth: float
                 カーネル密度推定のバンド幅調整係数。デフォルトは1.0です。
-            figsize : tuple[float, float], optional
+            figsize: tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
+            dpi: float | None, optional
                 プロットのdpi。デフォルトは350。
-            save_fig : bool, optional
+            save_fig: bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
+            show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
         """
         # デフォルトの色を設定

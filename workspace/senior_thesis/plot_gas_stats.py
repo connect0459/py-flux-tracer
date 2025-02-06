@@ -21,19 +21,19 @@ def plot_gas_stats(
 
     Parameters
     ----------
-        input_csv : str | Path, optional
+        input_csv: str | Path, optional
             入力CSVファイルのパス, by default "workspace/senior_thesis/private/gas_stats.csv"
-        output_dirpath : str, optional
+        output_dirpath: str, optional
             出力ディレクトリ, by default "workspace/senior_thesis/figures/gas_stats"
-        output_filename : str, optional
+        output_filename: str, optional
             出力ファイル名, by default "gas_stats.png"
-        figsize : tuple[float, float], optional
+        figsize: tuple[float, float], optional
             図のサイズ, by default (10, 6)
-        dpi : float | None, optional
+        dpi: float | None, optional
             図のdpi。デフォルトは350。
-        save_fig : bool, optional
+        save_fig: bool, optional
             図を保存するかどうか, by default True
-        show_fig : bool, optional
+        show_fig: bool, optional
             図を表示するかどうか, by default False
     """
     # データの読み込み

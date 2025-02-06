@@ -12,15 +12,15 @@ class TFAnalysisConfig:
 
     Parameters
     ----------
-        input_file : str | Path
+        input_file: str | Path
             入力ファイルのパス
-        output_dirpath : str | Path
+        output_dirpath: str | Path
             出力ディレクトリのパス
-        suffix : str
+        suffix: str
             ファイル名の接尾辞(例: "", "-detrend")
-        show_co_spectra : bool
+        show_co_spectra: bool
             コスペクトルのプロットを表示するかどうか
-        show_tf : bool
+        show_tf: bool
             伝達関数のプロットを表示するかどうか
     """
 

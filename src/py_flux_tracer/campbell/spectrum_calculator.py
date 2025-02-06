@@ -21,15 +21,15 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 pandasのデータフレーム。解析対象のデータを含む。
-            fs : float
+            fs: float
                 サンプリング周波数(Hz)。データのサンプリングレートを指定。
-            apply_window : bool, optional
+            apply_window: bool, optional
                 窓関数を適用するフラグ。デフォルトはTrue。
-            plots : int
+            plots: int, optional
                 プロットする点の数。可視化のためのデータポイント数。
-            window_type : WindowFunctionType
+            window_type: WindowFunctionType, optional
                 窓関数の種類。デフォルトは'hamming'。
         """
         self._df: pd.DataFrame = df
@@ -51,42 +51,50 @@ class SpectrumCalculator:
         apply_lag_correction_to_col2: bool = True,
         lag_second: float | None = None,
     ) -> tuple:
-        """
-        指定されたcol1とcol2のコスペクトルをDataFrameから計算するためのメソッド。
+        """指定されたcol1とcol2のコスペクトルをDataFrameから計算するためのメソッド。
 
         Parameters
         ----------
-            col1 : str
-                データの列名1。
-            col2 : str
-                データの列名2。
-            dimensionless : bool, optional
-                Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
-            frequency_weighted : bool, optional
-                周波数の重みづけを適用するかどうか。デフォルトはTrue。
-            interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。デフォルトはTrue。
-            scaling : str
-                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
-            detrend_1st : bool, optional
-                1次トレンドを除去するかどうか。デフォルトはTrue。
-            detrend_2nd : bool, optional
-                2次トレンドを除去するかどうか。デフォルトはFalse。
-            apply_lag_correction_to_col2 : bool, optional
-                col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
-            lag_second : float | None, optional
-                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
+            col1: str
+                データの列名1
+            col2: str  
+                データの列名2
+            dimensionless: bool, optional
+                分散で割って無次元化を行うかのフラグ。デフォルトはTrueで無次元化を行う
+            frequency_weighted: bool, optional
+                周波数の重みづけを適用するかのフラグ。デフォルトはTrueで重みづけを行う
+            interpolate_points: bool, optional
+                対数軸上で等間隔なデータ点を生成するかのフラグ。デフォルトはTrueで等間隔点を生成する
+            scaling: str, optional
+                スペクトルのスケーリング方法。"density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"
+            detrend_1st: bool, optional
+                1次トレンドを除去するかのフラグ。デフォルトはTrueで除去を行う
+            detrend_2nd: bool, optional
+                2次トレンドを除去するかのフラグ。デフォルトはFalseで除去を行わない
+            apply_lag_correction_to_col2: bool, optional
+                col2に遅れ時間補正を適用するかのフラグ。デフォルトはTrueで補正を行う
+            lag_second: float | None, optional
+                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone
 
         Returns
         ----------
             tuple
-                (freqs, co_spectrum, corr_coef)
-                - freqs : np.ndarray
-                    周波数軸(対数スケールの場合は対数変換済み)。
-                - co_spectrum : np.ndarray
-                    コスペクトル(対数スケールの場合は対数変換済み)。
-                - corr_coef : float
-                    変数の相関係数。
+                以下の3つの要素を含むタプル:
+                - freqs: np.ndarray
+                    周波数軸(対数スケールの場合は対数変換済み)
+                - co_spectrum: np.ndarray  
+                    コスペクトル(対数スケールの場合は対数変換済み)
+                - corr_coef: float
+                    変数の相関係数
+
+        Examples
+        --------
+        >>> sc = SpectrumCalculator(df=data, fs=10)
+        >>> freqs, co_spec, corr = sc.calculate_co_spectrum(
+        ...     col1="Uz",
+        ...     col2="Ultra_CH4_ppm_C",
+        ...     lag_second=0.1
+        ... )
         """
         freqs, co_spectrum, _, corr_coef = self.calculate_cross_spectrum(
             col1=col1,
@@ -120,37 +128,44 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            col1 : str
-                データの列名1。
-            col2 : str
-                データの列名2。
-            dimensionless : bool, optional
-                Trueの場合、分散で割って無次元化を行う。デフォルトはTrue。
-            frequency_weighted : bool, optional
-                周波数の重みづけを適用するかどうか。デフォルトはTrue。
-            interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。デフォルトはTrue。
-            scaling : str
-                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
-            detrend_1st : bool, optional
-                1次トレンドを除去するかどうか。デフォルトはTrue。
-            detrend_2nd : bool, optional
-                2次トレンドを除去するかどうか。デフォルトはFalse。
-            apply_lag_correction_to_col2 : bool, optional
-                col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
-            lag_second : float | None, optional
-                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
+            col1: str
+                データの列名1
+            col2: str
+                データの列名2
+            dimensionless: bool, optional
+                分散で割って無次元化を行うかのフラグ。デフォルトはTrueで無次元化を行う
+            frequency_weighted: bool, optional
+                周波数の重みづけを適用するかのフラグ。デフォルトはTrueで重みづけを行う
+            interpolate_points: bool, optional
+                対数軸上で等間隔なデータ点を生成するかのフラグ。デフォルトはTrueで等間隔点を生成する
+            scaling: str, optional
+                スペクトルのスケーリング方法。"density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"
+            detrend_1st: bool, optional
+                1次トレンドを除去するかのフラグ。デフォルトはTrueで除去を行う
+            detrend_2nd: bool, optional
+                2次トレンドを除去するかのフラグ。デフォルトはFalseで除去を行わない
+            apply_lag_correction_to_col2: bool, optional
+                col2に遅れ時間補正を適用するかのフラグ。デフォルトはTrueで補正を行う
+            lag_second: float | None, optional
+                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone
 
         Returns
         ----------
-            tuple
-                (freqs, co_spectrum, corr_coef)
-                - freqs : np.ndarray
-                    周波数軸(対数スケールの場合は対数変換済み)。
-                - co_spectrum : np.ndarray
-                    クロススペクトル(対数スケールの場合は対数変換済み)。
-                - corr_coef : float
-                    変数の相関係数。
+            tuple[np.ndarray, np.ndarray, np.ndarray, float]
+                以下の4つの要素を含むタプル:
+                - freqs: 周波数軸(対数スケールの場合は対数変換済み)
+                - co_spectrum: コスペクトル(対数スケールの場合は対数変換済み)
+                - quad_spectrum: クアドラチャスペクトル
+                - corr_coef: 変数の相関係数
+
+        Examples
+        --------
+        >>> sc = SpectrumCalculator(df=data, fs=10)
+        >>> freqs, co_spec, quad_spec, corr = sc.calculate_cross_spectrum(
+        ...     col1="Uz",
+        ...     col2="Ultra_CH4_ppm_C",
+        ...     lag_second=0.1
+        ... )
         """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
@@ -251,32 +266,41 @@ class SpectrumCalculator:
         detrend_1st: bool = True,
         detrend_2nd: bool = False,
     ) -> tuple:
-        """
-        指定されたcolに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
+        """指定されたcolに基づいてDataFrameからパワースペクトルと周波数軸を計算します。
         scipy.signal.welchを使用してパワースペクトルを計算します。
 
         Parameters
         ----------
-            col : str
-                データの列名
-            dimensionless : bool, optional
-                Trueの場合、分散で割って無次元化を行います。デフォルトはTrueです。
-            frequency_weighted : bool, optional
-                周波数の重みづけを適用するかどうか。デフォルトはTrueです。
-            interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。
-            scaling : str, optional
-                "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
-            detrend_1st : bool, optional
-                1次トレンドを除去するかどうか。デフォルトはTrue。
-            detrend_2nd : bool, optional
-                2次トレンドを除去するかどうか。デフォルトはFalse。
+            col: str
+                パワースペクトルを計算するデータの列名
+            dimensionless: bool, optional
+                分散で割って無次元化を行うかどうか。デフォルトはTrueで無次元化を行います。
+            frequency_weighted: bool, optional
+                周波数の重みづけを適用するかどうか。デフォルトはTrueで重みづけを行います。
+            interpolate_points: bool, optional
+                対数軸上で等間隔なデータ点を生成するかどうか。デフォルトはTrueで等間隔化を行います。
+            scaling: str, optional
+                スペクトルの計算方法。"density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
+            detrend_1st: bool, optional
+                1次トレンドを除去するかどうか。デフォルトはTrueで除去を行います。
+            detrend_2nd: bool, optional
+                2次トレンドを除去するかどうか。デフォルトはFalseで除去を行いません。
 
         Returns
         ----------
             tuple
+                以下の要素を含むタプル:
                 - freqs (np.ndarray): 周波数軸(対数スケールの場合は対数変換済み)
                 - power_spectrum (np.ndarray): パワースペクトル(対数スケールの場合は対数変換済み)
+
+        Examples
+        --------
+        >>> sc = SpectrumCalculator(df=data_frame, fs=10)
+        >>> freqs, power = sc.calculate_power_spectrum(
+        ...     col="Uz",
+        ...     dimensionless=True,
+        ...     frequency_weighted=True
+        ... )
         """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
@@ -342,21 +366,21 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            data1 : np.ndarray
+            data1: np.ndarray
                 基準データ
-            data2 : np.ndarray
+            data2: np.ndarray
                 遅れているデータ
-            fs : float
+            fs: float
                 サンプリング周波数
-            lag_second : float
+            lag_second: float
                 data1からdata2が遅れている時間(秒)。負の値は許可されない。
 
         Returns
         ----------
             tuple
-                - data1 : np.ndarray
+                - data1: np.ndarray
                     基準データ(シフトなし)
-                - data2 : np.ndarray
+                - data2: np.ndarray
                     補正された遅れているデータ
         """
         if lag_second < 0:
@@ -388,12 +412,12 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            data : np.ndarray
+            data: np.ndarray
                 入力データ
-            first : bool, optional
-                一次トレンドを除去するかどうか. デフォルトはTrue.
-            second : bool, optional
-                二次トレンドを除去するかどうか. デフォルトはFalse.
+            first: bool, optional
+                一次トレンドを除去するかどうか。デフォルトはTrue。
+            second: bool, optional
+                二次トレンドを除去するかどうか。デフォルトはFalse。
 
         Returns
         ----------
@@ -436,9 +460,9 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            type : WindowFunctionType
+            type: WindowFunctionType
                 窓関数の種類
-            data_length : int
+            data_length: int
                 データ長
 
         Returns
@@ -467,12 +491,12 @@ class SpectrumCalculator:
 
         Parameters
         ----------
-            spectrum : np.ndarray
+            spectrum: np.ndarray
                 スペクトルデータ
-            frequencies : np.ndarray
+            frequencies: np.ndarray
                 対応する周波数データ
-            freq_threshold : float
-                高周波数の閾値
+            freq_threshold: float, optional
+                高周波数の閾値。デフォルトは0.1。
 
         Returns
         ----------

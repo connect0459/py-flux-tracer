@@ -73,13 +73,13 @@ def test_add_uvw_columns_missing_columns():
         EddyDataPreprocessor().add_uvw_columns(invalid_df)
 
 
-def test_calculate_lag_time(preprocessor, sample_df):
+def testcalculate_lag_time(preprocessor, sample_df):
     """遅れ時間計算のテスト"""
     # テストデータの作成
     test_df = sample_df.copy()
     test_df["delayed_signal"] = test_df["Tv"].shift(2)  # 2サンプル分の遅れを作る
 
-    lags = EddyDataPreprocessor._calculate_lag_time(test_df, "Tv", ["delayed_signal"])
+    lags = EddyDataPreprocessor.calculate_lag_time(test_df, "Tv", ["delayed_signal"])
 
     assert len(lags) == 1
     assert isinstance(lags[0], int)

@@ -37,11 +37,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            fs : float
+            fs: float
                 サンプリング周波数。
-            logger : Logger | None
+            logger: Logger | None, optional
                 使用するロガー。Noneの場合は新しいロガーを作成します。
-            logging_debug : bool
+            logging_debug: bool, optional
                 ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
         self.fs: float = fs
@@ -63,9 +63,9 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 風速データを含むDataFrame
-            column_mapping : dict[MeasuredWindKeyType, str] | None
+            column_mapping: dict[MeasuredWindKeyType, str] | None, optional
                 入力データのカラム名マッピング。
                 キーは"u_m", "v_m", "w_m"で、値は対応する入力データのカラム名。
                 Noneの場合は{"u_m": "Ux", "v_m": "Uy", "w_m": "Uz"}を使用する。
@@ -79,6 +79,16 @@ class EddyDataPreprocessor:
         ----------
             ValueError
                 必要なカラムが存在しない場合、またはマッピングに必要なキーが不足している場合
+
+        Examples
+        --------
+        >>> df = pd.DataFrame({
+        ...     'Ux': [1.0, 2.0, 3.0],
+        ...     'Uy': [4.0, 5.0, 6.0],
+        ...     'Uz': [7.0, 8.0, 9.0]
+        ... })
+        >>> edp = EddyDataPreprocessor()
+        >>> df_with_uvw = edp.add_uvw_columns(df)
         """
         if column_mapping is None:
             column_mapping = {
@@ -165,68 +175,75 @@ class EddyDataPreprocessor:
         add_uvw_columns: bool = True,
         uvw_column_mapping: dict[MeasuredWindKeyType, str] | None = None,
     ) -> dict[str, float]:
-        """
-        遅れ時間(ラグ)の統計分析を行い、指定されたディレクトリ内のデータファイルを処理します。
+        """遅れ時間(ラグ)の統計分析を行い、指定されたディレクトリ内のデータファイルを処理します。
         解析結果とメタデータはCSVファイルとして出力されます。
 
         Parameters
         ----------
-            input_dirpath : str | Path
-                入力データファイルが格納されているディレクトリのパス。
-            input_files_pattern : str
-                入力ファイル名のパターン(正規表現)。
-            input_files_suffix : str
-                入力ファイルの拡張子。
-            col1 : str
-                基準変数の列名。
-            col2_list : list[str] | None
-                比較変数の列名のリスト。Noneの場合はデフォルト値("Tv")を使用。
-            median_range : float
-                中央値を中心とした範囲。
-            output_dirpath : str | Path | None
-                出力ディレクトリのパス。Noneの場合は保存しない。
-            output_tag : str
-                出力ファイルに付与するタグ。デフォルトは空文字で、何も付与されない。
-            add_title : bool
-                プロットにタイトルを追加するかどうか。デフォルトはTrue。
-            figsize : tuple[float, float]
-                プロットのサイズ。デフォルトは(10, 8)。
-            dpi : flaot | None, optional
-                プロットのdpi。デフォルトは350。
-            plot_range_tuple : tuple
-                ヒストグラムの表示範囲。
-            print_results : bool
-                結果をコンソールに表示するかどうか。デフォルトはTrue。
-            xlabel : str | None
-                x軸のラベル。デフォルトは"Seconds"。
-            ylabel : str | None
-                y軸のラベル。デフォルトは"Frequency"。
-            resample_in_processing : bool
-                データを遅れ時間の計算中にリサンプリングするかどうか。
-                inputするファイルが既にリサンプリング済みの場合はFalseでよい。
-                デフォルトはFalse。
-            interpolate : bool
-                欠損値の補完を適用するフラグ。デフォルトはTrue。
-            numeric_columns : list[str] | None
-                数値型に変換する列名のリスト。Noneの場合はデフォルトの列名のリストを使用。
-            metadata_rows : int
-                メタデータの行数。
-            skiprows : list[int] | None
-                スキップする行番号のリスト。Noneの場合はデフォルト値([0, 2, 3])を使用。
-            add_uvw_columns : bool
-                u, v, wの列を追加するかどうか。デフォルトはTrue。
-            uvw_column_mapping : dict[MeasuredWindKeyType, str] | None
-                u, v, wの列名をマッピングする辞書。Noneの場合は以下のデフォルト値を使用。
-                {
-                    "u_m": "Ux",
-                    "v_m": "Uy",
-                    "w_m": "Uz"
-                }
+            input_dirpath: str | Path
+                入力データファイルが格納されているディレクトリのパス
+            input_files_pattern: str, optional
+                入力ファイル名のパターン(正規表現)。デフォルトは"Eddy_(\\d+)"
+            input_files_suffix: str, optional
+                入力ファイルの拡張子。デフォルトは".dat"
+            col1: str, optional
+                基準変数の列名。デフォルトは"edp_wind_w"
+            col2_list: list[str] | None, optional
+                比較変数の列名のリスト。デフォルトはNoneで、その場合は["Tv"]を使用
+            median_range: float, optional
+                中央値を中心とした範囲。デフォルトは20
+            output_dirpath: str | Path | None, optional
+                出力ディレクトリのパス。デフォルトはNoneで、その場合は結果を保存しない
+            output_tag: str, optional
+                出力ファイルに付与するタグ。デフォルトは空文字
+            add_title: bool, optional
+                プロットにタイトルを追加するかどうか。デフォルトはTrue
+            figsize: tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 8)
+            dpi: float | None, optional
+                プロットのdpi。デフォルトは350
+            plot_range_tuple: tuple, optional
+                ヒストグラムの表示範囲。デフォルトは(-50, 200)
+            print_results: bool, optional
+                結果をコンソールに表示するかどうか。デフォルトはTrue
+            xlabel: str | None, optional
+                x軸のラベル。デフォルトは"Seconds"
+            ylabel: str | None, optional
+                y軸のラベル。デフォルトは"Frequency"
+            index_column: str, optional
+                タイムスタンプが格納された列名。デフォルトは"TIMESTAMP"
+            index_format: str, optional
+                タイムスタンプのフォーマット。デフォルトは"%Y-%m-%d %H:%M:%S.%f"
+            resample_in_processing: bool, optional
+                データを遅れ時間の計算中にリサンプリングするかどうか。デフォルトはFalse
+            interpolate: bool, optional
+                欠損値の補完を適用するかどうか。デフォルトはTrue
+            numeric_columns: list[str] | None, optional
+                数値型に変換する列名のリスト。デフォルトはNoneで、その場合は標準の列名リストを使用
+            metadata_rows: int, optional
+                メタデータの行数。デフォルトは4
+            skiprows: list[int] | None, optional
+                スキップする行番号のリスト。デフォルトはNoneで、その場合は[0, 2, 3]を使用
+            add_uvw_columns: bool, optional
+                u, v, wの列を追加するかどうか。デフォルトはTrue
+            uvw_column_mapping: dict[MeasuredWindKeyType, str] | None, optional
+                u, v, wの列名をマッピングする辞書。デフォルトはNoneで、その場合は標準のマッピングを使用
 
         Returns
-        ----------
+        -------
             dict[str, float]
-                各変数の遅れ時間(平均値を採用)を含む辞書。
+                各変数の遅れ時間(平均値を採用)を含む辞書
+
+        Examples
+        --------
+        >>> edp = EddyDataPreprocessor(fs=10)
+        >>> result = edp.analyze_lag_times(
+        ...     input_dirpath="data/eddy",
+        ...     col2_list=["Ultra_CH4_ppm", "Ultra_C2H6_ppb"],
+        ...     output_dirpath="outputs"
+        ... )
+        >>> print(result)
+        {'Ultra_CH4_ppm': 0.2, 'Ultra_C2H6_ppb': 0.3}
         """
         if output_dirpath is None:
             self.logger.warn(
@@ -296,7 +313,7 @@ class EddyDataPreprocessor:
             # 仰角などを補正した風速成分を追加
             if add_uvw_columns:
                 df = self.add_uvw_columns(df=df, column_mapping=uvw_column_mapping)
-            lags_list = EddyDataPreprocessor._calculate_lag_time(
+            lags_list = EddyDataPreprocessor.calculate_lag_time(
                 df=df,
                 col1=col1,
                 col2_list=col2_list,
@@ -366,7 +383,7 @@ class EddyDataPreprocessor:
             )
 
             if print_results:
-                print(f"{column:<{max_col_name_length}} : {mean_seconds:.2f} s")
+                print(f"{column:<{max_col_name_length}}: {mean_seconds:.2f} s")
 
         # 結果をCSVファイルとして出力
         if output_dirpath is not None:
@@ -385,13 +402,28 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            print_summary : bool
-                print()で表示するか。デフォルトはTrue。
+            print_summary: bool, optional
+                結果をprint()で表示するかどうかを指定するフラグ。デフォルトはTrueで表示する。
 
         Returns
         ----------
             list[str]
-                生成されるカラム名のリスト。
+                生成されるカラム名のリスト。以下のカラムが含まれる:
+                - edp_wind_u: 水平風速u成分
+                - edp_wind_v: 水平風速v成分 
+                - edp_wind_w: 鉛直風速w成分
+                - edp_rad_wind_dir: 風向(ラジアン)
+                - edp_rad_wind_inc: 迎角(ラジアン)
+                - edp_degree_wind_dir: 風向(度)
+                - edp_degree_wind_inc: 迎角(度)
+
+        Examples
+        --------
+        >>> edp = EddyDataPreprocessor()
+        >>> cols = edp.get_generated_columns_names(print_summary=False)
+        >>> print(cols)
+        ['edp_wind_u', 'edp_wind_v', 'edp_wind_w', 'edp_rad_wind_dir', 
+         'edp_rad_wind_inc', 'edp_degree_wind_dir', 'edp_degree_wind_inc']
         """
         list_cols: list[str] = [
             self.WIND_U,
@@ -417,11 +449,10 @@ class EddyDataPreprocessor:
         resample: bool = True,
         interpolate: bool = True,
     ) -> tuple[pd.DataFrame, list[str]]:
-        """
-        CSVファイルを読み込み、前処理を行う
+        """CSVファイルを読み込み、前処理を行う
 
         前処理の手順は以下の通りです:
-        1. 不要な行を削除する。デフォルト(`skiprows=[0, 2, 3]`)の場合は、2行目をヘッダーとして残し、1、3、4行目が削除される。
+        1. 不要な行を削除する。デフォルトの場合は、2行目をヘッダーとして残し、1、3、4行目が削除される。
         2. 数値データを float 型に変換する
         3. TIMESTAMP列をDateTimeインデックスに設定する
         4. エラー値をNaNに置き換える
@@ -431,29 +462,35 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            filepath : str
+            filepath: str
                 読み込むCSVファイルのパス
-            index_column : str, optional
-                インデックスに使用する列名。デフォルトは'TIMESTAMP'。
-            index_format : str, optional
-                インデックスの日付形式。デフォルトは'%Y-%m-%d %H:%M:%S.%f'。
-            numeric_columns : list[str] | None, optional
-                数値型に変換する列名のリスト。
-                Noneの場合はデフォルト値(["Ux", "Uy", "Uz", "Tv", "diag_sonic", "CO2_new", "H2O", "diag_irga", "cell_tmpr", "cell_press", "Ultra_CH4_ppm", "Ultra_C2H6_ppb", "Ultra_H2O_ppm", "Ultra_CH4_ppm_C", "Ultra_C2H6_ppb_C"])を使用。
-            metadata_rows : int, optional
+            index_column: str, optional
+                インデックスに使用する列名。デフォルトは"TIMESTAMP"。
+            index_format: str, optional
+                インデックスの日付形式。デフォルトは"%Y-%m-%d %H:%M:%S.%f"。
+            numeric_columns: list[str] | None, optional
+                数値型に変換する列名のリスト。デフォルトはNoneで、その場合は標準の列名リストを使用。
+            metadata_rows: int, optional
                 メタデータとして読み込む行数。デフォルトは4。
-            skiprows : list[int] | None, optional
-                スキップする行インデックスのリスト。Noneの場合はデフォルト値([0, 2, 3])を使用するため、1, 3, 4行目がスキップされる。
-            resample : bool, optional
-                メソッド内でリサンプリング&欠損補間をするか。デフォルトはTrue。
-                Falseの場合はfloat変換などの処理のみ適用する。
-            interpolate : bool, optional
-                欠損値の補完を適用するフラグ。デフォルトはTrue。
+            skiprows: list[int] | None, optional
+                スキップする行インデックスのリスト。デフォルトはNoneで、その場合は[0, 2, 3]を使用。
+            resample: bool, optional
+                メソッド内でリサンプリング&欠損補間をするかのフラグ。デフォルトはTrue。
+            interpolate: bool, optional
+                欠損値の補完を適用するかのフラグ。デフォルトはTrue。
 
         Returns
         ----------
             tuple[pd.DataFrame, list[str]]
-                前処理済みのデータフレームとメタデータのリスト。
+                前処理済みのデータフレームとメタデータのリストを含むタプル。
+
+        Examples
+        --------
+        >>> edp = EddyDataPreprocessor()
+        >>> df, metadata = edp.get_resampled_df(
+        ...     filepath="data/eddy_data.csv",
+        ...     numeric_columns=["Ux", "Uy", "Uz", "Tv"]
+        ... )
         """
         # デフォルト値の設定
         if numeric_columns is None:
@@ -565,50 +602,60 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            input_dirpath : str
-                入力CSVファイルが格納されているディレクトリのパス。
-            resampled_dirpath : str
-                リサンプリングされたCSVファイルを出力するディレクトリのパス。
-            c2c1_ratio_dirpath : str
-                計算結果を保存するディレクトリのパス。
-            input_file_pattern : str
-                ファイル名からソートキーを抽出する正規表現パターン。デフォルトでは、最初の数字グループでソートします。
-            input_files_suffix : str
-                入力ファイルの拡張子(.datや.csvなど)。デフォルトは".dat"。
-            col_c1 : str
-                CH4濃度を含む列名。デフォルトは'Ultra_CH4_ppm_C'。
-            col_c2 : str
-                C2H6濃度を含む列名。デフォルトは'Ultra_C2H6_ppb'。
-            output_c2c1_ratio : bool, optional
-                線形回帰を行うかどうか。デフォルトはTrue。
-            output_resampled : bool, optional
-                リサンプリングされたCSVファイルを出力するかどうか。デフォルトはTrue。
-            c2c1_ratio_csv_prefix : str
-                出力ファイルの接頭辞。デフォルトは'SAC.Ultra'で、出力時は'SAC.Ultra.2024.09.21.ratio.csv'のような形式となる。
-            index_column : str
-                日時情報を含む列名。デフォルトは'TIMESTAMP'。
-            index_format : str, optional
-                インデックスの日付形式。デフォルトは'%Y-%m-%d %H:%M:%S.%f'。
-            resample : bool
-                リサンプリングを行うかどうか。デフォルトはTrue。
-            interpolate : bool
-                欠損値補間を行うかどうか。デフォルトはTrue。
-            numeric_columns : list[str] | None, optional
-                数値型に変換する列名のリスト。
-                Noneの場合はデフォルト値(["Ux", "Uy", "Uz", "Tv", "diag_sonic", "CO2_new", "H2O", "diag_irga", "cell_tmpr", "cell_press", "Ultra_CH4_ppm", "Ultra_C2H6_ppb", "Ultra_H2O_ppm", "Ultra_CH4_ppm_C", "Ultra_C2H6_ppb_C"])を使用。
-            metadata_rows : int, optional
-                メタデータとして読み込む行数。デフォルトは4。
-            skiprows : list[int] | None, optional
-                スキップする行インデックスのリスト。Noneの場合はデフォルト値([0, 2, 3])を使用するため、1, 3, 4行目がスキップされる。
+            input_dirpath: str
+                入力CSVファイルが格納されているディレクトリのパス
+            resampled_dirpath: str
+                リサンプリングされたCSVファイルを出力するディレクトリのパス
+            c2c1_ratio_dirpath: str
+                計算結果を保存するディレクトリのパス
+            input_file_pattern: str, optional
+                ファイル名からソートキーを抽出する正規表現パターン。デフォルトは"Eddy_(\\d+)"で、最初の数字グループでソートします
+            input_files_suffix: str, optional
+                入力ファイルの拡張子。デフォルトは".dat"
+            col_c1: str, optional
+                CH4濃度を含む列名。デフォルトは"Ultra_CH4_ppm_C"
+            col_c2: str, optional
+                C2H6濃度を含む列名。デフォルトは"Ultra_C2H6_ppb"
+            output_c2c1_ratio: bool, optional
+                線形回帰を行うかどうか。デフォルトはTrue
+            output_resampled: bool, optional
+                リサンプリングされたCSVファイルを出力するかどうか。デフォルトはTrue
+            c2c1_ratio_csv_prefix: str, optional
+                出力ファイルの接頭辞。デフォルトは"SAC.Ultra"で、出力時は"SAC.Ultra.2024.09.21.ratio.csv"のような形式となる
+            index_column: str, optional
+                日時情報を含む列名。デフォルトは"TIMESTAMP"
+            index_format: str, optional
+                インデックスの日付形式。デフォルトは"%Y-%m-%d %H:%M:%S.%f"
+            resample: bool, optional
+                リサンプリングを行うかどうか。デフォルトはTrue
+            interpolate: bool, optional
+                欠損値補間を行うかどうか。デフォルトはTrue
+            numeric_columns: list[str] | None, optional
+                数値型に変換する列名のリスト。デフォルトはNoneで、その場合は標準の列名リストを使用
+            metadata_rows: int, optional
+                メタデータとして読み込む行数。デフォルトは4
+            skiprows: list[int] | None, optional
+                スキップする行インデックスのリスト。デフォルトはNoneで、その場合は[0, 2, 3]を使用
 
         Raises
         ----------
             OSError
-                ディレクトリの作成に失敗した場合。
+                ディレクトリの作成に失敗した場合
             FileNotFoundError
-                入力ファイルが見つからない場合。
+                入力ファイルが見つからない場合
             ValueError
-                出力ディレクトリが指定されていない、またはデータの処理中にエラーが発生した場合。
+                出力ディレクトリが指定されていない、またはデータの処理中にエラーが発生した場合
+
+        Examples
+        --------
+        >>> edp = EddyDataPreprocessor(fs=10)
+        >>> edp.output_resampled_data(
+        ...     input_dirpath="data/raw",
+        ...     resampled_dirpath="data/resampled",
+        ...     c2c1_ratio_dirpath="data/ratio",
+        ...     col_c1="Ultra_CH4_ppm_C",
+        ...     col_c2="Ultra_C2H6_ppb"
+        ... )
         """
         # 出力オプションとディレクトリの検証
         if output_resampled and resampled_dirpath is None:
@@ -739,28 +786,38 @@ class EddyDataPreprocessor:
             ratio_df.to_csv(ratio_path, index=False)
 
     @staticmethod
-    def _calculate_lag_time(
+    def calculate_lag_time(
         df: pd.DataFrame,
         col1: str,
         col2_list: list[str],
     ) -> list[int]:
-        """
-        指定された基準変数(col1)と比較変数のリスト(col2_list)の間の遅れ時間(ディレイ)を計算する。
-        周波数が10Hzでcol1がcol2より10.0秒遅れている場合は、+100がインデックスとして取得される
+        """指定された基準変数と比較変数の間の遅れ時間(ディレイ)を計算します。
+        周波数が10Hzでcol1がcol2より10.0秒遅れている場合は、+100がインデックスとして取得されます。
 
         Parameters
         ----------
-            df : pd.DataFrame
+            df: pd.DataFrame
                 遅れ時間の計算に使用するデータフレーム
-            col1 : str
+            col1: str
                 基準変数の列名
-            col2_list : list[str]
+            col2_list: list[str]
                 比較変数の列名のリスト
 
         Returns
-        ----------
+        -------
             list[int]
-                各比較変数に対する遅れ時間(ディレイ)のリスト
+                各比較変数に対する遅れ時間(ディレイ)のリスト。正の値は基準変数が比較変数より遅れていることを示し、
+                負の値は基準変数が比較変数より進んでいることを示します。
+
+        Examples
+        --------
+        >>> df = pd.DataFrame({
+        ...     'var1': [1, 2, 3, 4, 5],
+        ...     'var2': [2, 3, 4, 5, 6],
+        ...     'var3': [3, 4, 5, 6, 7]
+        ... })
+        >>> EddyDataPreprocessor.calculate_lag_time(df, 'var1', ['var2', 'var3'])
+        [1, 2]
         """
         lags_list: list[int] = []
         for col2 in col2_list:
@@ -793,11 +850,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            directory : str | Path
+            directory: str | Path
                 ファイルが格納されているディレクトリのパス
-            pattern : str
+            pattern: str
                 ファイル名からソートキーを抽出する正規表現パターン
-            suffix : str
+            suffix: str
                 ファイルの拡張子
 
         Returns
@@ -823,11 +880,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            x_array : numpy.ndarray
+            x_array: numpy.ndarray
                 x方向の風速成分の配列
-            y_array : numpy.ndarray
+            y_array: numpy.ndarray
                 y方向の風速成分の配列
-            wind_dir : float
+            wind_dir: float
                 水平成分の風向(ラジアン)
 
         Returns
@@ -861,11 +918,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            u_array : numpy.ndarray
+            u_array: numpy.ndarray
                 u方向の風速。
-            w_array : numpy.ndarray
+            w_array: numpy.ndarray
                 w方向の風速。
-            wind_inc : float
+            wind_inc: float
                 平均風向に対する迎角(ラジアン)。
 
         Returns
@@ -887,11 +944,11 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            x_array : numpy.ndarray
+            x_array: numpy.ndarray
                 西方向の風速成分。
-            y_array : numpy.ndarray
+            y_array: numpy.ndarray
                 南北方向の風速成分。
-            correction_angle : float, optional
+            correction_angle: float, optional
                 風向補正角度(ラジアン)。デフォルトは0.0。CSAT3の場合は0.0を指定。
 
         Returns
@@ -911,9 +968,9 @@ class EddyDataPreprocessor:
 
         Parameters
         ----------
-            u_array : numpy.ndarray
+            u_array: numpy.ndarray
                 u方向の瞬間風速。
-            w_array : numpy.ndarray
+            w_array: numpy.ndarray
                 w方向の瞬間風速。
 
         Returns

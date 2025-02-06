@@ -29,33 +29,33 @@ def plot_stacked_fluxes(
 
     Parameters
     ----------
-        input_filepath : str | Path
+        input_filepath: str | Path
             入力データのCSVファイルパス。
-        output_dirpath : str | Path
+        output_dirpath: str | Path
             出力画像を保存するディレクトリのパス。
-        output_filename : str, optional
+        output_filename: str, optional
             出力画像のファイル名。デフォルトは"ch4_flux_stacked_bar_directions.png"。
-        figsize : tuple of float, optional
+        figsize: tuple of float, optional
             図のサイズ。デフォルトは(20, 13)。
-        dpi : float, optional
+        dpi: float, optional
             出力画像の解像度。デフォルトは350。
-        color_bio : str, optional
+        color_bio: str, optional
             生物起源CH4の色。デフォルトは"blue"。
-        color_gas : str, optional
+        color_gas: str, optional
             ガス起源CH4の色。デフォルトは"red"。
-        label_bio : str, optional
+        label_bio: str, optional
             生物起源CH4の凡例ラベル。デフォルトは"bio"。
-        label_gas : str, optional
+        label_gas: str, optional
             ガス起源CH4の凡例ラベル。デフォルトは"gas"。
-        xlabel : str, optional
+        xlabel: str, optional
             x軸のラベル。デフォルトは"Month"。
-        ylabel : str, optional
+        ylabel: str, optional
             y軸のラベル。デフォルトは"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)"。
-        ylim : float or None, optional
+        ylim: float or None, optional
             y軸の上限。Noneの場合は自動設定される。
-        save_fig : bool, optional
+        save_fig: bool, optional
             図を保存するかどうか。デフォルトはTrue。
-        show_fig : bool, optional
+        show_fig: bool, optional
             図を表示するかどうか。デフォルトはFalse。
     """
     # データの読み込み
@@ -158,9 +158,9 @@ Ubuntu環境でのフォントの手動設定
 不要な方はコメントアウトして実行してください。
 ここでは日本語フォントを読み込んでいます。
 
-1. インストール : `sudo apt update && sudo apt install -y fonts-ipafont`
-2. キャッシュ削除 : `fc-cache -fv`
-3. パスを確認 : `fc-list | grep -i ipa`
+1. インストール: `sudo apt update && sudo apt install -y fonts-ipafont`
+2. キャッシュ削除: `fc-cache -fv`
+3. パスを確認: `fc-list | grep -i ipa`
 
 得られたパスを`font_path`に記述して実行
 これでも読み込まれない場合は、matplotlibのキャッシュを削除する
