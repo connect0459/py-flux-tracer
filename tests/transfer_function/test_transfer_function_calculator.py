@@ -3,6 +3,7 @@ import os
 import tempfile
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from py_flux_tracer import TransferFunctionCalculator
 
 
@@ -106,13 +107,19 @@ def test_cutoff_df(calculator):
 
 def test_create_plot_co_spectra(calculator, tmp_path):
     """コスペクトルプロット作成のテスト"""
-    # プロットの保存と表示テスト
     output_dirpath = str(tmp_path)
-    calculator.create_plot_co_spectra(
-        "co1", "co2", output_dirpath=output_dirpath, show_fig=False
-    )
+    os.makedirs(output_dirpath, exist_ok=True)
 
-    # ファイルが作成されたことを確認
+    calculator.create_plot_co_spectra(
+        "co1",
+        "co2",
+        output_dirpath=output_dirpath,
+        show_fig=False,
+        output_filename="co-co1_co2.png",  # 出力ファイル名を明示的に指定
+        save_fig=True,  # 保存を明示的に指定
+    )
+    plt.close("all")
+
     assert os.path.exists(os.path.join(output_dirpath, "co-co1_co2.png"))
 
 
@@ -120,12 +127,19 @@ def test_create_plot_ratio(calculator, tmp_path):
     """比率プロット作成のテスト"""
     df_processed = calculator.process_data("co1", "co2")
     output_dirpath = str(tmp_path)
+    os.makedirs(output_dirpath, exist_ok=True)
 
     calculator.create_plot_ratio(
-        df_processed, "co1", "co2", output_dirpath=output_dirpath, show_fig=False
+        df_processed,
+        "co1",
+        "co2",
+        output_dirpath=output_dirpath,
+        show_fig=False,
+        output_filename="ratio-co1_co2.png",  # 出力ファイル名を明示的に指定
+        save_fig=True,  # 保存を明示的に指定
     )
+    plt.close("all")
 
-    # ファイルが作成されたことを確認
     assert os.path.exists(os.path.join(output_dirpath, "ratio-co1_co2.png"))
 
 
@@ -133,12 +147,20 @@ def test_create_plot_transfer_function(calculator, tmp_path):
     """伝達関数プロット作成のテスト"""
     a, _, df_processed = calculator.calculate_transfer_function("co1", "co2")
     output_dirpath = str(tmp_path)
+    os.makedirs(output_dirpath, exist_ok=True)
 
     calculator.create_plot_transfer_function(
-        a, df_processed, "co1", "co2", output_dirpath=output_dirpath, show_fig=False
+        a,
+        df_processed,
+        "co1",
+        "co2",
+        output_dirpath=output_dirpath,
+        show_fig=False,
+        output_filename="tf-co1_co2.png",  # 出力ファイル名を明示的に指定
+        save_fig=True,  # 保存を明示的に指定
     )
+    plt.close("all")
 
-    # ファイルが作成されたことを確認
     assert os.path.exists(os.path.join(output_dirpath, "tf-co1_co2.png"))
 
 

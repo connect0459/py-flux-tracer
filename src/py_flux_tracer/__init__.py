@@ -3,8 +3,8 @@ from .campbell.eddy_data_figures_generator import (
     SlopeLine,
     SpectralPlotConfig,
 )
-from .campbell.eddy_data_preprocessor import EddyDataPreprocessor
-from .campbell.spectrum_calculator import SpectrumCalculator
+from .campbell.eddy_data_preprocessor import EddyDataPreprocessor, MeasuredWindKeyType
+from .campbell.spectrum_calculator import SpectrumCalculator, WindowFunctionType
 from .commons.utilities import setup_logger, setup_plot_params
 from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
 from .mobile.correcting_utils import (
@@ -62,7 +62,9 @@ __all__ = [
     "SlopeLine",
     "SpectralPlotConfig",
     "EddyDataPreprocessor",
+    "MeasuredWindKeyType",
     "SpectrumCalculator",
+    "WindowFunctionType",
     "setup_logger",
     "setup_plot_params",
     "FluxFootprintAnalyzer",
