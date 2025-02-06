@@ -178,6 +178,7 @@ if __name__ == "__main__":
         #     "wind_direction": "Wind direction",  # 風向 [度]
         #     "wind_speed": "WS vector",  # 風速 [m/s]
         #     "friction_velocity": "u*",  # 摩擦速度 [m/s]
+        #     "sigma_v": "sigmaV",  # 風速の標準偏差 [m/s]
         #     "sigma_v": "sigma_v",  # 風速の標準偏差 [m/s]
         #     "stability": "z/L",  # 安定度パラメータ [-]
         # },
