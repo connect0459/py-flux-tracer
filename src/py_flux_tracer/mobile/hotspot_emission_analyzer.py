@@ -20,6 +20,10 @@ class EmissionData:
     ----------
         timestamp : str
             タイムスタンプ
+        avg_lat : float
+            平均緯度
+        avg_lon : float
+            平均経度
         delta_ch4 : float
             CH4の増加量 (ppm)
         delta_c2h6 : float
@@ -32,10 +36,6 @@ class EmissionData:
             日排出量 (L/day)
         emission_per_year : float
             年間排出量 (L/year)
-        latitude : float
-            緯度
-        longitude : float
-            経度
         section : str | int | float
             セクション情報
         type : HotspotType
@@ -43,14 +43,14 @@ class EmissionData:
     """
 
     timestamp: str
+    avg_lat: float
+    avg_lon: float
     delta_ch4: float
     delta_c2h6: float
     delta_ratio: float
     emission_per_min: float
     emission_per_day: float
     emission_per_year: float
-    latitude: float
-    longitude: float
     section: str | int | float
     type: HotspotType
 
@@ -74,19 +74,19 @@ class EmissionData:
         if self.section is not None and not isinstance(self.section, (str, int, float)):
             raise ValueError("'section' must be a string, int, float, or None")
 
-        # latitude のバリデーション
+        # avg_lat のバリデーション
         if (
-            not isinstance(self.latitude, (int, float))
-            or not -90 <= self.latitude <= 90
+            not isinstance(self.avg_lat, (int, float))
+            or not -90 <= self.avg_lat <= 90
         ):
-            raise ValueError("'latitude' must be a number between -90 and 90")
+            raise ValueError("'avg_lat' must be a number between -90 and 90")
 
-        # longitude のバリデーション
+        # avg_lon のバリデーション
         if (
-            not isinstance(self.longitude, (int, float))
-            or not -180 <= self.longitude <= 180
+            not isinstance(self.avg_lon, (int, float))
+            or not -180 <= self.avg_lon <= 180
         ):
-            raise ValueError("'longitude' must be a number between -180 and 180")
+            raise ValueError("'avg_lon' must be a number between -180 and 180")
 
         # delta_ch4 のバリデーション
         if not isinstance(self.delta_ch4, (int, float)) or self.delta_ch4 < 0:
@@ -139,8 +139,8 @@ class EmissionData:
             "emission_per_min": self.emission_per_min,
             "emission_per_day": self.emission_per_day,
             "emission_per_year": self.emission_per_year,
-            "latitude": self.latitude,
-            "longitude": self.longitude,
+            "avg_lat": self.avg_lat,
+            "avg_lon": self.avg_lon,
             "section": self.section,
             "type": self.type,
         }
@@ -339,8 +339,8 @@ class HotspotEmissionAnalyzer:
                 emission_per_min=emission_per_min,
                 emission_per_day=emission_per_day,
                 emission_per_year=emission_per_year,
-                latitude=spot.avg_lat,
-                longitude=spot.avg_lon,
+                avg_lat=spot.avg_lat,
+                avg_lon=spot.avg_lon,
                 section=spot.section,
                 type=spot.type,
             )
