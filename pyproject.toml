@@ -18,7 +18,6 @@ dependencies = [
   "pillow",           # PILの互換ライブラリ
   "plotly>=5.24.1",
   "scipy",
-  "seaborn>=0.13.2",
   "setuptools_scm",   # バージョン管理用に追加
   "tqdm",
 ]
