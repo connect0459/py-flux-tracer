@@ -7,16 +7,16 @@ authors = [{ name = "connect0459", email = "connect0459@gmail.com" }]
 # PILの代わりにfork先のpillowをインストール
 # 詳細は<https://pillow.readthedocs.io/en/stable/>を参照
 dependencies = [
-  "folium>=0.18.0",   # 地図
-  "geopy>=2.4.1",     # MobileMeasurements
+  "folium>=0.18.0",
+  "geopy>=2.4.1",
   "jpholiday",
   "matplotlib",
-  "nbformat>=5.10.4", # MobileMeasurements
+  "nbformat>=5.10.4",
   "numpy",
   "openpyxl>=3.1.5",
   "pandas",
-  "pillow",           # 画像
-  "plotly>=5.24.1",   # MobileMeasurements
+  "pillow",           # PILの互換ライブラリ
+  "plotly>=5.24.1",
   "scipy",
   "seaborn>=0.13.2",
   "setuptools_scm",   # バージョン管理用に追加
@@ -77,6 +77,7 @@ src = ["src", "tests"]
 exclude = [".git", ".venv", "__pycache__", "build", "dist"]
 
 # 有効にするルール
+[tool.ruff.lint]
 select = [
   "E",   # pycodestyle errors
   "F",   # pyflakes
@@ -96,7 +97,7 @@ ignore = [
 # 自動修正の対象とするルール
 fixable = ["I", "F401"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 # isortの設定
 known-first-party = ["py_flux_tracer"]
 known-third-party = ["numpy", "pandas"]
@@ -108,11 +109,11 @@ section-order = [
   "local-folder",
 ]
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # 循環的複雑度の最大値
 max-complexity = 10
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 # docstringのスタイル
 convention = "numpy"
 
