@@ -2,27 +2,30 @@
 
 このドキュメントでは、`py_flux_tracer`パッケージで提供されている機能について説明します。
 
-## フットプリント解析
-
-- `FluxFootprintAnalyzer`: フラックスフットプリントを計算し、可視化するためのクラスです。
-- `GeoFluxFootprintAnalyzer`: 地理情報を考慮したフラックスフットプリントを計算・可視化するためのクラスです。
-
-## 移動観測解析
-
-- `MobileMeasurementAnalyzer`: 移動観測データを解析するためのクラスです。
-- `MobileMeasurementConfig`: 移動観測データの入力設定を管理するクラスです。
-
-## 伝達関数解析
-
-- `FftFileReorganizer`: FFTファイルを整理するためのクラスです。
-- `TransferFunctionCalculator`: 伝達関数を計算し、可視化するためのクラスです。
-
 ## データ前処理
 
+- `EddyDataFiguresGenerator`: 渦相関法で得られたデータから図を作成するクラスです。
 - `EddyDataPreprocessor`: 渦相関法で得られたデータの前処理を行うクラスです。
 - `SpectrumCalculator`: スペクトル解析を行うためのクラスです。
 
-## 注意事項
+## フットプリント
 
-- 本パッケージは大阪公立大学生態気象学研究グループの構成員、または著作権者から明示的な許可を得た第三者のみが使用できます。
-- データの品質管理や解析手法については、研究グループの方針に従ってください。
+- `FluxFootprintAnalyzer`: フラックスフットプリントを計算し、可視化するためのクラスです。
+
+## 車載濃度観測
+
+- `CorrectingUtils`: 観測データに補正を行う処理をまとめたクラスです。
+- `HotspotEmissionAnalyzer`: `MobileMeasurementAnalyzer`で計算された`HotspotData`をもとに、CH4排出量を解析するクラスです。
+- `MobileMeasurementAnalyzer`: 車載濃度観測データを解析するためのクラスです。
+
+## 月別データ
+
+- `MonthlyConverter`: MonthlyシートをDataFrameに変換するためのクラスです。
+- `MonthlyFiguresGenerator`: Monthlyシートから作成されたDataFrameから図を作成するクラスです。
+
+## 伝達関数
+
+FluxCalculator から出力されるFFTファイルをもとに伝達関数の係数を計算します。
+
+- `FftFileReorganizer`: FFTファイルを整理するためのクラスです。
+- `TransferFunctionCalculator`: 伝達関数を計算し、可視化するためのクラスです。
