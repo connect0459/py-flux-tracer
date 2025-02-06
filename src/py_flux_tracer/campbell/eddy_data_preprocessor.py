@@ -8,8 +8,8 @@ from scipy import stats
 from pathlib import Path
 from typing import Literal
 from datetime import datetime
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-
+from logging import Logger, DEBUG, INFO
+from ..commons.utilities import setup_logger
 
 MeasuredWindKeyType = Literal["u_m", "v_m", "w_m"]
 
@@ -48,7 +48,7 @@ class EddyDataPreprocessor:
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = EddyDataPreprocessor.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
     def add_uvw_columns(
         self,
@@ -95,11 +95,11 @@ class EddyDataPreprocessor:
                     f"必要な列 '{column}' (mapped from '{key}') がDataFrameに存在しません。"
                 )
 
-        df_copied: pd.DataFrame = df.copy()
+        df_internal: pd.DataFrame = df.copy()
         # pandasの.valuesを使用してnumpy配列を取得し、その型をnp.ndarrayに明示的にキャストする
-        wind_x_array: np.ndarray = np.array(df_copied[column_mapping["u_m"]].values)
-        wind_y_array: np.ndarray = np.array(df_copied[column_mapping["v_m"]].values)
-        wind_z_array: np.ndarray = np.array(df_copied[column_mapping["w_m"]].values)
+        wind_x_array: np.ndarray = np.array(df_internal[column_mapping["u_m"]].values)
+        wind_y_array: np.ndarray = np.array(df_internal[column_mapping["v_m"]].values)
+        wind_z_array: np.ndarray = np.array(df_internal[column_mapping["w_m"]].values)
 
         # 平均風向を計算
         wind_direction: float = EddyDataPreprocessor._wind_direction(
@@ -124,15 +124,15 @@ class EddyDataPreprocessor:
             )
         )
 
-        df_copied[self.WIND_U] = wind_u_array_rotated
-        df_copied[self.WIND_V] = wind_v_array
-        df_copied[self.WIND_W] = wind_w_array_rotated
-        df_copied[self.RAD_WIND_DIR] = wind_direction
-        df_copied[self.RAD_WIND_INC] = wind_inclination
-        df_copied[self.DEGREE_WIND_DIR] = np.degrees(wind_direction)
-        df_copied[self.DEGREE_WIND_INC] = np.degrees(wind_inclination)
+        df_internal[self.WIND_U] = wind_u_array_rotated
+        df_internal[self.WIND_V] = wind_v_array
+        df_internal[self.WIND_W] = wind_w_array_rotated
+        df_internal[self.RAD_WIND_DIR] = wind_direction
+        df_internal[self.RAD_WIND_INC] = wind_inclination
+        df_internal[self.DEGREE_WIND_DIR] = np.degrees(wind_direction)
+        df_internal[self.DEGREE_WIND_INC] = np.degrees(wind_inclination)
 
-        return df_copied
+        return df_internal
 
     def analyze_lag_times(
         self,
@@ -254,7 +254,9 @@ class EddyDataPreprocessor:
         # メイン処理
         # ファイル名に含まれる数字に基づいてソート
         csv_files = EddyDataPreprocessor._get_sorted_files(
-            directory=input_dirpath, pattern=input_files_pattern, suffix=input_files_suffix
+            directory=input_dirpath,
+            pattern=input_files_pattern,
+            suffix=input_files_suffix,
         )
         if not csv_files:
             raise FileNotFoundError(
@@ -820,44 +822,6 @@ class EddyDataPreprocessor:
             instantaneous_wind_directions - wind_dir
         )
         return vector_u, vector_v
-
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ----------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ----------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger
 
     @staticmethod
     def _vertical_rotation(

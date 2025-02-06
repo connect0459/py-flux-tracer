@@ -9,14 +9,14 @@ class H2OCorrectionConfig:
 
     Parameters
     ----------
-    coef_b : float | None
-        補正曲線の1次係数
-    coef_c : float | None
-        補正曲線の2次係数
-    h2o_ppm_threshold : float | None
-        水蒸気濃度の下限値（この値未満のデータは除外）
-    target_h2o_ppm : float
-        換算先の水蒸気濃度（デフォルト: 10000 ppm）
+        coef_b : float | None
+            補正曲線の1次係数
+        coef_c : float | None
+            補正曲線の2次係数
+        h2o_ppm_threshold : float | None
+            水蒸気濃度の下限値（この値未満のデータは除外）
+        target_h2o_ppm : float
+            換算先の水蒸気濃度（デフォルト: 10000 ppm）
     """
 
     coef_b: float | None = None
@@ -31,12 +31,12 @@ class BiasRemovalConfig:
 
     Parameters
     ----------
-    quantile_value : float
-        バイアス除去に使用するクォンタイル値
-    base_ch4_ppm : float
-        補正前の値から最小値を引いた後に足すCH4濃度の基準値。
-    base_c2h6_ppb : float
-        補正前の値から最小値を引いた後に足すC2H6濃度の基準値。
+        quantile_value : float
+            バイアス除去に使用するクォンタイル値
+        base_ch4_ppm : float
+            補正前の値から最小値を引いた後に足すCH4濃度の基準値。
+        base_c2h6_ppb : float
+            補正前の値から最小値を引いた後に足すC2H6濃度の基準値。
     """
 
     quantile_value: float = 0.05
@@ -148,11 +148,11 @@ class CorrectingUtils:
             pd.DataFrame
                 バイアスが除去されたデータフレーム。
         """
-        df_copied: pd.DataFrame = df.copy()
+        df_internal: pd.DataFrame = df.copy()
         # CH4
-        ch4_min: float = df_copied[col_ch4_ppm].quantile(quantile_value)
-        df_copied[col_ch4_ppm] = df_copied[col_ch4_ppm] - ch4_min + base_ch4_ppm
+        ch4_min: float = df_internal[col_ch4_ppm].quantile(quantile_value)
+        df_internal[col_ch4_ppm] = df_internal[col_ch4_ppm] - ch4_min + base_ch4_ppm
         # C2H6
-        c2h6_min: float = df_copied[col_c2h6_ppb].quantile(quantile_value)
-        df_copied[col_c2h6_ppb] = df_copied[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
-        return df_copied
+        c2h6_min: float = df_internal[col_c2h6_ppb].quantile(quantile_value)
+        df_internal[col_c2h6_ppb] = df_internal[col_c2h6_ppb] - c2h6_min + base_c2h6_ppb
+        return df_internal

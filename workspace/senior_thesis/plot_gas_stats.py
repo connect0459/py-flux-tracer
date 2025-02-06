@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
-from py_flux_tracer import FigureUtils
+from py_flux_tracer import setup_plot_params
 
 
 def plot_gas_stats(
@@ -11,6 +11,7 @@ def plot_gas_stats(
     output_dirpath: str,
     output_filename: str = "gas_stats.png",
     figsize: tuple[float, float] = (10, 6),
+    dpi: float | None = 350,
     save_fig: bool = True,
     show_fig: bool = False,
 ) -> None:
@@ -18,18 +19,20 @@ def plot_gas_stats(
 
     Parameters
     ----------
-    input_csv : str, optional
-        入力CSVファイルのパス, by default "workspace/senior_thesis/private/gas_stats.csv"
-    output_dirpath : str, optional
-        出力ディレクトリ, by default "workspace/senior_thesis/figures/gas_stats"
-    output_filename : str, optional
-        出力ファイル名, by default "gas_stats.png"
-    figsize : tuple[float, float], optional
-        図のサイズ, by default (10, 6)
-    save_fig : bool, optional
-        図を保存するかどうか, by default True
-    show_fig : bool, optional
-        図を表示するかどうか, by default False
+        input_csv : str, optional
+            入力CSVファイルのパス, by default "workspace/senior_thesis/private/gas_stats.csv"
+        output_dirpath : str, optional
+            出力ディレクトリ, by default "workspace/senior_thesis/figures/gas_stats"
+        output_filename : str, optional
+            出力ファイル名, by default "gas_stats.png"
+        figsize : tuple[float, float], optional
+            図のサイズ, by default (10, 6)
+        dpi : float | None, optional
+            図のdpi。デフォルトは350。
+        save_fig : bool, optional
+            図を保存するかどうか, by default True
+        show_fig : bool, optional
+            図を表示するかどうか, by default False
     """
     # データの読み込み
     df = pd.read_csv(input_csv)
@@ -104,9 +107,7 @@ if __name__ == "__main__":
     for path in font_paths:
         fm.fontManager.addfont(path)
     # プロットの書式を設定
-    FigureUtils.setup_plot_params(
-        font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24
-    )
+    setup_plot_params(font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24)
     plot_gas_stats(
         input_csv="workspace/senior_thesis/private/gas_stats.csv",
         output_dirpath="workspace/senior_thesis/private/outputs/gas_stats",

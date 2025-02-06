@@ -1,14 +1,11 @@
 import os
-import re  # 正規表現を使用するためのインポート
 import numpy as np
 import pandas as pd
 from py_flux_tracer import (
-    FigureUtils,
     MonthlyConverter,
     MonthlyFiguresGenerator,
-    EddyDataPreprocessor,
+    setup_plot_params,
 )
-from tqdm import tqdm  # プログレスバー用
 import matplotlib.font_manager as fm
 
 """
@@ -23,9 +20,7 @@ font_paths: list[str] = [
 for path in font_paths:
     fm.fontManager.addfont(path)
 # プロットの書式を設定
-FigureUtils.setup_plot_params(
-    font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24
-)
+setup_plot_params(font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24)
 
 include_end_date: bool = True
 start_date, end_date = "2024-05-15", "2024-12-31"  # yyyy-MM-ddで指定
@@ -54,7 +49,6 @@ output_dirpath = (
 )
 
 # フラグ
-plot_turbulences: bool = False
 plot_timeseries: bool = False
 plot_comparison: bool = False
 plot_diurnals: bool = False
@@ -165,7 +159,7 @@ if __name__ == "__main__":
         df_combined_without_fleeze.loc[freeze_mask, "C2H6_ultra_cal"] = np.nan
         df_combined_without_fleeze.loc[freeze_mask, "Fch4_ultra"] = np.nan
         df_combined_without_fleeze.loc[freeze_mask, "Fc2h6_ultra"] = np.nan
-        mfg.plot_c1c2_concentrations_and_fluxes_timeseries(
+        mfg.plot_c1c2_concs_and_fluxes_timeseries(
             df=df_combined_without_fleeze,
             col_ch4_conc="CH4_ultra_cal",
             col_ch4_flux="Fch4_ultra",
@@ -186,98 +180,6 @@ if __name__ == "__main__":
             figsize=(20, 6),
         )
         mfg.logger.info("'timeseries'を作成しました。")
-
-    if plot_turbulences:
-        # 乱流データの設定
-        data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-for_turb"
-        turbulence_configs: list[dict[str, str | float]] = [
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_105_2024_10_08_1200-resampled.csv",
-                "ch4_offset": 0.012693983,
-                "c2h6_offset": -13.1381285,
-            },
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_106_2024_10_09_0830-resampled.csv",
-                "ch4_offset": 0.009960667,
-                "c2h6_offset": -13.19275367,
-            },
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_106_2024_10_09_2000-resampled.csv",
-                "ch4_offset": 0.0095262,
-                "c2h6_offset": -13.35212183,
-            },
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_107_2024_10_10_0000-resampled.csv",
-                "ch4_offset": 0.009106433,
-                "c2h6_offset": -13.35047267,
-            },
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_107_2024_10_10_0200-resampled.csv",
-                "ch4_offset": 0.009106433,
-                "c2h6_offset": -13.35047267,
-            },
-            {
-                "filename": "TOA5_37477.SAC_Ultra.Eddy_109_2024_10_12_1400-resampled.csv",
-                "ch4_offset": 0.011030083,
-                "c2h6_offset": -11.82567127,
-            },
-        ]
-
-        # 各設定に対して処理を実行
-        for config in tqdm(turbulence_configs, desc="Processing turbulences"):
-            target_filename = config["filename"]
-            ch4_offset = config["ch4_offset"]
-            c2h6_offset = config["c2h6_offset"]
-            # ディレクトリ内の全てのCSVファイルを取得
-            filepath = os.path.join(data_dir, target_filename)
-            # ファイル名から日時を抽出
-            filename = os.path.basename(filepath)
-            try:
-                # ファイル名をアンダースコアで分割し、日時部分を取得
-                parts = filename.split("_")
-                # 年、月、日、時刻の部分を見つける
-                for i, part in enumerate(parts):
-                    if part == "2024":  # 年を見つけたら、そこから4つの要素を取得
-                        date = "_".join(
-                            [
-                                parts[i],  # 年
-                                parts[i + 1],  # 月
-                                parts[i + 2],  # 日
-                                re.sub(
-                                    r"(\+|-resampled\.csv)", "", parts[i + 3]
-                                ),  # 時刻から+と-resampled.csvを削除
-                            ]
-                        )
-                        break
-
-                # データの読み込みと処理
-                edp = EddyDataPreprocessor(10)
-                df_for_turb, _ = edp.get_resampled_df(filepath=filepath)
-                df_for_turb = edp.add_uvw_columns(df_for_turb)
-                df_for_turb["ch4_ppm_cal"] = df_for_turb["Ultra_CH4_ppm_C"] - ch4_offset
-                df_for_turb["c2h6_ppb_cal"] = (
-                    df_for_turb["Ultra_C2H6_ppb"] - c2h6_offset
-                )
-
-                # 図の作成と保存
-                mfg.plot_turbulence(
-                    df=df_for_turb,
-                    col_uz="edp_wind_w",
-                    col_ch4="ch4_ppm_cal",
-                    col_c2h6="c2h6_ppb_cal",
-                    output_dirpath=(os.path.join(output_dirpath, "turbulences", "for_turb")),
-                    output_filename=f"turbulence-{date}.png",
-                    add_serial_labels=False,
-                    figsize=(20, 10),
-                )
-                # mfg.logger.info(f"'{date}'の'turbulences'を作成しました。")
-
-            except (IndexError, ValueError):
-                # except (IndexError, ValueError) as e:
-                # mfg.logger.warning(
-                #     f"ファイル名'{filename}'から日時を抽出できませんでした: {e}"
-                # )
-                continue
 
     for month, subplot_label in zip(months, subplot_labels):
         # monthを0埋めのMM形式に変換
@@ -682,11 +584,11 @@ if __name__ == "__main__":
                 subplot_fontsize=24,
                 figsize=(6, 5),
                 y_max=100,
-                color_bio=season_mono_config["color_bio"],
-                color_gas=season_mono_config["color_gas"],
-                flux_alpha=season_mono_config["flux_alpha"],
-                label_bio=season_mono_config["label_bio"],
-                label_gas=season_mono_config["label_gas"],
+                color_bio=str(season_mono_config["color_bio"]),
+                color_gas=str(season_mono_config["color_gas"]),
+                flux_alpha=float(season_mono_config["flux_alpha"]),
+                label_bio=str(season_mono_config["label_bio"]),
+                label_gas=str(season_mono_config["label_gas"]),
                 # add_legend=(tag == "fall"),
                 add_xlabel=False,
                 add_ylabel=False,
@@ -701,11 +603,11 @@ if __name__ == "__main__":
                 col_c2h6_flux="Fc2h6_ultra",
                 subplot_fontsize=24,
                 y_max=110,
-                color_bio=season_mono_config["color_bio"],
-                color_gas=season_mono_config["color_gas"],
-                flux_alpha=season_mono_config["flux_alpha"],
-                label_bio=season_mono_config["label_bio"],
-                label_gas=season_mono_config["label_gas"],
+                color_bio=str(season_mono_config["color_bio"]),
+                color_gas=str(season_mono_config["color_gas"]),
+                flux_alpha=float(season_mono_config["flux_alpha"]),
+                label_bio=str(season_mono_config["label_bio"]),
+                label_gas=str(season_mono_config["label_gas"]),
                 add_xlabel=False,
                 add_ylabel=False,
                 add_legend=False,
@@ -735,13 +637,13 @@ if __name__ == "__main__":
                 col_c2h6_flux="Fc2h6_ultra",
                 col_wind_dir="Wind direction",
                 ymax=100,
-                label_gas=season_mono_config["label_gas"],
-                label_bio=season_mono_config["label_bio"],
-                color_bio=season_mono_config["color_bio"],
-                color_gas=season_mono_config["color_gas"],
+                color_bio=str(season_mono_config["color_bio"]),
+                color_gas=str(season_mono_config["color_gas"]),
+                flux_alpha=float(season_mono_config["flux_alpha"]),
+                label_bio=str(season_mono_config["label_bio"]),
+                label_gas=str(season_mono_config["label_gas"]),
                 gap_degrees=3.0,
                 num_directions=8,  # 方位の数（8方位）
-                flux_alpha=season_mono_config["flux_alpha"],
                 subplot_label=subplot_label,
                 print_summary=False,  # 統計情報を表示するかどうか
                 add_legend=False,
@@ -759,12 +661,12 @@ if __name__ == "__main__":
                 col_c2h6_flux="Fc2h6_ultra",
                 col_wind_dir="Wind direction",
                 ymax=100,
-                label_gas=season_mono_config["label_gas"],
-                label_bio=season_mono_config["label_bio"],
-                color_bio=season_mono_config["color_bio"],
-                color_gas=season_mono_config["color_gas"],
+                color_bio=str(season_mono_config["color_bio"]),
+                color_gas=str(season_mono_config["color_gas"]),
+                flux_alpha=float(season_mono_config["flux_alpha"]),
+                label_bio=str(season_mono_config["label_bio"]),
+                label_gas=str(season_mono_config["label_gas"]),
                 num_directions=8,  # 方位の数（8方位）
-                flux_alpha=season_mono_config["flux_alpha"],
                 subplot_label=subplot_label,
                 print_summary=False,  # 統計情報を表示するかどうか
                 add_legend=True,
@@ -790,7 +692,7 @@ if __name__ == "__main__":
             "nan",
         ],
     )
-    FigureUtils.setup_plot_params(font_size=20)
+    setup_plot_params(font_size=20)
     df_around_year_for_diurnal = df_around_year.copy()
     mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
         df=df_around_year_for_diurnal,

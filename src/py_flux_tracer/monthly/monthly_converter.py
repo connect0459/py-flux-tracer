@@ -3,7 +3,8 @@ import warnings
 from pathlib import Path
 from datetime import datetime
 from importlib.metadata import version
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
+from logging import Logger, DEBUG, INFO
+from ..commons.utilities import setup_logger
 
 
 class MonthlyConverter:
@@ -52,7 +53,7 @@ class MonthlyConverter:
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = MonthlyConverter.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
         self._na_values: list[str] = na_values
         self._directory = Path(directory)
@@ -62,44 +63,6 @@ class MonthlyConverter:
         # Excelファイルのパスを保持
         self._excel_files: dict[str, pd.ExcelFile] = {}
         self._file_pattern: str = file_pattern
-
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ----------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ----------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger
 
     def close(self) -> None:
         """
@@ -397,12 +360,12 @@ class MonthlyConverter:
             raise ValueError("start_dayはend_day以下である必要があります")
 
         # datetime_column をDatetime型に変換
-        df_copied = df.copy()
-        df_copied[datetime_column] = pd.to_datetime(df_copied[datetime_column])
+        df_internal = df.copy()
+        df_internal[datetime_column] = pd.to_datetime(df_internal[datetime_column])
 
         # 月でフィルタリング
-        monthly_data = df_copied[
-            df_copied[datetime_column].dt.month.isin(target_months)
+        monthly_data = df_internal[
+            df_internal[datetime_column].dt.month.isin(target_months)
         ]
 
         # 日付範囲でフィルタリング
@@ -442,8 +405,8 @@ class MonthlyConverter:
                 指定された期間のデータのみを含むデータフレーム
         """
         # データフレームのコピーを作成
-        df_copied = df.copy()
-        df_copied[datetime_column] = pd.to_datetime(df_copied[datetime_column])
+        df_internal = df.copy()
+        df_internal[datetime_column] = pd.to_datetime(df_internal[datetime_column])
         start_dt = pd.to_datetime(start_date)
         end_dt = pd.to_datetime(end_date)
 
@@ -452,9 +415,9 @@ class MonthlyConverter:
             raise ValueError("start_date は end_date より前である必要があります")
 
         # 期間でフィルタリング
-        period_data = df_copied[
-            (df_copied[datetime_column] >= start_dt)
-            & (df_copied[datetime_column] <= end_dt)
+        period_data = df_internal[
+            (df_internal[datetime_column] >= start_dt)
+            & (df_internal[datetime_column] <= end_dt)
         ]
 
         return period_data

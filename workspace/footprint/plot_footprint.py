@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import matplotlib.font_manager as fm
 from py_flux_tracer import (
-    FigureUtils,
     FluxFootprintAnalyzer,
     HotspotData,
     MonthlyConverter,
@@ -10,6 +9,7 @@ from py_flux_tracer import (
     MobileMeasurementConfig,
     H2OCorrectionConfig,
     BiasRemovalConfig,
+    setup_plot_params,
 )
 
 # picoデータの補正式に関するパラメータ
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     image = ffa.get_satellite_image_from_local(
         local_image_path=local_image_path
     )  # ローカル
-    FigureUtils.setup_plot_params(font_family=["Arial", "MS Gothic"])
+    setup_plot_params(font_family=["Arial", "MS Gothic"])
 
     for i, start_end_date in enumerate(start_end_dates_list):
         start_date = start_end_date[0]

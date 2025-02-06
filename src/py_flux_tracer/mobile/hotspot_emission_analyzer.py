@@ -4,8 +4,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from dataclasses import dataclass, field
 from typing import get_args
+from dataclasses import dataclass, field
+from logging import Logger, DEBUG, INFO
+from ..commons.utilities import setup_logger
 from .mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -252,8 +254,31 @@ class HotspotEmissionConfig:
 
 
 class HotspotEmissionAnalyzer:
-    @staticmethod
+    def __init__(
+        self,
+        logger: Logger | None = None,
+        logging_debug: bool = False,
+    ):
+        """
+        渦相関法によって記録されたデータファイルを処理するクラス。
+
+        Parameters
+        ----------
+            fs : float
+                サンプリング周波数。
+            logger : Logger | None
+                使用するロガー。Noneの場合は新しいロガーを作成します。
+            logging_debug : bool
+                ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
+        """
+        # ロガー
+        log_level: int = INFO
+        if logging_debug:
+            log_level = DEBUG
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
+
     def calculate_emission_rates(
+        self,
         hotspots: list[HotspotData],
         config: HotspotEmissionConfig,
         print_summary: bool = False,
@@ -351,7 +376,7 @@ class HotspotEmissionAnalyzer:
                 type_stats["emission_categories"] = category_counts
 
                 if print_summary:
-                    print(f"\n{spot_type}タイプの統計情報:")
+                    self.logger.info(f"{spot_type}タイプの統計情報:")
                     print(f"  検出数: {type_stats['count']}")
                     print("  排出量 (L/min):")
                     print(f"    最小値: {type_stats['emission_per_min_min']:.2f}")
@@ -367,8 +392,8 @@ class HotspotEmissionAnalyzer:
 
         return emission_data_list
 
-    @staticmethod
     def plot_emission_analysis(
+        self,
         emissions: list[EmissionData],
         dpi: int = 300,
         output_dirpath: str | Path | None = None,
@@ -553,7 +578,7 @@ class HotspotEmissionAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath = os.path.join(output_dirpath, output_filename)
@@ -565,7 +590,7 @@ class HotspotEmissionAnalyzer:
 
         if print_summary:
             # デバッグ用の出力
-            print("\nビンごとの集計:")
+            self.logger.info("ビンごとの集計:")
             print(f"{'Range':>12} | {'bio':>8} | {'gas':>8} | {'total':>8}")
             print("-" * 50)
 

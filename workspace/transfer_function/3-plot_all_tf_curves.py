@@ -1,8 +1,8 @@
 import matplotlib.font_manager as fm
 from py_flux_tracer import (
-    FigureUtils,
     TfCurvesFromCsvConfig,
     TransferFunctionCalculator,
+    setup_plot_params,
 )
 
 # # フォントファイルを登録
@@ -17,7 +17,7 @@ font_array: list[str] = [
     "Arial",
     "MS Gothic",
 ]
-FigureUtils.setup_plot_params(
+setup_plot_params(
     font_family=font_array,
     # font_size=24,
     # legend_size=24,

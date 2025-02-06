@@ -14,7 +14,8 @@ from matplotlib import gridspec
 from dataclasses import dataclass
 from geopy.distance import geodesic
 from typing import get_args, Literal
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
+from logging import Logger, DEBUG, INFO
+from ..commons.utilities import setup_logger
 from .correcting_utils import CorrectingUtils, H2OCorrectionConfig, BiasRemovalConfig
 
 
@@ -360,7 +361,7 @@ class MobileMeasurementAnalyzer:
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = MobileMeasurementAnalyzer.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
         # プライベートなプロパティ
         self._center_lat: float = center_lat
         self._center_lon: float = center_lon
@@ -716,7 +717,7 @@ class MobileMeasurementAnalyzer:
         # 地図を保存
         if save_fig and output_dirpath is None:
             raise ValueError(
-                "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
             )
             output_filepath: str = os.path.join(output_dirpath, output_filename)
             m.save(str(output_filepath))
@@ -763,7 +764,7 @@ class MobileMeasurementAnalyzer:
         # DataFrameに変換してCSVに出力
         if output_dirpath is None:
             raise ValueError(
-                "output_dirpathが指定されていません。有効なディレクトリパスを指定してください。"
+                "output_dirpath が指定されていません。有効なディレクトリパスを指定してください。"
             )
         os.makedirs(output_dirpath, exist_ok=True)
         output_filepath: str = os.path.join(output_dirpath, output_filename)
@@ -892,7 +893,7 @@ class MobileMeasurementAnalyzer:
         output_dirpath: str | Path | None,
         output_filename: str = "ch4_delta_histogram.png",
         dpi: int = 200,
-        figsize: tuple[int, int] = (8, 6),
+        figsize: tuple[float, float] = (8, 6),
         fontsize: float = 20,
         hotspot_colors: dict[HotspotType, str] = {
             "bio": "blue",
@@ -921,7 +922,7 @@ class MobileMeasurementAnalyzer:
                 保存するファイル名。デフォルトは"ch4_delta_histogram.png"。
             dpi : int
                 解像度。デフォルトは200。
-            figsize : tuple[int, int]
+            figsize : tuple[float, float]
                 図のサイズ。デフォルトは(8, 6)。
             fontsize : float
                 フォントサイズ。デフォルトは20。
@@ -1032,12 +1033,11 @@ class MobileMeasurementAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath: str = os.path.join(output_dirpath, output_filename)
             plt.savefig(output_filepath, bbox_inches="tight")
-            self.logger.info(f"ヒストグラムを保存しました: {output_filepath}")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1212,7 +1212,7 @@ class MobileMeasurementAnalyzer:
         output_dirpath: str | Path | None = None,
         output_filename: str = "scatter_c2c1.png",
         dpi: int = 200,
-        figsize: tuple[int, int] = (4, 4),
+        figsize: tuple[float, float] = (4, 4),
         hotspot_colors: dict[HotspotType, str] = {
             "bio": "blue",
             "gas": "red",
@@ -1255,7 +1255,7 @@ class MobileMeasurementAnalyzer:
                 保存するファイル名。デフォルトは"scatter_c2c1.png"。
             dpi : int
                 解像度。デフォルトは200。
-            figsize : tuple[int, int]
+            figsize : tuple[float, float]
                 図のサイズ。デフォルトは(4, 4)。
             fontsize : float
                 フォントサイズ。デフォルトは12。
@@ -1349,7 +1349,7 @@ class MobileMeasurementAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             output_filepath: str = os.path.join(output_dirpath, output_filename)
             plt.savefig(output_filepath, bbox_inches="tight")
@@ -1493,7 +1493,7 @@ class MobileMeasurementAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath = os.path.join(output_dirpath, output_filename)
@@ -1746,7 +1746,7 @@ class MobileMeasurementAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath = os.path.join(output_dirpath, output_filename)
@@ -2098,73 +2098,77 @@ class MobileMeasurementAnalyzer:
             )
 
         # データのコピーを作成
-        df_copied: pd.DataFrame = df.copy()
+        df_internal: pd.DataFrame = df.copy()
 
         # 移動相関の計算
-        df_copied["c1c2_correlation"] = (
-            df_copied[col_ch4_ppm]
+        df_internal["c1c2_correlation"] = (
+            df_internal[col_ch4_ppm]
             .rolling(window=window_size)
-            .corr(df_copied[col_c2h6_ppb])
+            .corr(df_internal[col_c2h6_ppb])
         )
 
         # バックグラウンド値の計算（指定されたパーセンタイルまたは移動平均）
         if rolling_method == "quantile":
-            df_copied["ch4_ppm_mv"] = (
-                df_copied[col_ch4_ppm]
+            df_internal["ch4_ppm_mv"] = (
+                df_internal[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .quantile(quantile_value)
             )
-            df_copied["c2h6_ppb_mv"] = (
-                df_copied[col_c2h6_ppb]
+            df_internal["c2h6_ppb_mv"] = (
+                df_internal[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .quantile(quantile_value)
             )
         elif rolling_method == "mean":
-            df_copied["ch4_ppm_mv"] = (
-                df_copied[col_ch4_ppm]
+            df_internal["ch4_ppm_mv"] = (
+                df_internal[col_ch4_ppm]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
-            df_copied["c2h6_ppb_mv"] = (
-                df_copied[col_c2h6_ppb]
+            df_internal["c2h6_ppb_mv"] = (
+                df_internal[col_c2h6_ppb]
                 .rolling(window=window_size, center=True, min_periods=1)
                 .mean()
             )
 
         # デルタ値の計算
-        df_copied["ch4_ppm_delta"] = df_copied[col_ch4_ppm] - df_copied["ch4_ppm_mv"]
-        df_copied["c2h6_ppb_delta"] = df_copied[col_c2h6_ppb] - df_copied["c2h6_ppb_mv"]
+        df_internal["ch4_ppm_delta"] = (
+            df_internal[col_ch4_ppm] - df_internal["ch4_ppm_mv"]
+        )
+        df_internal["c2h6_ppb_delta"] = (
+            df_internal[col_c2h6_ppb] - df_internal["c2h6_ppb_mv"]
+        )
 
         # C2H6/CH4の比率計算
-        df_copied["c2c1_ratio"] = df_copied[col_c2h6_ppb] / df_copied[col_ch4_ppm]
+        df_internal["c2c1_ratio"] = df_internal[col_c2h6_ppb] / df_internal[col_ch4_ppm]
         # デルタ値に基づく比の計算とフィルタリング
-        df_copied["c2c1_ratio_delta"] = (
-            df_copied["c2h6_ppb_delta"] / df_copied["ch4_ppm_delta"]
+        df_internal["c2c1_ratio_delta"] = (
+            df_internal["c2h6_ppb_delta"] / df_internal["ch4_ppm_delta"]
         )
 
         # フィルタリング条件の適用
-        df_copied.loc[
-            (df_copied["ch4_ppm_delta"] < ch4_ppm_delta_min)
-            | (df_copied["ch4_ppm_delta"] > ch4_ppm_delta_max),
+        df_internal.loc[
+            (df_internal["ch4_ppm_delta"] < ch4_ppm_delta_min)
+            | (df_internal["ch4_ppm_delta"] > ch4_ppm_delta_max),
             "c2c1_ratio_delta",
         ] = np.nan
-        df_copied.loc[
-            (df_copied["c2h6_ppb_delta"] < c2h6_ppb_delta_min)
-            | (df_copied["c2h6_ppb_delta"] > c2h6_ppb_delta_max),
+        df_internal.loc[
+            (df_internal["c2h6_ppb_delta"] < c2h6_ppb_delta_min)
+            | (df_internal["c2h6_ppb_delta"] > c2h6_ppb_delta_max),
             "c2h6_ppb_delta",
         ] = np.nan
         # c2h6_ppb_delta は0未満のものを一律0とする
-        df_copied.loc[df_copied["c2h6_ppb_delta"] < 0, "c2c1_ratio_delta"] = 0.0
+        df_internal.loc[df_internal["c2h6_ppb_delta"] < 0, "c2c1_ratio_delta"] = 0.0
 
         # 水蒸気濃度によるフィルタリング
-        df_copied.loc[
-            df_copied[col_h2o_ppm] < h2o_ppm_threshold, [col_ch4_ppm, col_c2h6_ppb]
+        df_internal.loc[
+            df_internal[col_h2o_ppm] < h2o_ppm_threshold, [col_ch4_ppm, col_c2h6_ppb]
         ] = np.nan
 
         # 欠損値の除去
-        df_copied = df_copied.dropna(subset=[col_ch4_ppm, col_c2h6_ppb])
+        df_internal = df_internal.dropna(subset=[col_ch4_ppm, col_c2h6_ppb])
 
-        return df_copied
+        return df_internal
 
     @staticmethod
     def _calculate_window_size(window_minutes: float) -> int:
@@ -2301,7 +2305,9 @@ class MobileMeasurementAnalyzer:
             else:
                 fs, lag, path = inp
                 normalized.append(
-                    MobileMeasurementConfig.validate_and_create(fs=fs, lag=lag, path=path)
+                    MobileMeasurementConfig.validate_and_create(
+                        fs=fs, lag=lag, path=path
+                    )
                 )
         return normalized
 
@@ -2461,41 +2467,3 @@ class MobileMeasurementAnalyzer:
                 )
 
         return unique_hotspots
-
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ----------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ----------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger

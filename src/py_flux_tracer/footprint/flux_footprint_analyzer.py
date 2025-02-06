@@ -13,9 +13,9 @@ from datetime import datetime
 from dataclasses import dataclass
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
+from logging import Logger, DEBUG, INFO
 from typing import Any, Callable, Literal, Mapping
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..commons.figure_utils import FigureUtils
+from ..commons.utilities import setup_logger, setup_plot_params
 from ..mobile.mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -120,14 +120,14 @@ class FluxFootprintAnalyzer:
         self._got_satellite_image: bool = False
 
         # 図表の初期設定
-        FigureUtils.setup_plot_params(
+        setup_plot_params(
             font_size=labelsize, tick_size=ticksize, plot_params=plot_params
         )
         # ロガー
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = FluxFootprintAnalyzer.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
     def _create_column_mapping(
         self, mapping: Mapping[str, str] | None
@@ -198,44 +198,6 @@ class FluxFootprintAnalyzer:
 
         return True
 
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ----------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ----------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger
-
     def calculate_flux_footprint(
         self,
         df: pd.DataFrame,
@@ -280,14 +242,14 @@ class FluxFootprintAnalyzer:
                 - z/L: 安定度パラメータ (無次元)
         """
         col_weekday: str = self.COL_FFA_IS_WEEKDAY
-        df_copied: pd.DataFrame = df.copy()
+        df_internal: pd.DataFrame = df.copy()
 
         # インデックスがdatetimeであることを確認し、必要に応じて変換
-        if not isinstance(df_copied.index, pd.DatetimeIndex):
-            df_copied.index = pd.to_datetime(df_copied.index)
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal.index = pd.to_datetime(df_internal.index)
 
         # DatetimeIndexから直接dateプロパティにアクセス
-        datelist: np.ndarray = np.array(df_copied.index.date)
+        datelist: np.ndarray = np.array(df_internal.index.date)
 
         # 各日付が平日かどうかを判定し、リストに格納
         numbers: list[int] = [
@@ -295,10 +257,10 @@ class FluxFootprintAnalyzer:
         ]
 
         # col_weekdayに基づいてデータフレームに平日情報を追加
-        df_copied.loc[:, col_weekday] = numbers  # .locを使用して値を設定
+        df_internal.loc[:, col_weekday] = numbers  # .locを使用して値を設定
 
         # 値が1のもの(平日)をコピーする
-        data_weekday: pd.DataFrame = df_copied[df_copied[col_weekday] == 1].copy()
+        data_weekday: pd.DataFrame = df_internal[df_internal[col_weekday] == 1].copy()
         # 特定の時間帯を抽出
         data_weekday = data_weekday.between_time(
             start_time, end_time
@@ -1090,7 +1052,7 @@ class FluxFootprintAnalyzer:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueの場合、output_dirpathを指定する必要があります。有効なディレクトリパスを指定してください。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
             output_filepath: str = os.path.join(output_dirpath, output_filename)
             self.logger.info("プロットを保存中...")
@@ -1103,7 +1065,7 @@ class FluxFootprintAnalyzer:
         if show_fig:
             plt.show()
         plt.close(fig=fig)
-        
+
     def plot_flux_footprint_with_scale_checker(
         self,
         x_list: list[float],
@@ -1530,7 +1492,7 @@ class FluxFootprintAnalyzer:
                 "DataFrameのインデックスはDatetimeIndexである必要があります"
             )
 
-        df_copied: pd.DataFrame = df.copy()
+        df_internal: pd.DataFrame = df.copy()
 
         # 日付形式の検証と変換
         try:
@@ -1545,7 +1507,7 @@ class FluxFootprintAnalyzer:
 
         # 期間でフィルタリング
         if start_date is not None or end_date is not None:
-            df_copied = df_copied.loc[start_date:end_date]
+            df_internal = df_internal.loc[start_date:end_date]
 
         # 月のバリデーション
         if months is not None:
@@ -1553,13 +1515,15 @@ class FluxFootprintAnalyzer:
                 raise ValueError(
                     "monthsは1から12までの整数のリストである必要があります"
                 )
-            df_copied = df_copied[pd.to_datetime(df_copied.index).month.isin(months)]
+            df_internal = df_internal[
+                pd.to_datetime(df_internal.index).month.isin(months)
+            ]
 
         # フィルタリング後のデータが空でないことを確認
-        if df_copied.empty:
+        if df_internal.empty:
             raise ValueError("フィルタリング後のデータが空になりました")
 
-        return df_copied
+        return df_internal
 
     @staticmethod
     def is_weekday(date: datetime) -> int:

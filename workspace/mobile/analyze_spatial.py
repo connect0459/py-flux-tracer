@@ -167,7 +167,9 @@ if __name__ == "__main__":
     msa.create_hotspots_map(unique_hotspots, output_dirpath=output_dirpath)
 
     # ホットスポットを散布図で表示
-    msa.plot_scatter_c2c1(unique_hotspots, output_dirpath=output_dirpath, show_fig=False)
+    msa.plot_scatter_c2c1(
+        unique_hotspots, output_dirpath=output_dirpath, show_fig=False
+    )
 
     # ヒストグラムを作図
     msa.plot_ch4_delta_histogram(
@@ -193,24 +195,27 @@ if __name__ == "__main__":
         HotspotEmissionConfig(
             formula=EmissionFormula(name="weitzel", coef_a=0.521, coef_b=0.795)
         ),
-        HotspotEmissionConfig(formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)),
+        HotspotEmissionConfig(
+            formula=EmissionFormula(name="joo", coef_a=2.738, coef_b=1.329)
+        ),
         HotspotEmissionConfig(
             formula=EmissionFormula(name="umezawa", coef_a=2.716, coef_b=0.741)
         ),
     ]
     for config in emission_configs:
         method: str = config.formula.name
-        msa.logger.info(f"{method}のemission解析を開始します。")
+        hea = HotspotEmissionAnalyzer()
+        hea.logger.info(f"{method}のemission解析を開始します。")
 
         # 排出量の計算と基本統計
         emissions_list: list[EmissionData] = (
-            HotspotEmissionAnalyzer.calculate_emission_rates(
+            hea.calculate_emission_rates(
                 hotspots=unique_hotspots, config=config, print_summary=True
             )
         )
 
         # 分布の可視化
-        HotspotEmissionAnalyzer.plot_emission_analysis(
+        hea.plot_emission_analysis(
             emissions=emissions_list,
             output_dirpath=output_dirpath,
             output_filename=f"emission_plots-{method}.png",

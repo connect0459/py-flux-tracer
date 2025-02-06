@@ -4,7 +4,8 @@ import csv
 import shutil
 from tqdm import tqdm
 from datetime import datetime
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
+from logging import Logger, DEBUG, INFO
+from ..commons.utilities import setup_logger
 
 
 class FftFileReorganizer:
@@ -62,7 +63,9 @@ class FftFileReorganizer:
         """
         self._fft_path: str = input_dirpath
         self._sorted_path: str = output_dirpath
-        self._output_dirpaths_struct = output_dirpaths_struct or self.DEFAULT_OUTPUT_DIRS
+        self._output_dirpaths_struct = (
+            output_dirpaths_struct or self.DEFAULT_OUTPUT_DIRS
+        )
         self._good_data_path: str = os.path.join(
             output_dirpath, self._output_dirpaths_struct["GOOD_DATA"]
         )
@@ -82,7 +85,7 @@ class FftFileReorganizer:
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = FftFileReorganizer.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
     def reorganize(self):
         """
@@ -234,41 +237,3 @@ class FftFileReorganizer:
             return "RH0"
         else:  # 10刻みで切り上げ
             return f"RH{min(int((rh + 9.99) // 10 * 10), 100)}"
-
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ----------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ----------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger

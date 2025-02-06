@@ -1,7 +1,11 @@
-from .campbell.eddy_data_analyzer import EddyDataAnalyzer, SlopeLine, SpectralPlotConfig
+from .campbell.eddy_data_figures_generator import (
+    EddyDataFiguresGenerator,
+    SlopeLine,
+    SpectralPlotConfig,
+)
 from .campbell.eddy_data_preprocessor import EddyDataPreprocessor
 from .campbell.spectrum_calculator import SpectrumCalculator
-from .commons.figure_utils import FigureUtils
+from .commons.utilities import setup_logger, setup_plot_params
 from .footprint.flux_footprint_analyzer import FluxFootprintAnalyzer
 from .mobile.correcting_utils import (
     CorrectingUtils,
@@ -54,12 +58,13 @@ private属性を適用するために再宣言してdocstringを記述してい�
 # モジュールを __all__ にセット
 __all__ = [
     "__version__",
-    "EddyDataAnalyzer",
+    "EddyDataFiguresGenerator",
     "SlopeLine",
     "SpectralPlotConfig",
     "EddyDataPreprocessor",
     "SpectrumCalculator",
-    "FigureUtils",
+    "setup_logger",
+    "setup_plot_params",
     "FluxFootprintAnalyzer",
     "CorrectingUtils",
     "BiasRemovalConfig",

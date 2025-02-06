@@ -159,10 +159,10 @@ class SpectrumCalculator:
             )
 
         fs: float = self._fs
-        df_copied: pd.DataFrame = self._df.copy()
+        df_internal: pd.DataFrame = self._df.copy()
         # データ取得と前処理
-        data1: np.ndarray = np.array(df_copied[col1].values)
-        data2: np.ndarray = np.array(df_copied[col2].values)
+        data1: np.ndarray = np.array(df_internal[col1].values)
+        data2: np.ndarray = np.array(df_internal[col2].values)
 
         # 遅れ時間の補正
         if apply_lag_correction_to_col2:
@@ -285,8 +285,8 @@ class SpectrumCalculator:
             )
 
         # データの取得とトレンド除去
-        df_copied: pd.DataFrame = self._df.copy()
-        data: np.ndarray = np.array(df_copied[col].values)
+        df_internal: pd.DataFrame = self._df.copy()
+        data: np.ndarray = np.array(df_internal[col].values)
         # どちらか一方でもTrueの場合は適用
         if detrend_1st or detrend_2nd:
             data = SpectrumCalculator._detrend(

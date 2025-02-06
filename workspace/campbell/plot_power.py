@@ -1,6 +1,6 @@
 import os
 import matplotlib.font_manager as fm
-from py_flux_tracer import FigureUtils, EddyDataAnalyzer, SlopeLine, SpectralPlotConfig
+from py_flux_tracer import setup_plot_params, EddyDataFiguresGenerator, SlopeLine, SpectralPlotConfig
 
 # フォントファイルを登録
 font_paths: list[str] = [
@@ -14,7 +14,7 @@ font_array: list[str] = [
     "Arial",
     "MS Gothic",
 ]
-FigureUtils.setup_plot_params(
+setup_plot_params(
     font_family=font_array,
     # font_size=24,
     # legend_size=24,
@@ -49,7 +49,7 @@ power_slope = SlopeLine(
 )
 
 if __name__ == "__main__":
-    eda = EddyDataAnalyzer(fs=10)
+    eda = EddyDataFiguresGenerator(fs=10)
 
     for term_tag in terms_tags:
         eda.logger.info(f"{term_tag}の処理を開始します。")

@@ -1,19 +1,17 @@
 import os
-import glob
 import jpholiday
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from tqdm import tqdm
 from pathlib import Path
 from typing import Literal
 from scipy import linalg, stats
-from matplotlib.ticker import FuncFormatter, MultipleLocator
-from logging import getLogger, Formatter, Logger, StreamHandler, DEBUG, INFO
-from ..campbell.eddy_data_preprocessor import EddyDataPreprocessor
-from ..campbell.spectrum_calculator import SpectrumCalculator
+from logging import Logger, DEBUG, INFO
+from matplotlib.axes import Axes
+from matplotlib.ticker import FuncFormatter, MultipleLocator, NullLocator
+from ..commons.utilities import setup_logger
 
 
 # 移動平均の計算関数
@@ -80,75 +78,12 @@ class MonthlyFiguresGenerator:
         log_level: int = INFO
         if logging_debug:
             log_level = DEBUG
-        self.logger: Logger = MonthlyFiguresGenerator.setup_logger(logger, log_level)
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
-    def plot_c1c2_fluxes_timeseries(
-        self,
-        df,
-        output_dirpath: str,
-        output_filename: str = "timeseries.png",
-        col_datetime: str = "Date",
-        col_c1_flux: str = "Fch4_ultra",
-        col_c2_flux: str = "Fc2h6_ultra",
-    ):
-        """
-        月別のフラックスデータを時系列プロットとして出力する
-
-        Parameters
-        ------
-            df : pd.DataFrame
-                月別データを含むDataFrame
-            output_dirpath : str
-                出力ファイルを保存するディレクトリのパス
-            output_filename : str
-                出力ファイルの名前
-            col_datetime : str
-                日付を含む列の名前。デフォルトは"Date"。
-            col_c1_flux : str
-                CH4フラックスを含む列の名前。デフォルトは"Fch4_ultra"。
-            col_c2_flux : str
-                C2H6フラックスを含む列の名前。デフォルトは"Fc2h6_ultra"。
-        """
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
-        # 図の作成
-        _, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-
-        # CH4フラックスのプロット
-        ax1.scatter(df[col_datetime], df[col_c1_flux], color="red", alpha=0.5, s=20)
-        ax1.set_ylabel(r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
-        ax1.set_ylim(-100, 600)
-        ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top", fontsize=20)
-        ax1.grid(True, alpha=0.3)
-
-        # C2H6フラックスのプロット
-        ax2.scatter(
-            df[col_datetime],
-            df[col_c2_flux],
-            color="orange",
-            alpha=0.5,
-            s=20,
-        )
-        ax2.set_ylabel(r"C$_2$H$_6$ flux (nmol m$^{-2}$ s$^{-1}$)")
-        ax2.set_ylim(-20, 60)
-        ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top", fontsize=20)
-        ax2.grid(True, alpha=0.3)
-
-        # x軸の設定
-        ax2.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-        ax2.xaxis.set_major_formatter(mdates.DateFormatter("%m"))
-        plt.setp(ax2.get_xticklabels(), rotation=0, ha="right")
-        ax2.set_xlabel("Month")
-
-        # 図の保存
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close()
-
-    def plot_c1c2_concentrations_and_fluxes_timeseries(
+    def plot_c1c2_concs_and_fluxes_timeseries(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "conc_flux_timeseries.png",
         col_datetime: str = "Date",
         col_ch4_conc: str = "CH4_ultra",
@@ -159,6 +94,10 @@ class MonthlyFiguresGenerator:
         ylim_ch4_flux: tuple = (-100, 600),  # CH4フラックスのy軸範囲
         ylim_c2h6_conc: tuple = (-12, 20),  # C2H6濃度のy軸範囲
         ylim_c2h6_flux: tuple = (-20, 40),  # C2H6フラックスのy軸範囲
+        figsize: tuple[float, float] = (12, 16),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
         print_summary: bool = False,
     ) -> None:
         """
@@ -168,7 +107,7 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 月別データを含むDataFrame
-            output_dirpath : str
+            output_dirpath : str | Path | None
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
@@ -190,13 +129,19 @@ class MonthlyFiguresGenerator:
                 C2H6濃度のy軸範囲
             ylim_c2h6_flux : tuple
                 C2H6フラックスのy軸範囲
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(12, 16)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                図を保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                図を表示するかどうか。デフォルトはTrue。
             print_summary : bool
                 解析情報をprintするかどうか
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
+        # dfのコピー
+        df_internal: pd.DataFrame = df.copy()
         if print_summary:
             # 統計情報の計算と表示
             for name, col in [
@@ -206,7 +151,7 @@ class MonthlyFiguresGenerator:
                 ("C2H6 flux", col_c2h6_flux),
             ]:
                 # NaNを除外してから統計量を計算
-                valid_data = df[col].dropna()
+                valid_data = df_internal[col].dropna()
 
                 if len(valid_data) > 0:
                     # quantileで計算（0-1の範囲）
@@ -226,17 +171,29 @@ class MonthlyFiguresGenerator:
                     print(f"\n{name}: データが存在しません")
 
         # プロットの作成
-        _, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
+        _, (ax1, ax2, ax3, ax4) = plt.subplots(4, 1, figsize=figsize, sharex=True)
 
         # CH4濃度のプロット
-        ax1.scatter(df[col_datetime], df[col_ch4_conc], color="red", alpha=0.5, s=20)
+        ax1.scatter(
+            df_internal[col_datetime],
+            df_internal[col_ch4_conc],
+            color="red",
+            alpha=0.5,
+            s=20,
+        )
         ax1.set_ylabel("CH$_4$ Concentration\n(ppm)")
         ax1.set_ylim(*ylim_ch4_conc)  # 引数からy軸範囲を設定
         ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top", fontsize=20)
         ax1.grid(True, alpha=0.3)
 
         # CH4フラックスのプロット
-        ax2.scatter(df[col_datetime], df[col_ch4_flux], color="red", alpha=0.5, s=20)
+        ax2.scatter(
+            df_internal[col_datetime],
+            df_internal[col_ch4_flux],
+            color="red",
+            alpha=0.5,
+            s=20,
+        )
         ax2.set_ylabel("CH$_4$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
         ax2.set_ylim(*ylim_ch4_flux)  # 引数からy軸範囲を設定
         ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top", fontsize=20)
@@ -244,7 +201,11 @@ class MonthlyFiguresGenerator:
 
         # C2H6濃度のプロット
         ax3.scatter(
-            df[col_datetime], df[col_c2h6_conc], color="orange", alpha=0.5, s=20
+            df_internal[col_datetime],
+            df_internal[col_c2h6_conc],
+            color="orange",
+            alpha=0.5,
+            s=20,
         )
         ax3.set_ylabel("C$_2$H$_6$ Concentration\n(ppb)")
         ax3.set_ylim(*ylim_c2h6_conc)  # 引数からy軸範囲を設定
@@ -253,7 +214,11 @@ class MonthlyFiguresGenerator:
 
         # C2H6フラックスのプロット
         ax4.scatter(
-            df[col_datetime], df[col_c2h6_flux], color="orange", alpha=0.5, s=20
+            df_internal[col_datetime],
+            df_internal[col_c2h6_flux],
+            color="orange",
+            alpha=0.5,
+            s=20,
         )
         ax4.set_ylabel("C$_2$H$_6$ flux\n(nmol m$^{-2}$ s$^{-1}$)")
         ax4.set_ylim(*ylim_c2h6_flux)  # 引数からy軸範囲を設定
@@ -268,14 +233,25 @@ class MonthlyFiguresGenerator:
 
         # レイアウトの調整と保存
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+
+        # 図の保存
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
         plt.close()
 
         if print_summary:
 
             def analyze_top_values(df, column_name, top_percent=20):
                 print(f"\n{column_name}の上位{top_percent}%の分析:")
-
                 # DataFrameのコピーを作成し、日時関連の列を追加
                 df_analysis = df.copy()
                 df_analysis["hour"] = pd.to_datetime(df_analysis[col_datetime]).dt.hour
@@ -287,7 +263,7 @@ class MonthlyFiguresGenerator:
                 ).dt.dayofweek
 
                 # 上位20%のしきい値を計算
-                threshold = df[column_name].quantile(1 - top_percent / 100)
+                threshold = df_analysis[column_name].quantile(1 - top_percent / 100)
                 high_values = df_analysis[df_analysis[column_name] > threshold]
 
                 # 月ごとの分析
@@ -338,17 +314,17 @@ class MonthlyFiguresGenerator:
 
             # 濃度とフラックスそれぞれの分析を実行
             print("\n=== 上位値の時間帯・曜日分析 ===")
-            analyze_top_values(df, col_ch4_conc)
-            analyze_top_values(df, col_ch4_flux)
-            analyze_top_values(df, col_c2h6_conc)
-            analyze_top_values(df, col_c2h6_flux)
+            analyze_top_values(df_internal, col_ch4_conc)
+            analyze_top_values(df_internal, col_ch4_flux)
+            analyze_top_values(df_internal, col_c2h6_conc)
+            analyze_top_values(df_internal, col_c2h6_flux)
 
     def plot_c1c2_timeseries(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "timeseries_year.png",
         col_datetime: str = "Date",
         window_size: int = 24 * 7,  # 1週間の移動平均のデフォルト値
@@ -362,6 +338,9 @@ class MonthlyFiguresGenerator:
         start_date: str | None = None,  # 追加："YYYY-MM-DD"形式
         end_date: str | None = None,  # 追加："YYYY-MM-DD"形式
         figsize: tuple[float, float] = (16, 6),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """CH4とC2H6フラックスの時系列変動をプロット
 
@@ -369,12 +348,12 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dirpath : str
-                出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
             col_c2h6_flux : str
                 C2H6フラックスのカラム名
+            output_dirpath : str | Path | None
+                出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
             col_datetime : str
@@ -399,26 +378,28 @@ class MonthlyFiguresGenerator:
                 開始日（YYYY-MM-DD形式）
             end_date : str | None
                 終了日（YYYY-MM-DD形式）
-            figsize : tuple[float, float]
-                図のサイズ。デフォルトは(16, 6)。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(16, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの準備
-        df_copied = df.copy()
-        if not isinstance(df_copied.index, pd.DatetimeIndex):
-            df_copied[col_datetime] = pd.to_datetime(df_copied[col_datetime])
-            df_copied.set_index(col_datetime, inplace=True)
+        df_internal = df.copy()
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal[col_datetime] = pd.to_datetime(df_internal[col_datetime])
+            df_internal.set_index(col_datetime, inplace=True)
 
         # 日付範囲の処理
         if start_date is not None:
             start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
             # df_min_date = (
-            #     df_copied.index.normalize().min().normalize()
+            #     df_internal.index.normalize().min().normalize()
             # )  # 日付のみの比較のため正規化
-            df_min_date = pd.to_datetime(df_copied.index.min()).normalize()
+            df_min_date = pd.to_datetime(df_internal.index.min()).normalize()
 
             # データの最小日付が指定開始日より後の場合にのみ警告
             if df_min_date.date() > start_dt.date():
@@ -428,8 +409,8 @@ class MonthlyFiguresGenerator:
                 )
                 start_dt = df_min_date
         else:
-            # start_dt = df_copied.index.normalize().min()
-            start_dt = pd.to_datetime(df_copied.index.min()).normalize()
+            # start_dt = df_internal.index.normalize().min()
+            start_dt = pd.to_datetime(df_internal.index.min()).normalize()
 
         if end_date is not None:
             end_dt = (
@@ -438,9 +419,9 @@ class MonthlyFiguresGenerator:
                 - pd.Timedelta(seconds=1)
             )
             # df_max_date = (
-            #     df_copied.index.normalize().max().normalize()
+            #     df_internal.index.normalize().max().normalize()
             # )  # 日付のみの比較のため正規化
-            df_max_date = pd.to_datetime(df_copied.index.max()).normalize()
+            df_max_date = pd.to_datetime(df_internal.index.max()).normalize()
 
             # データの最大日付が指定終了日より前の場合にのみ警告
             if df_max_date.date() < pd.to_datetime(end_date).date():
@@ -448,30 +429,30 @@ class MonthlyFiguresGenerator:
                     f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
                 )
-                end_dt = df_copied.index.max()
+                end_dt = df_internal.index.max()
         else:
-            end_dt = df_copied.index.max()
+            end_dt = df_internal.index.max()
 
         # 指定された期間のデータを抽出
-        mask = (df_copied.index >= start_dt) & (df_copied.index <= end_dt)
-        df_copied = df_copied[mask]
+        mask = (df_internal.index >= start_dt) & (df_internal.index <= end_dt)
+        df_internal = df_internal[mask]
 
         # CH4とC2H6の移動平均と信頼区間を計算
         ch4_mean, ch4_lower, ch4_upper = calculate_rolling_stats(
-            df_copied[col_ch4_flux], window_size, confidence_interval
+            df_internal[col_ch4_flux], window_size, confidence_interval
         )
         c2h6_mean, c2h6_lower, c2h6_upper = calculate_rolling_stats(
-            df_copied[col_c2h6_flux], window_size, confidence_interval
+            df_internal[col_c2h6_flux], window_size, confidence_interval
         )
 
         # プロットの作成
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # CH4プロット
-        ax1.plot(df_copied.index, ch4_mean, "red", label="CH$_4$")
+        ax1.plot(df_internal.index, ch4_mean, "red", label="CH$_4$")
         if show_ci:
             ax1.fill_between(
-                df_copied.index, ch4_lower, ch4_upper, color="red", alpha=0.2
+                df_internal.index, ch4_lower, ch4_upper, color="red", alpha=0.2
             )
         if subplot_label_ch4:
             ax1.text(
@@ -488,10 +469,10 @@ class MonthlyFiguresGenerator:
         ax1.grid(True, alpha=0.3)
 
         # C2H6プロット
-        ax2.plot(df_copied.index, c2h6_mean, "orange", label="C$_2$H$_6$")
+        ax2.plot(df_internal.index, c2h6_mean, "orange", label="C$_2$H$_6$")
         if show_ci:
             ax2.fill_between(
-                df_copied.index, c2h6_lower, c2h6_upper, color="orange", alpha=0.2
+                df_internal.index, c2h6_lower, c2h6_upper, color="orange", alpha=0.2
             )
         if subplot_label_c2h6:
             ax2.text(
@@ -529,16 +510,27 @@ class MonthlyFiguresGenerator:
             plt.setp(ax.xaxis.get_majorticklabels(), ha="right")
 
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close(fig)
+
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
     def plot_fluxes_comparison(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         cols_flux: list[str],
         labels: list[str],
         colors: list[str],
+        output_dirpath: str | Path | None,
         output_filename: str = "ch4_flux_comparison.png",
         col_datetime: str = "Date",
         window_size: int = 24 * 7,  # 1週間の移動平均のデフォルト値
@@ -550,15 +542,16 @@ class MonthlyFiguresGenerator:
         start_date: str | None = None,
         end_date: str | None = None,
         include_end_date: bool = True,
-        figsize: tuple[float, float] = (12, 6),
         legend_loc: str = "upper right",
         apply_ma: bool = True,  # 移動平均を適用するかどうか
         hourly_mean: bool = False,  # 1時間平均を適用するかどうか
         x_interval: Literal["month", "10days"] = "month",  # "month" または "10days"
         xlabel: str = "Month",
         ylabel: str = "CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)",
+        figsize: tuple[float, float] = (12, 6),
+        dpi: float | None = 350,
         save_fig: bool = True,
-        show_fig: bool = False,
+        show_fig: bool = True,
     ) -> None:
         """複数のCH4フラックスの時系列比較プロット
 
@@ -566,14 +559,14 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dirpath : str
-                出力ディレクトリのパス
             cols_flux : list[str]
                 比較するフラックスのカラム名リスト
             labels : list[str]
                 凡例に表示する各フラックスのラベルリスト
             colors : list[str]
                 各フラックスの色リスト
+            output_dirpath : str | Path | None
+                出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
             col_datetime : str
@@ -596,8 +589,6 @@ class MonthlyFiguresGenerator:
                 終了日（YYYY-MM-DD形式）
             include_end_date : bool
                 終了日を含めるかどうか。Falseの場合、終了日の前日までを表示
-            figsize : tuple[float, float]
-                図のサイズ
             legend_loc : str
                 凡例の位置
             apply_ma : bool
@@ -610,35 +601,40 @@ class MonthlyFiguresGenerator:
                 x軸のラベル（通常は"Month"）
             ylabel : str
                 y軸のラベル（通常は"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)"）
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             save_fig : bool
                 図を保存するかどうか
             show_fig : bool
                 図を表示するかどうか
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの準備
-        df = df.copy()
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df[col_datetime] = pd.to_datetime(df[col_datetime])
-            df.set_index(col_datetime, inplace=True)
+        df_internal = df.copy()
+        # if not isinstance(df_internal.index, pd.DatetimeIndex):
+        #     df_internal[col_datetime] = pd.to_datetime(df_internal[col_datetime])
+        #     df_internal.set_index(col_datetime, inplace=True)
+
+        # インデックスを日時型に変換
+        df_internal.index = pd.to_datetime(df_internal.index)
 
         # 1時間平均の適用
         if hourly_mean:
             # 時間情報のみを使用してグループ化
-            df = df.groupby([df.index.date, df.index.hour]).mean()
+            df_internal = df_internal.groupby(
+                [df_internal.index.strftime("%Y-%m-%d"), df_internal.index.hour]
+            ).mean()
             # マルチインデックスを日時インデックスに変換
-            df.index = pd.to_datetime(
-                [f"{date} {hour:02d}:00:00" for date, hour in df.index]
+            df_internal.index = pd.to_datetime(
+                [f"{date} {hour:02d}:00:00" for date, hour in df_internal.index]
             )
 
         # 日付範囲の処理
         if start_date is not None:
             start_dt = pd.to_datetime(start_date).normalize()  # 時刻を00:00:00に設定
             df_min_date = (
-                df.index.normalize().min().normalize()
+                df_internal.index.normalize().min().normalize()
             )  # 日付のみの比較のため正規化
 
             # データの最小日付が指定開始日より後の場合にのみ警告
@@ -649,7 +645,7 @@ class MonthlyFiguresGenerator:
                 )
                 start_dt = df_min_date
         else:
-            start_dt = df.index.normalize().min()
+            start_dt = df_internal.index.normalize().min()
 
         if end_date is not None:
             if include_end_date:
@@ -663,7 +659,7 @@ class MonthlyFiguresGenerator:
                 end_dt = pd.to_datetime(end_date).normalize() - pd.Timedelta(seconds=1)
 
             df_max_date = (
-                df.index.normalize().max().normalize()
+                df_internal.index.normalize().max().normalize()
             )  # 日付のみの比較のため正規化
 
             # データの最大日付が指定終了日より前の場合にのみ警告
@@ -676,13 +672,13 @@ class MonthlyFiguresGenerator:
                     f"指定された終了日{end_date}がデータの終了日{df_max_date.strftime('%Y-%m-%d')}より後です。"
                     f"データの終了日を使用します。"
                 )
-                end_dt = df.index.max()
+                end_dt = df_internal.index.max()
         else:
-            end_dt = df.index.max()
+            end_dt = df_internal.index.max()
 
         # 指定された期間のデータを抽出
-        mask = (df.index >= start_dt) & (df.index <= end_dt)
-        df = df[mask]
+        mask = (df_internal.index >= start_dt) & (df_internal.index <= end_dt)
+        df_internal = df_internal[mask]
 
         # プロットの作成
         fig, ax = plt.subplots(figsize=figsize)
@@ -692,14 +688,22 @@ class MonthlyFiguresGenerator:
             if apply_ma:
                 # 移動平均の計算
                 mean, lower, upper = calculate_rolling_stats(
-                    df[flux_col], window_size, confidence_interval
+                    df_internal[flux_col], window_size, confidence_interval
                 )
-                ax.plot(df.index, mean, color, label=label, alpha=0.7)
+                ax.plot(df_internal.index, mean, color, label=label, alpha=0.7)
                 if show_ci:
-                    ax.fill_between(df.index, lower, upper, color=color, alpha=0.2)
+                    ax.fill_between(
+                        df_internal.index, lower, upper, color=color, alpha=0.2
+                    )
             else:
                 # 生データのプロット
-                ax.plot(df.index, df[flux_col], color, label=label, alpha=0.7)
+                ax.plot(
+                    df_internal.index,
+                    df_internal[flux_col],
+                    color,
+                    label=label,
+                    alpha=0.7,
+                )
 
         # プロットの設定
         if subplot_label:
@@ -722,12 +726,12 @@ class MonthlyFiguresGenerator:
         ax.legend(loc=legend_loc)
 
         # x軸の設定
-        ax.set_xlim(start_dt, end_dt)
+        ax.set_xlim(float(mdates.date2num(start_dt)), float(mdates.date2num(end_dt)))
 
         if x_interval == "month":
             # 月初めにメジャー線のみ表示
             ax.xaxis.set_major_locator(mdates.MonthLocator())
-            ax.xaxis.set_minor_locator(plt.NullLocator())  # マイナー線を非表示
+            ax.xaxis.set_minor_locator(NullLocator())  # マイナー線を非表示
         elif x_interval == "10days":
             # 月初め(1日)、10日、20日、30日に目盛りを表示
             class Custom10DayLocator(mdates.DateLocator):
@@ -758,7 +762,7 @@ class MonthlyFiguresGenerator:
                         current = (current + pd.DateOffset(months=1)).replace(day=1)
 
                     return self.raise_if_exceeds(
-                        np.array([mdates.date2num(date) for date in dates])
+                        [float(mdates.date2num(date)) for date in dates]
                     )
 
             ax.xaxis.set_major_locator(Custom10DayLocator())
@@ -779,7 +783,7 @@ class MonthlyFiguresGenerator:
                 day = f"{date.strftime('%d'):<2}"  # 左寄せで2文字
                 return f"{month}/{day}"
 
-        ax.xaxis.set_major_formatter(plt.FuncFormatter(date_formatter))
+        ax.xaxis.set_major_formatter(FuncFormatter(date_formatter))
         plt.setp(
             ax.xaxis.get_majorticklabels(), ha="center", rotation=0
         )  # 中央揃えに変更
@@ -787,10 +791,17 @@ class MonthlyFiguresGenerator:
         plt.tight_layout()
 
         if save_fig:
-            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
-        plt.close(fig)
+        plt.close(fig=fig)
 
     def plot_c1c2_fluxes_diurnal_patterns(
         self,
@@ -801,7 +812,7 @@ class MonthlyFiguresGenerator:
         labels_c2h6: list[str],
         colors_ch4: list[str],
         colors_c2h6: list[str],
-        output_dirpath: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "diurnal.png",
         legend_only_ch4: bool = False,
         add_label: bool = True,
@@ -809,11 +820,14 @@ class MonthlyFiguresGenerator:
         show_std: bool = False,  # 標準偏差表示のオプションを追加
         std_alpha: float = 0.2,  # 標準偏差の透明度
         figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
         subplot_fontsize: int = 20,
         subplot_label_ch4: str | None = "(a)",
         subplot_label_c2h6: str | None = "(b)",
         ax1_ylim: tuple[float, float] | None = None,
         ax2_ylim: tuple[float, float] | None = None,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """CH4とC2H6の日変化パターンを1つの図に並べてプロットする
 
@@ -847,6 +861,10 @@ class MonthlyFiguresGenerator:
                 標準偏差を表示するかどうか。デフォルトはFalse。
             std_alpha : float, optional
                 標準偏差の透明度。デフォルトは0.2。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(12, 5)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             subplot_fontsize : int, optional
                 サブプロットのフォントサイズ。デフォルトは20。
             subplot_label_ch4 : str | None, optional
@@ -857,21 +875,28 @@ class MonthlyFiguresGenerator:
                 CH4プロットのy軸の範囲。デフォルトはNone。
             ax2_ylim : tuple[float, float] | None, optional
                 C2H6プロットのy軸の範囲。デフォルトはNone。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの準備
+        df_internal: pd.DataFrame = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
         target_columns = y_cols_ch4 + y_cols_c2h6
-        hourly_means, time_points = self._prepare_diurnal_data(df, target_columns)
+        hourly_means, time_points = self._prepare_diurnal_data(
+            df_internal, target_columns
+        )
 
         # 標準偏差の計算を追加
         hourly_stds = {}
         if show_std:
-            hourly_stds = df.groupby(df.index.hour)[target_columns].std()
+            hourly_stds = df_internal.groupby(df_internal.index.hour)[
+                target_columns
+            ].std()
             # 24時間目のデータ点を追加
             last_hour = hourly_stds.iloc[0:1].copy()
-            last_hour.index = [24]
+            last_hour.index = pd.Index([24])
             hourly_stds = pd.concat([hourly_stds, last_hour])
 
         # プロットの作成
@@ -879,8 +904,8 @@ class MonthlyFiguresGenerator:
 
         # CH4のプロット (左側)
         ch4_lines = []
-        for y_col, label, color in zip(y_cols_ch4, labels_ch4, colors_ch4):
-            mean_values = hourly_means["all"][y_col]
+        for col_y, label, color in zip(y_cols_ch4, labels_ch4, colors_ch4):
+            mean_values = hourly_means["all"][col_y]
             line = ax1.plot(
                 time_points,
                 mean_values,
@@ -892,7 +917,7 @@ class MonthlyFiguresGenerator:
 
             # 標準偏差の表示
             if show_std:
-                std_values = hourly_stds[y_col]
+                std_values = hourly_stds[col_y]
                 ax1.fill_between(
                     time_points,
                     mean_values - std_values,
@@ -903,8 +928,8 @@ class MonthlyFiguresGenerator:
 
         # C2H6のプロット (右側)
         c2h6_lines = []
-        for y_col, label, color in zip(y_cols_c2h6, labels_c2h6, colors_c2h6):
-            mean_values = hourly_means["all"][y_col]
+        for col_y, label, color in zip(y_cols_c2h6, labels_c2h6, colors_c2h6):
+            mean_values = hourly_means["all"][col_y]
             line = ax2.plot(
                 time_points,
                 mean_values,
@@ -916,7 +941,7 @@ class MonthlyFiguresGenerator:
 
             # 標準偏差の表示
             if show_std:
-                std_values = hourly_stds[y_col]
+                std_values = hourly_stds[col_y]
                 ax2.fill_between(
                     time_points,
                     mean_values - std_values,
@@ -968,15 +993,24 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close(fig)
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            fig.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
     def plot_c1c2_fluxes_diurnal_patterns_by_date(
         self,
         df: pd.DataFrame,
         y_col_ch4: str,
         y_col_c2h6: str,
-        output_dirpath: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "diurnal_by_date.png",
         plot_all: bool = True,
         plot_weekday: bool = True,
@@ -992,7 +1026,11 @@ class MonthlyFiguresGenerator:
         subplot_label_c2h6: str | None = "(b)",
         ax1_ylim: tuple[float, float] | None = None,
         ax2_ylim: tuple[float, float] | None = None,
-        print_summary: bool = False,  # 追加: 統計情報を表示するかどうか
+        figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
+        print_summary: bool = False,
     ) -> None:
         """CH4とC2H6の日変化パターンを日付分類して1つの図に並べてプロットする
 
@@ -1004,7 +1042,7 @@ class MonthlyFiguresGenerator:
                 CH4フラックスを含むカラム名。
             y_col_c2h6 : str
                 C2H6フラックスを含むカラム名。
-            output_dirpath : str
+            output_dirpath : str | Path | None
                 出力先ディレクトリのパス。
             output_filename : str, optional
                 出力ファイル名。デフォルトは"diurnal_by_date.png"。
@@ -1036,16 +1074,23 @@ class MonthlyFiguresGenerator:
                 CH4プロットのy軸の範囲。デフォルトはNone。
             ax2_ylim : tuple[float, float] | None, optional
                 C2H6プロットのy軸の範囲。デフォルトはNone。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
             print_summary : bool, optional
-                統計情報を表示するかどうか。デフォルトはTrue。
+                統計情報を表示するかどうか。デフォルトはFalse。
         """
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの準備
+        df_internal: pd.DataFrame = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
         target_columns = [y_col_ch4, y_col_c2h6]
         hourly_means, time_points = self._prepare_diurnal_data(
-            df, target_columns, include_date_types=True
+            df_internal, target_columns, include_date_types=True
         )
 
         # 標準偏差の計算を追加
@@ -1053,23 +1098,27 @@ class MonthlyFiguresGenerator:
         if show_std:
             for condition in ["all", "weekday", "weekend", "holiday"]:
                 if condition == "all":
-                    condition_data = df
+                    condition_data = df_internal
                 elif condition == "weekday":
-                    condition_data = df[
+                    condition_data = df_internal[
                         ~(
-                            df.index.dayofweek.isin([5, 6])
-                            | df.index.map(lambda x: jpholiday.is_holiday(x.date()))
+                            df_internal.index.dayofweek.isin([5, 6])
+                            | df_internal.index.map(
+                                lambda x: jpholiday.is_holiday(x.date())
+                            )
                         )
                     ]
                 elif condition == "weekend":
-                    condition_data = df[df.index.dayofweek.isin([5, 6])]
+                    condition_data = df_internal[
+                        df_internal.index.dayofweek.isin([5, 6])
+                    ]
                 else:  # holiday
-                    condition_data = df[
-                        df.index.map(lambda x: jpholiday.is_holiday(x.date()))
+                    condition_data = df_internal[
+                        df_internal.index.map(lambda x: jpholiday.is_holiday(x.date()))
                     ]
 
                 hourly_stds[condition] = condition_data.groupby(
-                    condition_data.index.hour
+                    pd.to_datetime(condition_data.index).hour
                 )[target_columns].std()
                 # 24時間目のデータ点を追加
                 last_hour = hourly_stds[condition].iloc[0:1].copy()
@@ -1118,7 +1167,7 @@ class MonthlyFiguresGenerator:
         }
 
         # プロットの作成
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # CH4とC2H6のプロット用のラインオブジェクトを保存
         ch4_lines = []
@@ -1203,19 +1252,28 @@ class MonthlyFiguresGenerator:
             )
             plt.subplots_adjust(bottom=0.25)  # 下部に凡例用のスペースを確保
 
-        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close(fig)
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            fig.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
         # 日変化パターンの統計分析を追加
         if print_summary:
             # 平日と休日のデータを準備
-            dates = pd.to_datetime(df.index)
+            dates = pd.to_datetime(df_internal.index)
             is_weekend = dates.dayofweek.isin([5, 6])
             is_holiday = dates.map(lambda x: jpholiday.is_holiday(x.date()))
             is_weekday = ~(is_weekend | is_holiday)
 
-            weekday_data = df[is_weekday]
-            holiday_data = df[is_weekend | is_holiday]
+            weekday_data = df_internal[is_weekday]
+            holiday_data = df_internal[is_weekend | is_holiday]
 
             def get_diurnal_stats(data, column):
                 # 時間ごとの平均値を計算
@@ -1283,21 +1341,25 @@ class MonthlyFiguresGenerator:
     def plot_diurnal_concentrations(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ch4_conc: str = "CH4_ultra_cal",
         col_c2h6_conc: str = "C2H6_ultra_cal",
         col_datetime: str = "Date",
+        output_dirpath: str | Path | None = None,
         output_filename: str = "diurnal_concentrations.png",
         show_std: bool = True,
         alpha_std: float = 0.2,
-        add_legend: bool = True,  # 凡例表示のオプションを追加
+        add_legend: bool = True,
         print_summary: bool = False,
         subplot_label_ch4: str | None = None,
         subplot_label_c2h6: str | None = None,
         subplot_fontsize: int = 24,
         ch4_ylim: tuple[float, float] | None = None,
         c2h6_ylim: tuple[float, float] | None = None,
-        interval: str = "1H",  # "30min" または "1H" を指定
+        interval: Literal["30min", "1H"] = "1H",
+        figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """CH4とC2H6の濃度の日内変動を描画する
 
@@ -1335,32 +1397,39 @@ class MonthlyFiguresGenerator:
                 C2H6のy軸範囲
             interval : str
                 時間間隔。"30min"または"1H"を指定
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの準備
-        df = df.copy()
+        df_internal = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
         if interval == "30min":
             # 30分間隔の場合、時間と30分を別々に取得
-            df["hour"] = pd.to_datetime(df[col_datetime]).dt.hour
-            df["minute"] = pd.to_datetime(df[col_datetime]).dt.minute
-            df["time_bin"] = df["hour"] + df["minute"].map({0: 0, 30: 0.5})
+            df_internal["hour"] = pd.to_datetime(df_internal[col_datetime]).dt.hour
+            df_internal["minute"] = pd.to_datetime(df_internal[col_datetime]).dt.minute
+            df_internal["time_bin"] = df_internal["hour"] + df_internal["minute"].map(
+                {0: 0, 30: 0.5}
+            )
         else:
             # 1時間間隔の場合
-            df["time_bin"] = pd.to_datetime(df[col_datetime]).dt.hour
+            df_internal["time_bin"] = pd.to_datetime(df_internal[col_datetime]).dt.hour
 
         # 時間ごとの平均値と標準偏差を計算
-        hourly_stats = df.groupby("time_bin")[[col_ch4_conc, col_c2h6_conc]].agg(
-            ["mean", "std"]
-        )
+        hourly_stats = df_internal.groupby("time_bin")[
+            [col_ch4_conc, col_c2h6_conc]
+        ].agg(["mean", "std"])
 
         # 最後のデータポイントを追加（最初のデータを使用）
         last_point = hourly_stats.iloc[0:1].copy()
-        last_point.index = [
-            hourly_stats.index[-1] + (0.5 if interval == "30min" else 1)
-        ]
+        last_point.index = pd.Index(
+            [hourly_stats.index[-1] + (0.5 if interval == "30min" else 1)]
+        )
         hourly_stats = pd.concat([hourly_stats, last_point])
 
         # 時間軸の作成
@@ -1372,7 +1441,7 @@ class MonthlyFiguresGenerator:
             x_ticks = [0, 6, 12, 18, 24]
 
         # プロットの作成
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # CH4濃度プロット
         mean_ch4 = hourly_stats[col_ch4_conc]["mean"]
@@ -1434,10 +1503,6 @@ class MonthlyFiguresGenerator:
             ax.set_xlim(time_points[0], time_points[-1])
             # 1時間ごとの縦線を表示
             ax.grid(True, which="major", alpha=0.3)
-            # 補助目盛りは表示するが、グリッド線は表示しない
-            # if interval == "30min":
-            #     ax.xaxis.set_minor_locator(mdates.MinuteLocator(byminute=[30]))
-            #     ax.tick_params(which='minor', length=4)
 
         # 共通の凡例を図の下部に配置
         if add_legend:
@@ -1451,8 +1516,16 @@ class MonthlyFiguresGenerator:
         plt.subplots_adjust(bottom=0.2)
 
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close(fig)
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError()
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
         if print_summary:
             # 統計情報の表示
@@ -1470,16 +1543,21 @@ class MonthlyFiguresGenerator:
     def plot_flux_diurnal_patterns_with_std(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ch4_flux: str = "Fch4",
         col_c2h6_flux: str = "Fc2h6",
         ch4_label: str = r"$\mathregular{CH_{4}}$フラックス",
         c2h6_label: str = r"$\mathregular{C_{2}H_{6}}$フラックス",
         col_datetime: str = "Date",
+        output_dirpath: str | Path | None = None,
         output_filename: str = "diurnal_patterns.png",
         window_size: int = 6,  # 移動平均の窓サイズ
         show_std: bool = True,  # 標準偏差の表示有無
         alpha_std: float = 0.1,  # 標準偏差の透明度
+        figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
+        print_summary: bool = False,
     ) -> None:
         """CH4とC2H6フラックスの日変化パターンをプロットする
 
@@ -1487,8 +1565,6 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dirpath : str
-                出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
             col_c2h6_flux : str
@@ -1499,6 +1575,8 @@ class MonthlyFiguresGenerator:
                 C2H6フラックスのラベル
             col_datetime : str
                 日時カラムの名前
+            output_dirpath : str | Path | None
+                出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
             window_size : int
@@ -1507,43 +1585,39 @@ class MonthlyFiguresGenerator:
                 標準偏差を表示するかどうか
             alpha_std : float
                 標準偏差の透明度（0-1）
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(12, 5)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
+            print_summary : bool, optional
+                統計情報を表示するかどうか。デフォルトはFalse。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
-        # # プロットのスタイル設定
-        # plt.rcParams.update({
-        #     'font.size': 20,
-        #     'axes.labelsize': 20,
-        #     'axes.titlesize': 20,
-        #     'xtick.labelsize': 20,
-        #     'ytick.labelsize': 20,
-        #     'legend.fontsize': 20,
-        # })
-
         # 日時インデックスの処理
-        df = df.copy()
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df[col_datetime] = pd.to_datetime(df[col_datetime])
-            df.set_index(col_datetime, inplace=True)
-
+        df_internal = df.copy()
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal[col_datetime] = pd.to_datetime(df_internal[col_datetime])
+            df_internal.set_index(col_datetime, inplace=True)
+        df_internal.index = pd.to_datetime(df_internal.index)
         # 時刻データの抽出とグループ化
-        df["hour"] = df.index.hour
-        hourly_means = df.groupby("hour")[[col_ch4_flux, col_c2h6_flux]].agg(
+        df_internal["hour"] = df_internal.index.hour
+        hourly_means = df_internal.groupby("hour")[[col_ch4_flux, col_c2h6_flux]].agg(
             ["mean", "std"]
         )
 
         # 24時間目のデータ点を追加（0時のデータを使用）
         last_hour = hourly_means.iloc[0:1].copy()
-        last_hour.index = [24]
+        last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
 
         # 24時間分のデータポイントを作成
         time_points = pd.date_range("2024-01-01", periods=25, freq="h")
 
         # プロットの作成
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # 移動平均の計算と描画
         ch4_mean = (
@@ -1603,33 +1677,45 @@ class MonthlyFiguresGenerator:
 
         # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close()
+
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
         # 統計情報の表示（オプション）
-        for col, name in [(col_ch4_flux, "CH4"), (col_c2h6_flux, "C2H6")]:
-            mean_val = hourly_means[(col, "mean")].mean()
-            min_val = hourly_means[(col, "mean")].min()
-            max_val = hourly_means[(col, "mean")].max()
-            min_time = hourly_means[(col, "mean")].idxmin()
-            max_time = hourly_means[(col, "mean")].idxmax()
+        if print_summary:
+            for col, name in [(col_ch4_flux, "CH4"), (col_c2h6_flux, "C2H6")]:
+                mean_val = hourly_means[(col, "mean")].mean()
+                min_val = hourly_means[(col, "mean")].min()
+                max_val = hourly_means[(col, "mean")].max()
+                min_time = hourly_means[(col, "mean")].idxmin()
+                max_time = hourly_means[(col, "mean")].idxmax()
 
-            self.logger.info(f"{name} Statistics:")
-            self.logger.info(f"Mean: {mean_val:.2f}")
-            self.logger.info(f"Min: {min_val:.2f} (Hour: {min_time})")
-            self.logger.info(f"Max: {max_val:.2f} (Hour: {max_time})")
-            self.logger.info(f"Max/Min ratio: {max_val / min_val:.2f}\n")
+                self.logger.info(f"{name} Statistics:")
+                self.logger.info(f"Mean: {mean_val:.2f}")
+                self.logger.info(f"Min: {min_val:.2f} (Hour: {min_time})")
+                self.logger.info(f"Max: {max_val:.2f} (Hour: {max_time})")
+                self.logger.info(f"Max/Min ratio: {max_val / min_val:.2f}\n")
 
     def plot_gas_ratio_diurnal(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ratio_1: str,
         col_ratio_2: str,
         label_1: str,
         label_2: str,
         color_1: str,
         color_2: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "gas_ratio_diurnal.png",
         add_xlabel: bool = True,
         add_ylabel: bool = True,
@@ -1640,6 +1726,7 @@ class MonthlyFiguresGenerator:
         subplot_label: str | None = None,
         y_max: float | None = 100,
         figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = False,
     ) -> None:
@@ -1649,8 +1736,6 @@ class MonthlyFiguresGenerator:
         ----------
         df : pd.DataFrame
             データフレーム
-        output_dirpath : str
-            出力ディレクトリ
         col_ratio_1 : str
             1つ目の比率のカラム名
         col_ratio_2 : str
@@ -1663,6 +1748,8 @@ class MonthlyFiguresGenerator:
             1つ目の比率の色
         color_2 : str
             2つ目の比率の色
+        output_dirpath : str | Path | None
+            出力ディレクトリ
         output_filename : str, optional
             出力ファイル名, by default "gas_ratio_diurnal.png"
         add_xlabel : bool, optional
@@ -1683,30 +1770,37 @@ class MonthlyFiguresGenerator:
             y軸の最大値, by default 100
         figsize : tuple[float, float], optional
             図のサイズ, by default (12, 5)
+        dpi : float | None, optional
+            図のdpi。デフォルトは350。
         save_fig : bool, optional
             図を保存するかどうか, by default True
         show_fig : bool, optional
             図を表示するかどうか, by default False
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath = os.path.join(output_dirpath, output_filename)
+        df_internal: pd.DataFrame = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
 
         # 時刻でグループ化して平均を計算
-        hourly_means = df.groupby(df.index.hour)[[col_ratio_1, col_ratio_2]].mean()
-        hourly_stds = df.groupby(df.index.hour)[[col_ratio_1, col_ratio_2]].std()
+        hourly_means = df_internal.groupby(df_internal.index.hour)[
+            [col_ratio_1, col_ratio_2]
+        ].mean()
+        hourly_stds = df_internal.groupby(df_internal.index.hour)[
+            [col_ratio_1, col_ratio_2]
+        ].std()
 
         # 24時間目のデータ点を追加（0時のデータを使用）
         last_hour = hourly_means.iloc[0:1].copy()
-        last_hour.index = [24]
+        last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
 
         last_hour_std = hourly_stds.iloc[0:1].copy()
-        last_hour_std.index = [24]
+        last_hour_std.index = pd.Index([24])
         hourly_stds = pd.concat([hourly_stds, last_hour_std])
 
         # 24時間分の時刻を生成
-        time_points = pd.date_range("2024-01-01", periods=25, freq="h")
+        time_points: pd.DatetimeIndex = pd.date_range(
+            "2024-01-01", periods=25, freq="h"
+        )
 
         # プロットの作成
         fig, ax = plt.subplots(figsize=figsize)
@@ -1760,7 +1854,10 @@ class MonthlyFiguresGenerator:
         # x軸の設定
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
         ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
-        ax.set_xlim(time_points[0], time_points[-1])
+        ax.set_xlim(
+            float(mdates.date2num(time_points[0])),
+            float(mdates.date2num(time_points[-1])),
+        )
         ax.set_xticks(time_points[::6])
         ax.set_xticklabels(["0", "6", "12", "18", "24"])
 
@@ -1790,7 +1887,14 @@ class MonthlyFiguresGenerator:
         # プロットの保存と表示
         plt.tight_layout()
         if save_fig:
-            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            # 出力ディレクトリの作成
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -1798,19 +1902,23 @@ class MonthlyFiguresGenerator:
     def plot_scatter(
         self,
         df: pd.DataFrame,
-        x_col: str,
-        y_col: str,
-        output_dirpath: str,
+        col_x: str,
+        col_y: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "scatter.png",
+        add_label: bool = True,
         xlabel: str | None = None,
         ylabel: str | None = None,
-        add_label: bool = True,
         x_axis_range: tuple | None = None,
         y_axis_range: tuple | None = None,
+        x_scientific: bool = False,
+        y_scientific: bool = False,
         fixed_slope: float = 0.076,
         show_fixed_slope: bool = False,
-        x_scientific: bool = False,  # 追加：x軸を指数表記にするかどうか
-        y_scientific: bool = False,  # 追加：y軸を指数表記にするかどうか
+        figsize: tuple[float, float] = (6, 6),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """散布図を作成し、TLS回帰直線を描画します。
 
@@ -1818,15 +1926,15 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 プロットに使用するデータフレーム
-            x_col : str
+            col_x : str
                 x軸に使用する列名
-            y_col : str
+            col_y : str
                 y軸に使用する列名
             xlabel : str
                 x軸のラベル
             ylabel : str
                 y軸のラベル
-            output_dirpath : str
+            output_dirpath : str | Path | None
                 出力先ディレクトリ
             output_filename : str, optional
                 出力ファイル名。デフォルトは"scatter.png"
@@ -1840,20 +1948,29 @@ class MonthlyFiguresGenerator:
                 固定傾きを指定するための値。デフォルトは0.076
             show_fixed_slope : bool, optional
                 固定傾きの線を表示するかどうか。デフォルトはFalse
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(6, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # 有効なデータの抽出
-        df = MonthlyFiguresGenerator.get_valid_data(df, x_col, y_col)
+        df_internal = MonthlyFiguresGenerator.get_valid_data(
+            df=df, col_x=col_x, col_y=col_y
+        )
 
         # データの準備
-        x = df[x_col].values
-        y = df[y_col].values
+        x = df_internal[col_x].values
+        y = df_internal[col_y].values
 
         # データの中心化
-        x_mean = np.mean(x)
-        y_mean = np.mean(y)
+        x_array = np.array(x)
+        y_array = np.array(y)
+        x_mean = np.mean(x_array, axis=0)
+        y_mean = np.mean(y_array, axis=0)
         x_c = x - x_mean
         y_c = y - y_mean
 
@@ -1868,20 +1985,20 @@ class MonthlyFiguresGenerator:
 
         # R²とRMSEの計算
         y_pred = slope * x + intercept
-        r_squared = 1 - np.sum((y - y_pred) ** 2) / np.sum((y - np.mean(y)) ** 2)
+        r_squared = 1 - np.sum((y - y_pred) ** 2) / np.sum((y - y_mean) ** 2)
         rmse = np.sqrt(np.mean((y - y_pred) ** 2))
 
         # プロットの作成
-        fig, ax = plt.subplots(figsize=(6, 6))
+        fig, ax = plt.subplots(figsize=figsize)
 
         # データ点のプロット
-        ax.scatter(x, y, color="black")
+        ax.scatter(x_array, y_array, color="black")
 
         # データの範囲を取得
         if x_axis_range is None:
-            x_axis_range = (df[x_col].min(), df[x_col].max())
+            x_axis_range = (df_internal[col_x].min(), df_internal[col_x].max())
         if y_axis_range is None:
-            y_axis_range = (df[y_col].min(), df[y_col].max())
+            y_axis_range = (df_internal[col_y].min(), df_internal[col_y].max())
 
         # 回帰直線のプロット
         x_range = np.linspace(x_axis_range[0], x_axis_range[1], 150)
@@ -1963,13 +2080,21 @@ class MonthlyFiguresGenerator:
         # 目盛り線の設定
         ax.grid(True, alpha=0.3)
 
-        fig.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close(fig)
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            fig.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
     def plot_source_contributions_diurnal(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
         col_datetime: str = "Date",
@@ -1977,18 +2102,22 @@ class MonthlyFiguresGenerator:
         color_gas: str = "red",
         label_bio: str = "bio",
         label_gas: str = "gas",
-        figsize: tuple[float, float] = (10, 6),
         flux_alpha: float = 0.6,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "source_contributions.png",
-        window_size: int = 6,  # 移動平均の窓サイズ
-        print_summary: bool = False,  # 統計情報を表示するかどうか
+        window_size: int = 6,
+        print_summary: bool = False,
         add_xlabel: bool = True,
         add_ylabel: bool = True,
         add_legend: bool = True,
         smooth: bool = False,
-        y_max: float = 100,  # y軸の上限値を追加
+        y_max: float = 100,
         subplot_label: str | None = None,
         subplot_fontsize: int = 20,
+        figsize: tuple[float, float] = (10, 6),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の日変化を積み上げグラフとして表示
 
@@ -2036,11 +2165,15 @@ class MonthlyFiguresGenerator:
                 サブプロットのラベル（デフォルトはNone）
             subplot_fontsize : int, optional
                 サブプロットラベルのフォントサイズ（デフォルトは20）
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
             df=df,
@@ -2048,6 +2181,7 @@ class MonthlyFiguresGenerator:
             col_c2h6_flux=col_c2h6_flux,
             col_datetime=col_datetime,
         )
+        df_with_sources.index = pd.to_datetime(df_with_sources.index)
 
         # 時刻データの抽出とグループ化
         df_with_sources["hour"] = df_with_sources.index.hour
@@ -2055,7 +2189,7 @@ class MonthlyFiguresGenerator:
 
         # 24時間目のデータ点を追加（0時のデータを使用）
         last_hour = hourly_means.iloc[0:1].copy()
-        last_hour.index = [24]
+        last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
 
         # 移動平均の適用
@@ -2112,7 +2246,10 @@ class MonthlyFiguresGenerator:
             ax.set_ylabel(r"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
         ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
-        ax.set_xlim(time_points[0], time_points[-1])
+        ax.set_xlim(
+            float(mdates.date2num(time_points[0])),
+            float(mdates.date2num(time_points[-1])),
+        )
         ax.set_ylim(0, y_max)  # y軸の範囲を設定
         ax.grid(True, alpha=0.3)
 
@@ -2128,10 +2265,19 @@ class MonthlyFiguresGenerator:
                 ncol=len(handles),
             )
             plt.subplots_adjust(bottom=0.2)  # 下部に凡例用のスペースを確保
-
-        # グラフの保存
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+
+        # グラフの保存、表示
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
+        if show_fig:
+            plt.show()
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2151,10 +2297,12 @@ class MonthlyFiguresGenerator:
             # 都市ガス比率を計算
             gas_ratio = (gas_flux / total_flux) * 100
             daytime_gas_ratio = (
-                gas_flux[daytime_hours].sum() / total_flux[daytime_hours].sum()
+                pd.Series(gas_flux).iloc[np.array(list(daytime_hours))].sum()
+                / pd.Series(total_flux).iloc[np.array(list(daytime_hours))].sum()
             ) * 100
             nighttime_gas_ratio = (
-                gas_flux[nighttime_hours].sum() / total_flux[nighttime_hours].sum()
+                pd.Series(gas_flux).iloc[np.array(list(nighttime_hours))].sum()
+                / pd.Series(total_flux).iloc[np.array(list(nighttime_hours))].sum()
             ) * 100
 
             stats = {
@@ -2184,8 +2332,8 @@ class MonthlyFiguresGenerator:
                 max_time = data.idxmax()
 
                 # 昼間と夜間のデータを抽出
-                daytime_data = data[daytime_hours]
-                nighttime_data = data[nighttime_hours]
+                daytime_data = pd.Series(data).iloc[np.array(list(daytime_hours))]
+                nighttime_data = pd.Series(data).iloc[np.array(list(nighttime_hours))]
 
                 daytime_mean = daytime_data.mean()
                 nighttime_mean = nighttime_data.mean()
@@ -2208,7 +2356,6 @@ class MonthlyFiguresGenerator:
     def plot_source_contributions_diurnal_by_date(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
         col_ch4_flux: str,
         col_c2h6_flux: str,
         col_datetime: str = "Date",
@@ -2216,17 +2363,21 @@ class MonthlyFiguresGenerator:
         color_gas: str = "red",
         label_bio: str = "bio",
         label_gas: str = "gas",
-        figsize: tuple[float, float] = (12, 5),
         flux_alpha: float = 0.6,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "source_contributions_by_date.png",
         add_xlabel: bool = True,
         add_ylabel: bool = True,
         add_legend: bool = True,
-        print_summary: bool = False,  # 統計情報を表示するかどうか,
+        print_summary: bool = False,
         subplot_fontsize: int = 20,
         subplot_label_weekday: str | None = None,
         subplot_label_weekend: str | None = None,
-        y_max: float | None = None,  # y軸の上限値
+        y_max: float | None = None,
+        figsize: tuple[float, float] = (12, 5),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """CH4フラックスの都市ガス起源と生物起源の日変化を平日・休日別に表示
 
@@ -2234,8 +2385,6 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            output_dirpath : str
-                出力ディレクトリのパス
             col_ch4_flux : str
                 CH4フラックスのカラム名
             col_c2h6_flux : str
@@ -2250,8 +2399,8 @@ class MonthlyFiguresGenerator:
                 生物起源のラベル（デフォルトは"bio"）
             label_gas : str, optional
                 都市ガスのラベル（デフォルトは"gas"）
-            figsize : tuple[float, float], optional
-                プロットのサイズ（デフォルトは(10, 6)）
+            output_dirpath : str | Path | None
+                出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
             add_xlabel : bool, optional
@@ -2268,11 +2417,15 @@ class MonthlyFiguresGenerator:
                 休日グラフのラベル
             y_max : float | None
                 y軸の上限値
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # 起源の計算
         df_with_sources = self._calculate_source_contributions(
             df=df,
@@ -2280,6 +2433,7 @@ class MonthlyFiguresGenerator:
             col_c2h6_flux=col_c2h6_flux,
             col_datetime=col_datetime,
         )
+        df_with_sources.index = pd.to_datetime(df_with_sources.index)
 
         # 日付タイプの分類
         dates = pd.to_datetime(df_with_sources.index)
@@ -2300,11 +2454,13 @@ class MonthlyFiguresGenerator:
             (ax2, data_holiday, "Weekends & Holidays"),
         ]:
             # 時間ごとの平均値を計算
-            hourly_means = data.groupby(data.index.hour)[["ch4_gas", "ch4_bio"]].mean()
+            hourly_means = data.groupby(pd.to_datetime(data.index).hour)[
+                ["ch4_gas", "ch4_bio"]
+            ].mean()
 
             # 24時間目のデータ点を追加
             last_hour = hourly_means.iloc[0:1].copy()
-            last_hour.index = [24]
+            last_hour.index = pd.Index([24])
             hourly_means = pd.concat([hourly_means, last_hour])
 
             # 24時間分のデータポイントを作成
@@ -2343,7 +2499,10 @@ class MonthlyFiguresGenerator:
 
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
             ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
-            ax.set_xlim(time_points[0], time_points[-1])
+            ax.set_xlim(
+                float(mdates.date2num(time_points[0])),
+                float(mdates.date2num(time_points[-1])),
+            )
             if y_max is not None:
                 ax.set_ylim(0, y_max)
             ax.grid(True, alpha=0.3)
@@ -2384,7 +2543,17 @@ class MonthlyFiguresGenerator:
             plt.subplots_adjust(bottom=0.2)  # 下部に30%のスペースを確保
 
         plt.tight_layout()
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
+        # グラフの保存または表示
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
+        if show_fig:
+            plt.show()
         plt.close(fig=fig)
 
         # 統計情報の表示
@@ -2393,7 +2562,7 @@ class MonthlyFiguresGenerator:
                 (data_weekday, "Weekdays"),
                 (data_holiday, "Weekends & Holidays"),
             ]:
-                hourly_means = data.groupby(data.index.hour)[
+                hourly_means = data.groupby(pd.to_datetime(data.index).hour)[
                     ["ch4_gas", "ch4_bio"]
                 ].mean()
 
@@ -2411,14 +2580,19 @@ class MonthlyFiguresGenerator:
                 )
 
                 # 昼間の統計
-                daytime_gas = gas_flux[daytime_hours]
-                daytime_bio = bio_flux[daytime_hours]
+                daytime_gas = pd.Series(gas_flux).iloc[np.array(list(daytime_hours))]
+                daytime_bio = pd.Series(bio_flux).iloc[np.array(list(daytime_hours))]
+                daytime_total = daytime_gas + daytime_bio
                 daytime_total = daytime_gas + daytime_bio
                 daytime_ratio = (daytime_gas.sum() / daytime_total.sum()) * 100
 
                 # 夜間の統計
-                nighttime_gas = gas_flux[nighttime_hours]
-                nighttime_bio = bio_flux[nighttime_hours]
+                nighttime_gas = pd.Series(gas_flux).iloc[
+                    np.array(list(nighttime_hours))
+                ]
+                nighttime_bio = pd.Series(bio_flux).iloc[
+                    np.array(list(nighttime_hours))
+                ]
                 nighttime_total = nighttime_gas + nighttime_bio
                 nighttime_ratio = (nighttime_gas.sum() / nighttime_total.sum()) * 100
 
@@ -2459,299 +2633,10 @@ class MonthlyFiguresGenerator:
                 if total_flux.min() != 0:
                     print(f"  最大/最小比: {total_flux.max() / total_flux.min():.2f}")
 
-    def plot_spectra(
-        self,
-        fs: float,
-        lag_second: float,
-        input_dirpath: str | Path,
-        output_dirpath: str | Path,
-        output_filename_power: str = "power_spectrum.png",
-        output_filename_co: str = "co_spectrum.png",
-        col_ch4: str = "Ultra_CH4_ppm_C",
-        col_c2h6: str = "Ultra_C2H6_ppb",
-        col_tv: str = "Tv",
-        label_ch4: str | None = None,
-        label_c2h6: str | None = None,
-        label_tv: str | None = None,
-        file_pattern: str = "*.csv",
-        figsize: tuple[float, float] = (20, 6),
-        markersize: float = 14,
-        are_inputs_resampled: bool = True,
-        save_fig: bool = True,
-        show_fig: bool = True,
-        plot_power: bool = True,
-        plot_co: bool = True,
-        add_tv_in_co: bool = True,
-    ) -> None:
-        """
-        月間の平均パワースペクトル密度を計算してプロットする。
-
-        データファイルを指定されたディレクトリから読み込み、パワースペクトル密度を計算し、
-        結果を指定された出力ディレクトリにプロットして保存します。
-
-        Parameters
-        ------
-            fs : float
-                サンプリング周波数。
-            lag_second : float
-                ラグ時間（秒）。
-            input_dirpath : str | Path
-                データファイルが格納されているディレクトリ。
-            output_dirpath : str | Path
-                出力先ディレクトリ。
-            output_filename_power : str
-                出力するパワースペクトルのファイル名。デフォルトは"power_spectrum.png"
-            output_filename_power : str
-                出力するコスペクトルのファイル名。デフォルトは"co_spectrum.png"
-            col_ch4 : str, optional
-                CH4の濃度データが入ったカラムのキー。デフォルトは"Ultra_CH4_ppm_C"。
-            col_c2h6 : str, optional
-                C2H6の濃度データが入ったカラムのキー。デフォルトは"Ultra_C2H6_ppb"。
-            col_tv : str, optional
-                気温データが入ったカラムのキー。デフォルトは"Tv"。
-            label_ch4 : str | None, optional
-                CH4のラベル。デフォルトはNone。
-            label_c2h6 : str | None, optional
-                C2H6のラベル。デフォルトはNone。
-            label_tv : str | None, optional
-                気温のラベル。デフォルトはNone。
-            file_pattern : str, optional
-                処理対象のファイルパターン。デフォルトは"*.csv"。
-            markersize : float, optional
-                プロットマーカーのサイズ。デフォルトは14。
-            are_inputs_resampled : bool, optional
-                入力データが再サンプリングされているかどうか。デフォルトはTrue。
-            save_fig : bool, optional
-                図を保存するかどうか。デフォルトはTrue。
-            show_fig : bool, optional
-                図を表示するかどうか。デフォルトはTrue。
-            plot_power : bool, optional
-                パワースペクトルをプロットするかどうか。デフォルトはTrue。
-            plot_co : bool, optional
-                COのスペクトルをプロットするかどうか。デフォルトはTrue。
-            add_tv_in_co : bool, optional
-                顕熱フラックスのコスペクトルを表示するかどうか。デフォルトはTrue。
-        """
-        # 出力ディレクトリの作成
-        if save_fig:
-            os.makedirs(output_dirpath, exist_ok=True)
-
-        # データの読み込みと結合
-        edp = EddyDataPreprocessor(fs=fs)
-        col_wind_w: str = EddyDataPreprocessor.WIND_W
-
-        # 各変数のパワースペクトルを格納する辞書
-        power_spectra = {col_ch4: [], col_c2h6: []}
-        co_spectra = {col_ch4: [], col_c2h6: [], col_tv: []}
-        freqs = None
-
-        # プログレスバーを表示しながらファイルを処理
-        file_list = glob.glob(os.path.join(input_dirpath, file_pattern))
-        for filepath in tqdm(file_list, desc="Processing files"):
-            df, _ = edp.get_resampled_df(
-                filepath=filepath, resample=are_inputs_resampled
-            )
-
-            # 風速成分の計算を追加
-            df = edp.add_uvw_columns(df)
-
-            # NaNや無限大を含む行を削除
-            df = df.replace([np.inf, -np.inf], np.nan).dropna(
-                subset=[col_ch4, col_c2h6, col_tv, col_wind_w]
-            )
-
-            # データが十分な行数を持っているか確認
-            if len(df) < 100:
-                continue
-
-            # 各ファイルごとにスペクトル計算
-            calculator = SpectrumCalculator(
-                df=df,
-                fs=fs,
-            )
-
-            for col in power_spectra.keys():
-                # 各変数のパワースペクトルを計算して保存
-                if plot_power:
-                    f, ps = calculator.calculate_power_spectrum(
-                        col=col,
-                        dimensionless=True,
-                        frequency_weighted=True,
-                        interpolate_points=True,
-                        scaling="density",
-                    )
-                    # 最初のファイル処理時にfreqsを初期化
-                    if freqs is None:
-                        freqs = f
-                        power_spectra[col].append(ps)
-                    # 以降は周波数配列の長さが一致する場合のみ追加
-                    elif len(f) == len(freqs):
-                        power_spectra[col].append(ps)
-
-                # コスペクトル
-                if plot_co:
-                    _, cs, _ = calculator.calculate_co_spectrum(
-                        col1=col_wind_w,
-                        col2=col,
-                        dimensionless=True,
-                        frequency_weighted=True,
-                        interpolate_points=True,
-                        scaling="spectrum",
-                        apply_lag_correction_to_col2=True,
-                        lag_second=lag_second,
-                    )
-                    if freqs is not None and len(cs) == len(freqs):
-                        co_spectra[col].append(cs)
-
-            # 顕熱フラックスのコスペクトル計算を追加
-            if plot_co and add_tv_in_co:
-                _, cs_heat, _ = calculator.calculate_co_spectrum(
-                    col1=col_wind_w,
-                    col2=col_tv,
-                    dimensionless=True,
-                    frequency_weighted=True,
-                    interpolate_points=True,
-                    scaling="spectrum",
-                )
-                if freqs is not None and len(cs_heat) == len(freqs):
-                    co_spectra[col_tv].append(cs_heat)
-
-        # 各変数のスペクトルを平均化
-        if plot_power:
-            averaged_power_spectra = {
-                col: np.mean(spectra, axis=0) for col, spectra in power_spectra.items()
-            }
-        if plot_co:
-            averaged_co_spectra = {
-                col: np.mean(spectra, axis=0) for col, spectra in co_spectra.items()
-            }
-        # 顕熱フラックスの平均コスペクトル計算
-        if plot_co and add_tv_in_co and co_spectra[col_tv]:
-            averaged_heat_co_spectra = np.mean(co_spectra[col_tv], axis=0)
-
-        # プロット設定を修正
-        plot_configs = [
-            {
-                "col": col_ch4,
-                "psd_ylabel": r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
-                "co_ylabel": r"$fC_{w\mathrm{CH_4}} / \overline{w'\mathrm{CH_4}'}$",
-                "color": "red",
-                "label": label_ch4,
-            },
-            {
-                "col": col_c2h6,
-                "psd_ylabel": r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
-                "co_ylabel": r"$fC_{w\mathrm{C_2H_6}} / \overline{w'\mathrm{C_2H_6}'}$",
-                "color": "orange",
-                "label": label_c2h6,
-            },
-        ]
-        plot_tv_config = {
-            "col": col_tv,
-            "psd_ylabel": r"$fS_{T_v} / s_{T_v}^2$",
-            "co_ylabel": r"$fC_{wT_v} / \overline{w'T_v'}$",
-            "color": "blue",
-            "label": label_tv,
-        }
-
-        # パワースペクトルの図を作成
-        if plot_power:
-            fig_power, axes_psd = plt.subplots(1, 2, figsize=figsize, sharex=True)
-            for ax, config in zip(axes_psd, plot_configs):
-                ax.plot(
-                    freqs,
-                    averaged_power_spectra[config["col"]],
-                    "o",  # マーカーを丸に設定
-                    color=config["color"],
-                    markersize=markersize,
-                )
-                ax.set_xscale("log")
-                ax.set_yscale("log")
-                ax.set_xlim(0.001, 10)
-                ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
-                ax.text(0.1, 0.06, "-2/3", fontsize=18)
-                ax.set_ylabel(config["psd_ylabel"])
-                if config["label"] is not None:
-                    ax.text(
-                        0.02, 0.98, config["label"], transform=ax.transAxes, va="top"
-                    )
-                ax.grid(True, alpha=0.3)
-                ax.set_xlabel("f (Hz)")
-
-            plt.tight_layout()
-
-            if save_fig:
-                output_filepath_psd: str = os.path.join(output_dirpath, output_filename_power)
-                plt.savefig(
-                    output_filepath_psd,
-                    dpi=350,
-                    bbox_inches="tight",
-                )
-            if show_fig:
-                plt.show()
-            else:
-                plt.close(fig=fig_power)
-
-        # コスペクトルの図を作成
-        if plot_co:
-            fig_co, axes_cosp = plt.subplots(1, 2, figsize=figsize, sharex=True)
-            for ax, config in zip(axes_cosp, plot_configs):
-                # 顕熱フラックスのコスペクトルを先に描画（背景として）
-                if add_tv_in_co and len(co_spectra[col_tv]) > 0:
-                    ax.plot(
-                        freqs,
-                        averaged_heat_co_spectra,
-                        "o",
-                        color="gray",
-                        alpha=0.3,
-                        markersize=markersize,
-                        label=plot_tv_config["label"]
-                        if plot_tv_config["label"]
-                        else None,
-                    )
-
-                # CH4またはC2H6のコスペクトルを描画
-                ax.plot(
-                    freqs,
-                    averaged_co_spectra[config["col"]],
-                    "o",
-                    color=config["color"],
-                    markersize=markersize,
-                    label=config["label"] if config["label"] else None,
-                )
-                ax.set_xscale("log")
-                ax.set_yscale("log")
-                ax.set_xlim(0.001, 10)
-                # ax.plot([0.01, 10], [1, 0.01], "-", color="black", alpha=0.5)
-                # ax.text(0.1, 0.1, "-4/3", fontsize=18)
-                ax.set_ylabel(config["co_ylabel"])
-                if config["label"] is not None:
-                    ax.text(
-                        0.02, 0.98, config["label"], transform=ax.transAxes, va="top"
-                    )
-                ax.grid(True, alpha=0.3)
-                ax.set_xlabel("f (Hz)")
-                # 凡例を追加（顕熱フラックスが含まれる場合）
-                if add_tv_in_co and label_tv:
-                    ax.legend(loc="lower left")
-
-            plt.tight_layout()
-            if save_fig:
-                output_filepath_csd: str = os.path.join(output_dirpath, output_filename_co)
-                plt.savefig(
-                    output_filepath_csd,
-                    dpi=350,
-                    bbox_inches="tight",
-                )
-            if show_fig:
-                plt.show()
-            else:
-                plt.close(fig=fig_co)
-
     def plot_turbulence(
         self,
         df: pd.DataFrame,
-        output_dirpath: str,
+        output_dirpath: str | Path | None = None,
         output_filename: str = "turbulence.png",
         col_uz: str = "Uz",
         col_ch4: str = "Ultra_CH4_ppm_C",
@@ -2759,6 +2644,9 @@ class MonthlyFiguresGenerator:
         col_timestamp: str = "TIMESTAMP",
         add_serial_labels: bool = True,
         figsize: tuple[float, float] = (12, 10),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
     ) -> None:
         """時系列データのプロットを作成する
 
@@ -2780,50 +2668,53 @@ class MonthlyFiguresGenerator:
                 タイムスタンプのカラム名
             add_serial_labels : bool
                 シリアルラベルを追加するかどうかのフラグ
-            figsize : tuple[float, float]
-                プロットのサイズを指定するタプル
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(12, 10)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
-        # 出力ディレクトリの作成
-        os.makedirs(output_dirpath, exist_ok=True)
-        output_filepath: str = os.path.join(output_dirpath, output_filename)
-
         # データの前処理
-        df = df.copy()
+        df_internal = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
 
         # タイムスタンプをインデックスに設定（まだ設定されていない場合）
-        if not isinstance(df.index, pd.DatetimeIndex):
-            df[col_timestamp] = pd.to_datetime(df[col_timestamp])
-            df.set_index(col_timestamp, inplace=True)
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal[col_timestamp] = pd.to_datetime(df_internal[col_timestamp])
+            df_internal.set_index(col_timestamp, inplace=True)
 
         # 開始時刻と終了時刻を取得
-        start_time = df.index[0]
-        end_time = df.index[-1]
+        start_time = df_internal.index[0]
+        end_time = df_internal.index[-1]
 
         # 開始時刻の分を取得
         start_minute = start_time.minute
 
         # 時間軸の作成（実際の開始時刻からの経過分数）
-        minutes_elapsed = (df.index - start_time).total_seconds() / 60
+        minutes_elapsed = (df_internal.index - start_time).total_seconds() / 60
 
         # プロットの作成
-        _, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=figsize, sharex=True)
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=figsize, sharex=True)
 
         # 鉛直風速
-        ax1.plot(minutes_elapsed, df[col_uz], "k-", linewidth=0.5)
+        ax1.plot(minutes_elapsed, df_internal[col_uz], "k-", linewidth=0.5)
         ax1.set_ylabel(r"$w$ (m s$^{-1}$)")
         if add_serial_labels:
             ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top")
         ax1.grid(True, alpha=0.3)
 
         # CH4濃度
-        ax2.plot(minutes_elapsed, df[col_ch4], "r-", linewidth=0.5)
+        ax2.plot(minutes_elapsed, df_internal[col_ch4], "r-", linewidth=0.5)
         ax2.set_ylabel(r"$\mathrm{CH_4}$ (ppm)")
         if add_serial_labels:
             ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top")
         ax2.grid(True, alpha=0.3)
 
         # C2H6濃度
-        ax3.plot(minutes_elapsed, df[col_c2h6], "orange", linewidth=0.5)
+        ax3.plot(minutes_elapsed, df_internal[col_c2h6], "orange", linewidth=0.5)
         ax3.set_ylabel(r"$\mathrm{C_2H_6}$ (ppb)")
         if add_serial_labels:
             ax3.text(0.02, 0.98, "(c)", transform=ax3.transAxes, va="top")
@@ -2841,9 +2732,18 @@ class MonthlyFiguresGenerator:
         # レイアウトの調整
         plt.tight_layout()
 
-        # 図の保存
-        plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-        plt.close()
+        # グラフの保存または表示
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
 
     def plot_wind_rose_sources(
         self,
@@ -2860,7 +2760,6 @@ class MonthlyFiguresGenerator:
         color_gas: str = "red",
         label_bio: str = "生物起源",
         label_gas: str = "都市ガス起源",
-        figsize: tuple[float, float] = (8, 8),
         flux_alpha: float = 0.4,
         num_directions: int = 8,  # 方位の数（8方位）
         gap_degrees: float = 0.0,  # セクター間の隙間（度数）
@@ -2869,6 +2768,8 @@ class MonthlyFiguresGenerator:
         add_legend: bool = True,
         stack_bars: bool = True,  # 追加：積み上げ方式を選択するパラメータ
         print_summary: bool = False,  # 統計情報を表示するかどうか
+        figsize: tuple[float, float] = (8, 8),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
     ) -> None:
@@ -2914,13 +2815,15 @@ class MonthlyFiguresGenerator:
                 フラックスの単位
             ymax : float | None
                 y軸の上限値（指定しない場合はデータの最大値に基づいて自動設定）
-            figsize : tuple[float, float]
-                図のサイズ
             flux_alpha : float
                 フラックスの透明度
             stack_bars : bool, optional
                 Trueの場合、生物起源の上に都市ガス起源を積み上げます（デフォルト）。
                 Falseの場合、両方を0から積み上げます。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(8, 8)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             save_fig : bool
                 図を保存するかどうかのフラグ
             show_fig : bool
@@ -2945,7 +2848,7 @@ class MonthlyFiguresGenerator:
         )
 
         # プロットの作成
-        fig = plt.figure(figsize=figsize)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_subplot(111, projection="polar")
 
         # 方位の角度（ラジアン）を計算
@@ -3010,8 +2913,10 @@ class MonthlyFiguresGenerator:
             ax.set_ylim(0, max_value * 1.1)  # 最大値の1.1倍を上限に設定
 
         # 方位ラベルの設定
-        ax.set_theta_zero_location("N")  # 北を上に設定
-        ax.set_theta_direction(-1)  # 時計回りに設定
+        # 北を上に設定
+        ax.set_theta_zero_location("N")  # type:ignore
+        # 時計回りに設定
+        ax.set_theta_direction(-1)  # type:ignore
 
         # 方位ラベルの表示
         labels = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
@@ -3056,18 +2961,15 @@ class MonthlyFiguresGenerator:
                 ncol=len(handles),  # ハンドルの数だけ列を作成（一行に表示）
             )
 
-        # グラフの保存
+        # グラフの保存または表示
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirpathに有効なパスを指定する必要があります。"
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
                 )
-            # 出力ディレクトリの作成
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath: str = os.path.join(output_dirpath, output_filename)
-            plt.savefig(output_filepath, dpi=350, bbox_inches="tight")
-
-        # グラフの表示
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
@@ -3177,26 +3079,27 @@ class MonthlyFiguresGenerator:
             pd.DataFrame
                 方位ごとの集計データ
         """
+        df_internal: pd.DataFrame = df.copy()
         result_data = direction_ranges.copy()
         result_data["gas_flux"] = 0.0
         result_data["bio_flux"] = 0.0
-
         for idx, row in direction_ranges.iterrows():
             if row["start_angle"] < row["end_angle"]:
-                mask = (df[col_wind_dir] > row["start_angle"]) & (
-                    df[col_wind_dir] <= row["end_angle"]
+                mask = (df_internal[col_wind_dir] > row["start_angle"]) & (
+                    df_internal[col_wind_dir] <= row["end_angle"]
                 )
             else:  # 北方向など、-180度と180度をまたぐ場合
-                mask = (df[col_wind_dir] > row["start_angle"]) | (
-                    df[col_wind_dir] <= row["end_angle"]
+                mask = (df_internal[col_wind_dir] > row["start_angle"]) | (
+                    df_internal[col_wind_dir] <= row["end_angle"]
                 )
-
-            result_data.loc[idx, "gas_flux"] = df.loc[mask, "ch4_gas"].mean()
-            result_data.loc[idx, "bio_flux"] = df.loc[mask, "ch4_bio"].mean()
-
+            result_data.at[idx, "gas_flux"] = np.nanmean(
+                pd.to_numeric(df_internal.loc[mask, "ch4_gas"])
+            )
+            result_data.at[idx, "bio_flux"] = np.nanmean(
+                pd.to_numeric(df_internal.loc[mask, "ch4_bio"])
+            )
         # NaNを0に置換
         result_data = result_data.fillna(0)
-
         return result_data
 
     def _calculate_source_contributions(
@@ -3220,7 +3123,7 @@ class MonthlyFiguresGenerator:
             col_c2h6_flux : str
                 C2H6フラックスのカラム名
             gas_ratio_c1c2 : float
-                ガスのC2H6/CH4比（ppb/ppb）
+                ガスのC2H6/CH4比(無次元)
             col_datetime : str
                 日時カラムの名前
 
@@ -3229,28 +3132,30 @@ class MonthlyFiguresGenerator:
             pd.DataFrame
                 起源別のフラックス値を含むデータフレーム
         """
-        df_copied = df.copy()
+        df_internal = df.copy()
 
         # 日時インデックスの処理
-        if not isinstance(df_copied.index, pd.DatetimeIndex):
-            df_copied[col_datetime] = pd.to_datetime(df_copied[col_datetime])
-            df_copied.set_index(col_datetime, inplace=True)
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal[col_datetime] = pd.to_datetime(df_internal[col_datetime])
+            df_internal.set_index(col_datetime, inplace=True)
 
         # C2H6/CH4比の計算
-        df_copied["c2c1_ratio"] = df_copied[col_c2h6_flux] / df_copied[col_ch4_flux]
+        df_internal["c2c1_ratio"] = (
+            df_internal[col_c2h6_flux] / df_internal[col_ch4_flux]
+        )
 
         # 都市ガスの標準組成に基づく都市ガス比率の計算
-        df_copied["gas_ratio"] = df_copied["c2c1_ratio"] / gas_ratio_c1c2 * 100
+        df_internal["gas_ratio"] = df_internal["c2c1_ratio"] / gas_ratio_c1c2 * 100
 
         # gas_ratioに基づいて都市ガス起源と生物起源の寄与を比例配分
-        df_copied["ch4_gas"] = df_copied[col_ch4_flux] * np.clip(
-            df_copied["gas_ratio"] / 100, 0, 1
+        df_internal["ch4_gas"] = df_internal[col_ch4_flux] * np.clip(
+            df_internal["gas_ratio"] / 100, 0, 1
         )
-        df_copied["ch4_bio"] = df_copied[col_ch4_flux] * (
-            1 - np.clip(df_copied["gas_ratio"] / 100, 0, 1)
+        df_internal["ch4_bio"] = df_internal[col_ch4_flux] * (
+            1 - np.clip(df_internal["gas_ratio"] / 100, 0, 1)
         )
 
-        return df_copied
+        return df_internal
 
     def _prepare_diurnal_data(
         self,
@@ -3276,8 +3181,8 @@ class MonthlyFiguresGenerator:
                 - 時間帯ごとの平均値を含むDataFrameの辞書
                 - 24時間分の時間点
         """
-        df = df.copy()
-        df["hour"] = pd.to_datetime(df["Date"]).dt.hour
+        df_internal = df.copy()
+        df_internal["hour"] = pd.to_datetime(df_internal["Date"]).dt.hour
 
         # 時間ごとの平均値を計算する関数
         def calculate_hourly_means(data_df, condition=None):
@@ -3286,20 +3191,22 @@ class MonthlyFiguresGenerator:
             return data_df.groupby("hour")[target_columns].mean().reset_index()
 
         # 基本の全日データを計算
-        hourly_means = {"all": calculate_hourly_means(df)}
+        hourly_means = {"all": calculate_hourly_means(df_internal)}
 
         # 日付タイプによる分類が必要な場合
         if include_date_types:
-            dates = pd.to_datetime(df["Date"])
+            dates = pd.to_datetime(df_internal["Date"])
             is_weekend = dates.dt.dayofweek.isin([5, 6])
             is_holiday = dates.map(lambda x: jpholiday.is_holiday(x.date()))
             is_weekday = ~(is_weekend | is_holiday)
 
             hourly_means.update(
                 {
-                    "weekday": calculate_hourly_means(df, is_weekday),
-                    "weekend": calculate_hourly_means(df, is_weekend),
-                    "holiday": calculate_hourly_means(df, is_weekend | is_holiday),
+                    "weekday": calculate_hourly_means(df_internal, is_weekday),
+                    "weekend": calculate_hourly_means(df_internal, is_weekend),
+                    "holiday": calculate_hourly_means(
+                        df_internal, is_weekend | is_holiday
+                    ),
                 }
             )
 
@@ -3318,7 +3225,7 @@ class MonthlyFiguresGenerator:
 
     def _setup_diurnal_axes(
         self,
-        ax: plt.Axes,
+        ax: Axes,
         time_points: pd.DatetimeIndex,
         ylabel: str,
         subplot_label: str | None = None,
@@ -3351,7 +3258,10 @@ class MonthlyFiguresGenerator:
 
         ax.xaxis.set_major_formatter(mdates.DateFormatter("%-H"))
         ax.xaxis.set_major_locator(mdates.HourLocator(byhour=[0, 6, 12, 18, 24]))
-        ax.set_xlim(time_points[0], time_points[-1])
+        ax.set_xlim(
+            float(mdates.date2num(time_points[0])),
+            float(mdates.date2num(time_points[-1])),
+        )
         ax.set_xticks(time_points[::6])
         ax.set_xticklabels(["0", "6", "12", "18", "24"])
 
@@ -3369,7 +3279,7 @@ class MonthlyFiguresGenerator:
             ax.legend()
 
     @staticmethod
-    def get_valid_data(df: pd.DataFrame, x_col: str, y_col: str) -> pd.DataFrame:
+    def get_valid_data(df: pd.DataFrame, col_x: str, col_y: str) -> pd.DataFrame:
         """
         指定された列の有効なデータ（NaNを除いた）を取得します。
 
@@ -3377,9 +3287,9 @@ class MonthlyFiguresGenerator:
         ------
             df : pd.DataFrame
                 データフレーム
-            x_col : str
+            col_x : str
                 X軸の列名
-            y_col : str
+            col_y : str
                 Y軸の列名
 
         Returns
@@ -3387,45 +3297,7 @@ class MonthlyFiguresGenerator:
             pd.DataFrame
                 有効なデータのみを含むDataFrame
         """
-        return df.copy().dropna(subset=[x_col, y_col])
-
-    @staticmethod
-    def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
-        """
-        ロガーを設定します。
-
-        このメソッドは、ロギングの設定を行い、ログメッセージのフォーマットを指定します。
-        ログメッセージには、日付、ログレベル、メッセージが含まれます。
-
-        渡されたロガーがNoneまたは不正な場合は、新たにロガーを作成し、標準出力に
-        ログメッセージが表示されるようにStreamHandlerを追加します。ロガーのレベルは
-        引数で指定されたlog_levelに基づいて設定されます。
-
-        Parameters
-        ------
-            logger : Logger | None
-                使用するロガー。Noneの場合は新しいロガーを作成します。
-            log_level : int
-                ロガーのログレベル。デフォルトはINFO。
-
-        Returns
-        ------
-            Logger
-                設定されたロガーオブジェクト。
-        """
-        if logger is not None and isinstance(logger, Logger):
-            return logger
-        # 渡されたロガーがNoneまたは正しいものでない場合は独自に設定
-        new_logger: Logger = getLogger()
-        # 既存のハンドラーをすべて削除
-        for handler in new_logger.handlers[:]:
-            new_logger.removeHandler(handler)
-        new_logger.setLevel(log_level)  # ロガーのレベルを設定
-        ch = StreamHandler()
-        ch_formatter = Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        ch.setFormatter(ch_formatter)  # フォーマッターをハンドラーに設定
-        new_logger.addHandler(ch)  # StreamHandlerの追加
-        return new_logger
+        return df.copy().dropna(subset=[col_x, col_y])
 
     @staticmethod
     def plot_fluxes_distributions(
@@ -3436,6 +3308,8 @@ class MonthlyFiguresGenerator:
         colors: dict[str, str] | None = None,
         xlim: tuple[float, float] = (-50, 200),
         bandwidth: float = 1.0,
+        figsize: tuple[float, float] = (10, 6),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
     ) -> None:
@@ -3458,10 +3332,14 @@ class MonthlyFiguresGenerator:
                 x軸の範囲。デフォルトは(-50, 200)です。
             bandwidth : float
                 カーネル密度推定のバンド幅調整係数。デフォルトは1.0です。
-            save_fig : bool
-                図を保存するかどうか。デフォルトはTrueです。
-            show_fig : bool
-                図を表示するかどうか。デフォルトはTrueです。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
         """
         # デフォルトの色を設定
         default_colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
@@ -3471,7 +3349,7 @@ class MonthlyFiguresGenerator:
                 for i, name in enumerate(flux_data.keys())
             }
 
-        fig = plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=figsize, dpi=dpi)
 
         # 統計情報を格納する辞書
         stats_info = {}
@@ -3484,7 +3362,7 @@ class MonthlyFiguresGenerator:
 
             # KDEプロット
             sns.kdeplot(
-                data=flux,
+                x=flux,
                 label=name,
                 color=color,
                 alpha=0.5,
@@ -3502,7 +3380,7 @@ class MonthlyFiguresGenerator:
                 label=f"{name} mean",
             )
             plt.axvline(
-                median_val,
+                float(median_val),
                 color=color,
                 linestyle=":",
                 alpha=0.5,
@@ -3556,12 +3434,12 @@ class MonthlyFiguresGenerator:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             plt.savefig(
                 os.path.join(output_dirpath, f"{output_filename.format(month=month)}"),
-                dpi=350,
+                dpi=dpi,
                 bbox_inches="tight",
             )
         if show_fig:

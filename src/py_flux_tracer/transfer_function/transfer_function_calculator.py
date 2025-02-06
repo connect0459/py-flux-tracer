@@ -109,7 +109,7 @@ class TransferFunctionCalculator:
         col2: str,
         color1: str = "gray",
         color2: str = "red",
-        figsize: tuple[int, int] = (10, 6),
+        figsize: tuple[float, float] = (10, 6),
         dpi: float | None = 350,
         label1: str | None = None,
         label2: str | None = None,
@@ -145,7 +145,7 @@ class TransferFunctionCalculator:
                 1つ目のデータの色。デフォルトは'gray'。
             color2 : str, optional
                 2つ目のデータの色。デフォルトは'red'。
-            figsize : tuple[int, int], optional
+            figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
                 プロットのdpi。デフォルトは350。
@@ -180,10 +180,10 @@ class TransferFunctionCalculator:
             subplot_label_pos : tuple[float, float], optional
                 サブプロットラベルの位置。デフォルトは(0.00015, 3)。
         """
-        df_copied: pd.DataFrame = self._df.copy()
+        df_internal: pd.DataFrame = self._df.copy()
         # データの取得と移動平均の適用
-        data1 = df_copied[df_copied[col1] > 0].groupby(self._col_freq)[col1].median()
-        data2 = df_copied[df_copied[col2] > 0].groupby(self._col_freq)[col2].median()
+        data1 = df_internal[df_internal[col1] > 0].groupby(self._col_freq)[col1].median()
+        data2 = df_internal[df_internal[col2] > 0].groupby(self._col_freq)[col2].median()
 
         data1 = data1.rolling(window=window_size, center=True, min_periods=1).mean()
         data2 = data2.rolling(window=window_size, center=True, min_periods=1).mean()
@@ -239,10 +239,10 @@ class TransferFunctionCalculator:
         df_processed: pd.DataFrame,
         reference_name: str,
         target_name: str,
-        figsize: tuple[int, int] = (10, 6),
-        dpi: float | None = 350,
         output_dirpath: str | Path | None = None,
         output_filename: str = "ratio.png",
+        figsize: tuple[float, float] = (10, 6),
+        dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
     ) -> None:
@@ -257,14 +257,14 @@ class TransferFunctionCalculator:
                 参照の名前。
             target_name : str
                 ターゲットの名前。
-            figsize : tuple[int, int], optional
-                プロットのサイズ。デフォルトは(10, 6)。
-            dpi : float | None, optional
-                プロットのdpi。デフォルトは350。
             output_dirpath : str | Path | None, optional
                 プロットを保存するディレクトリ。デフォルトはNoneで、保存しない。
             output_filename : str, optional
                 保存するファイル名。デフォルトは"ratio.png"。
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(10, 6)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
             save_fig : bool, optional
                 プロットを保存するかどうか。デフォルトはTrue。
             show_fig : bool, optional
@@ -285,7 +285,7 @@ class TransferFunctionCalculator:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
                 )
             fig.savefig(os.path.join(output_dirpath, output_filename), dpi=dpi)
         if show_fig:
@@ -422,7 +422,7 @@ class TransferFunctionCalculator:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             # 出力ファイル名が指定されていない場合、gas_nameを使用
@@ -438,7 +438,7 @@ class TransferFunctionCalculator:
         df_processed: pd.DataFrame,
         reference_name: str,
         target_name: str,
-        figsize: tuple[int, int] = (10, 6),
+        figsize: tuple[float, float] = (10, 6),
         dpi: float | None = 350,
         output_dirpath: str | Path | None = None,
         output_filename: str = "tf.png",
@@ -463,7 +463,7 @@ class TransferFunctionCalculator:
                 参照の名前。
             target_name : str
                 ターゲットの名前。
-            figsize : tuple[int, int], optional
+            figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
                 プロットのdpi。デフォルトは350。
@@ -514,7 +514,7 @@ class TransferFunctionCalculator:
         if save_fig:
             if output_dirpath is None:
                 raise ValueError(
-                    "save_fig=Trueのとき、output_dirpathに有効なディレクトリパスを指定する必要があります。"
+                    "save_fig = True のとき、 output_dirpath に有効なディレクトリパスを指定する必要があります。"
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             # プロットをPNG形式で保存
@@ -539,21 +539,21 @@ class TransferFunctionCalculator:
             pd.DataFrame
                 処理されたデータフレーム。
         """
-        df_copied: pd.DataFrame = self._df.copy()
+        df_internal: pd.DataFrame = self._df.copy()
         col_freq: str = self._col_freq
 
         # データ型の確認と変換
-        df_copied[col_freq] = pd.to_numeric(df_copied[col_freq], errors="coerce")
-        df_copied[col_reference] = pd.to_numeric(
-            df_copied[col_reference], errors="coerce"
+        df_internal[col_freq] = pd.to_numeric(df_internal[col_freq], errors="coerce")
+        df_internal[col_reference] = pd.to_numeric(
+            df_internal[col_reference], errors="coerce"
         )
-        df_copied[col_target] = pd.to_numeric(df_copied[col_target], errors="coerce")
+        df_internal[col_target] = pd.to_numeric(df_internal[col_target], errors="coerce")
 
         # NaNを含む行を削除
-        df_copied = df_copied.dropna(subset=[col_freq, col_reference, col_target])
+        df_internal = df_internal.dropna(subset=[col_freq, col_reference, col_target])
 
         # グループ化と中央値の計算
-        grouped = df_copied.groupby(col_freq)
+        grouped = df_internal.groupby(col_freq)
         reference_data = grouped[col_reference].median()
         target_data = grouped[col_target].median()
 

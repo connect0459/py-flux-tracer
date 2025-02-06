@@ -2,7 +2,7 @@ import os
 import matplotlib.font_manager as fm
 from pathlib import Path
 from dataclasses import dataclass
-from py_flux_tracer import FigureUtils, TransferFunctionCalculator
+from py_flux_tracer import setup_plot_params, TransferFunctionCalculator
 
 
 @dataclass
@@ -51,7 +51,7 @@ font_array: list[str] = [
     "Arial",
     "MS Gothic",
 ]
-FigureUtils.setup_plot_params(
+setup_plot_params(
     font_family=font_array,
     font_size=24,
     legend_size=24,

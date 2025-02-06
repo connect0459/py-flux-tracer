@@ -1,13 +1,16 @@
 import os
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from pathlib import Path
-from logging import Logger
-from matplotlib.axes import Axes
 from dataclasses import dataclass
-from ..campbell.eddy_data_preprocessor import EddyDataPreprocessor
-from ..campbell.spectrum_calculator import SpectrumCalculator
+from logging import Logger, DEBUG, INFO
+from matplotlib.axes import Axes
+from matplotlib.ticker import MultipleLocator
+from ..commons.utilities import setup_logger
+from .spectrum_calculator import SpectrumCalculator
+from .eddy_data_preprocessor import EddyDataPreprocessor
 
 
 @dataclass
@@ -92,10 +95,15 @@ class SpectralPlotConfig:
     label: str | None = None
 
 
-class EddyDataAnalyzer:
+class EddyDataFiguresGenerator:
     """渦相関データの解析を行うクラス"""
 
-    def __init__(self, fs: float, logger: Logger | None = None):
+    def __init__(
+        self,
+        fs: float,
+        logger: Logger | None = None,
+        logging_debug: bool = False,
+    ):
         """
         Parameters
         ----------
@@ -103,9 +111,14 @@ class EddyDataAnalyzer:
                 サンプリング周波数
             logger : Logger | None, optional
                 ロガーオブジェクト。デフォルトはNone。
+            logging_debug : bool
+                ログレベルを"DEBUG"に設定するかどうか。デフォルトはFalseで、Falseの場合はINFO以上のレベルのメッセージが出力されます。
         """
         self._fs = fs
-        self.logger = EddyDataPreprocessor.setup_logger(logger)
+        log_level: int = INFO
+        if logging_debug:
+            log_level = DEBUG
+        self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
     def plot_c1c2_spectra(
         self,
@@ -375,7 +388,9 @@ class EddyDataAnalyzer:
             plt.tight_layout()
 
             if save_fig:
-                output_filepath_psd: str = os.path.join(output_dirpath, output_filename_power)
+                output_filepath_psd: str = os.path.join(
+                    output_dirpath, output_filename_power
+                )
                 plt.savefig(
                     output_filepath_psd,
                     dpi=dpi,
@@ -433,7 +448,9 @@ class EddyDataAnalyzer:
 
             plt.tight_layout()
             if save_fig:
-                output_filepath_csd: str = os.path.join(output_dirpath, output_filename_co)
+                output_filepath_csd: str = os.path.join(
+                    output_dirpath, output_filename_co
+                )
                 plt.savefig(
                     output_filepath_csd,
                     dpi=dpi,
@@ -442,3 +459,115 @@ class EddyDataAnalyzer:
             if show_fig:
                 plt.show()
             plt.close(fig=fig_co)
+
+    def plot_turbulence(
+        self,
+        df: pd.DataFrame,
+        output_dirpath: str | Path | None = None,
+        output_filename: str = "turbulence.png",
+        col_uz: str = "Uz",
+        col_ch4: str = "Ultra_CH4_ppm_C",
+        col_c2h6: str = "Ultra_C2H6_ppb",
+        col_timestamp: str = "TIMESTAMP",
+        add_serial_labels: bool = True,
+        figsize: tuple[float, float] = (12, 10),
+        dpi: float | None = 350,
+        save_fig: bool = True,
+        show_fig: bool = True,
+    ) -> None:
+        """時系列データのプロットを作成する
+
+        Parameters
+        ------
+            df : pd.DataFrame
+                プロットするデータを含むDataFrame
+            output_dirpath : str
+                出力ディレクトリのパス
+            output_filename : str
+                出力ファイル名
+            col_uz : str
+                鉛直風速データのカラム名
+            col_ch4 : str
+                メタンデータのカラム名
+            col_c2h6 : str
+                エタンデータのカラム名
+            col_timestamp : str
+                タイムスタンプのカラム名
+            add_serial_labels : bool
+                シリアルラベルを追加するかどうかのフラグ
+            figsize : tuple[float, float], optional
+                プロットのサイズ。デフォルトは(12, 10)。
+            dpi : float | None, optional
+                プロットのdpi。デフォルトは350。
+            save_fig : bool, optional
+                プロットを保存するかどうか。デフォルトはTrue。
+            show_fig : bool, optional
+                プロットを表示するかどうか。デフォルトはTrue。
+        """
+        # データの前処理
+        df_internal = df.copy()
+        df_internal.index = pd.to_datetime(df_internal.index)
+
+        # タイムスタンプをインデックスに設定（まだ設定されていない場合）
+        if not isinstance(df_internal.index, pd.DatetimeIndex):
+            df_internal[col_timestamp] = pd.to_datetime(df_internal[col_timestamp])
+            df_internal.set_index(col_timestamp, inplace=True)
+
+        # 開始時刻と終了時刻を取得
+        start_time = df_internal.index[0]
+        end_time = df_internal.index[-1]
+
+        # 開始時刻の分を取得
+        start_minute = start_time.minute
+
+        # 時間軸の作成（実際の開始時刻からの経過分数）
+        minutes_elapsed = (df_internal.index - start_time).total_seconds() / 60
+
+        # プロットの作成
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=figsize, sharex=True)
+
+        # 鉛直風速
+        ax1.plot(minutes_elapsed, df_internal[col_uz], "k-", linewidth=0.5)
+        ax1.set_ylabel(r"$w$ (m s$^{-1}$)")
+        if add_serial_labels:
+            ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top")
+        ax1.grid(True, alpha=0.3)
+
+        # CH4濃度
+        ax2.plot(minutes_elapsed, df_internal[col_ch4], "r-", linewidth=0.5)
+        ax2.set_ylabel(r"$\mathrm{CH_4}$ (ppm)")
+        if add_serial_labels:
+            ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top")
+        ax2.grid(True, alpha=0.3)
+
+        # C2H6濃度
+        ax3.plot(minutes_elapsed, df_internal[col_c2h6], "orange", linewidth=0.5)
+        ax3.set_ylabel(r"$\mathrm{C_2H_6}$ (ppb)")
+        if add_serial_labels:
+            ax3.text(0.02, 0.98, "(c)", transform=ax3.transAxes, va="top")
+        ax3.grid(True, alpha=0.3)
+        ax3.set_xlabel("Time (minutes)")
+
+        # x軸の範囲を実際の開始時刻から30分後までに設定
+        total_minutes = (end_time - start_time).total_seconds() / 60
+        ax3.set_xlim(0, min(30, total_minutes))
+
+        # x軸の目盛りを5分間隔で設定
+        np.arange(start_minute, start_minute + 35, 5)
+        ax3.xaxis.set_major_locator(MultipleLocator(5))
+
+        # レイアウトの調整
+        plt.tight_layout()
+
+        # グラフの保存または表示
+        if save_fig:
+            if output_dirpath is None:
+                raise ValueError(
+                    "save_fig = True の場合、 output_dirpath を指定する必要があります。有効なディレクトリパスを指定してください。"
+                )
+            os.makedirs(output_dirpath, exist_ok=True)
+            output_filepath: str = os.path.join(output_dirpath, output_filename)
+            plt.savefig(output_filepath, bbox_inches="tight")
+        if show_fig:
+            plt.show()
+        plt.close(fig=fig)
