@@ -21,17 +21,50 @@ from tqdm import tqdm
 from ..commons.utilities import setup_logger
 from ..mobile.mobile_measurement_analyzer import HotspotData, HotspotType
 
+DefaultColumnsNames = Literal[
+    "datetime",
+    "wind_direction",
+    "wind_speed",
+    "friction_velocity",
+    "sigma_v",
+    "stability",
+]
+
 
 @dataclass
-class DefaultColumnNames:
-    """デフォルトのカラム名定義"""
+class DefaultColumns:
+    """
+    デフォルトのカラム名定義
 
-    DATETIME: str = "Date"
-    WIND_DIRECTION: str = "Wind direction"
-    WIND_SPEED: str = "WS vector"
-    FRICTION_VELOCITY: str = "u*"
-    SIGMA_V: str = "sigmaV"
-    STABILITY: str = "z/L"
+    以下のスネークケースの識別子を使用してカラムを指定します:
+    - datetime: 日時
+    - wind_direction: 風向 [度]
+    - wind_speed: 風速 [m/s]
+    - friction_velocity: 摩擦速度 [m/s]
+    - sigma_v: 風速の標準偏差 [m/s]
+    - stability: 安定度パラメータ [-]
+    """
+
+    # スネークケースで内部的な識別子を定義
+    DATETIME: DefaultColumnsNames = "datetime"
+    WIND_DIRECTION: DefaultColumnsNames = "wind_direction"
+    WIND_SPEED: DefaultColumnsNames = "wind_speed"
+    FRICTION_VELOCITY: DefaultColumnsNames = "friction_velocity"
+    SIGMA_V: DefaultColumnsNames = "sigma_v"
+    STABILITY: DefaultColumnsNames = "stability"
+
+    # デフォルトのカラム名マッピング
+    @property
+    def defalut_mapping(self) -> dict[DefaultColumnsNames, str]:
+        """デフォルトのカラム名マッピングを返す"""
+        return {
+            self.DATETIME: "Date",
+            self.WIND_DIRECTION: "Wind direction",
+            self.WIND_SPEED: "WS vector",
+            self.FRICTION_VELOCITY: "u*",
+            self.SIGMA_V: "sigmaV",
+            self.STABILITY: "z/L",
+        }
 
 
 class FluxFootprintAnalyzer:
@@ -60,7 +93,7 @@ class FluxFootprintAnalyzer:
         self,
         z_m: float,
         na_values: list[str] | None = None,
-        column_mapping: Mapping[str, str] | None = None,
+        column_mapping: Mapping[DefaultColumnsNames, str] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -74,8 +107,29 @@ class FluxFootprintAnalyzer:
             na_values: list[str] | None, optional
                 NaNと判定する値のパターン。デフォルト値は以下の通り:
                 ["#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NAME?", "NAN", "nan"]
-            column_mapping: Mapping[str, str] | None, optional
-                入力データのカラム名とデフォルトカラム名のマッピング。デフォルト値はNoneで、その場合はデフォルトのカラム名を使用
+            column_mapping: Mapping[DefaultColumnsNames, str] | None, optional
+                入力データのカラム名とデフォルトカラム名のマッピング。
+                キーにスネークケースの識別子、値に実際のカラム名を指定します。
+                デフォルト値はNoneで、その場合は以下のデフォルトマッピングを使用:
+                ```python
+                {
+                    "datetime": "Date",              # 日時カラム
+                    "wind_direction": "Wind direction", # 風向 [度]
+                    "wind_speed": "WS vector",       # 風速 [m/s]
+                    "friction_velocity": "u*",        # 摩擦速度 [m/s]
+                    "sigma_v": "sigmaV",             # 風速の標準偏差 [m/s]
+                    "stability": "z/L"               # 安定度パラメータ [-]
+                }
+                ```
+                例えば、入力データのカラム名が異なる場合は以下のように指定:
+                ```python
+                {
+                    "wind_direction": "WD",          # 風向カラム名が"WD"の場合
+                    "wind_speed": "WS",              # 風速カラム名が"WS"の場合
+                    "friction_velocity": "USTAR"      # 摩擦速度カラム名が"USTAR"の場合
+                }
+                ```
+                指定されなかったキーはデフォルト値が使用されます。
             logger: Logger | None, optional
                 使用するロガー。デフォルト値はNoneで、その場合は新しいロガーを生成
             logging_debug: bool, optional
@@ -87,25 +141,26 @@ class FluxFootprintAnalyzer:
 
         Examples
         --------
-        >>> # 基本的な初期化
+        >>> # 基本的な初期化(デフォルトのカラム名を使用)
         >>> analyzer = FluxFootprintAnalyzer(z_m=2.5)
-        
-        >>> # カスタムのNaN値とカラム名マッピングを指定
-        >>> custom_na = ["NA", "N/A"]
+
+        >>> # カスタムのカラム名マッピングを指定
         >>> custom_mapping = {
-        ...     "wind_dir": "WIND_DIRECTION",
-        ...     "ws": "WIND_SPEED"
+        ...     "wind_direction": "WD",      # 風向カラムが"WD"
+        ...     "wind_speed": "WS",          # 風速カラムが"WS"
+        ...     "friction_velocity": "USTAR"  # 摩擦速度カラムが"USTAR"
         ... }
         >>> analyzer = FluxFootprintAnalyzer(
         ...     z_m=3.0,
-        ...     na_values=custom_na,
         ...     column_mapping=custom_mapping
         ... )
         """
         # デフォルトのカラム名を設定
-        self._default_cols = DefaultColumnNames()
+        self._default_cols = DefaultColumns()
         # カラム名マッピングの作成
-        self._cols = self._create_column_mapping(column_mapping)
+        self._cols: Mapping[DefaultColumnsNames, str] = self._create_column_mapping(
+            column_mapping
+        )
         # 必須カラムのリストを作成
         self._required_columns = [
             self._cols[self._default_cols.WIND_DIRECTION],
@@ -136,48 +191,46 @@ class FluxFootprintAnalyzer:
         self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
     def _create_column_mapping(
-        self, mapping: Mapping[str, str] | None
-    ) -> Mapping[str, str]:
+        self,
+        mapping: Mapping[DefaultColumnsNames, str] | None,
+    ) -> Mapping[
+        Literal[
+            "datetime",
+            "wind_direction",
+            "wind_speed",
+            "friction_velocity",
+            "sigma_v",
+            "stability",
+        ],
+        str,
+    ]:
         """
         カラム名のマッピングを作成します。
 
         Parameters
         ----------
-            mapping : Mapping[str, str] | None
-                ユーザー指定のカラム名マッピング。Noneの場合はデフォルトのマッピングを使用。
+            mapping : Mapping[DefaultColumnsNames, str] | None
+                ユーザー指定のカラム名マッピング。
+                キーにスネークケースの識別子(例: "wind_speed")、
+                値に実際のカラム名(例: "WS")を指定。
 
         Returns
         -------
-            Mapping[str, str]
-                作成されたカラム名マッピング。デフォルトのカラム名をキーとし、実際のカラム名を値とする。
+            Mapping[DefaultColumnsNames, str]
+                作成されたカラム名マッピング
         """
-        if mapping is None:
-            # マッピングが指定されていない場合はデフォルト値をそのまま使用
-            return {
-                self._default_cols.DATETIME: self._default_cols.DATETIME,
-                self._default_cols.WIND_DIRECTION: self._default_cols.WIND_DIRECTION,
-                self._default_cols.WIND_SPEED: self._default_cols.WIND_SPEED,
-                self._default_cols.FRICTION_VELOCITY: self._default_cols.FRICTION_VELOCITY,
-                self._default_cols.SIGMA_V: self._default_cols.SIGMA_V,
-                self._default_cols.STABILITY: self._default_cols.STABILITY,
-            }
+        # デフォルトのマッピングをコピー
+        result = self._default_cols.defalut_mapping.copy()
 
-        # デフォルトのマッピングを作成
-        result = {
-            self._default_cols.DATETIME: self._default_cols.DATETIME,
-            self._default_cols.WIND_DIRECTION: self._default_cols.WIND_DIRECTION,
-            self._default_cols.WIND_SPEED: self._default_cols.WIND_SPEED,
-            self._default_cols.FRICTION_VELOCITY: self._default_cols.FRICTION_VELOCITY,
-            self._default_cols.SIGMA_V: self._default_cols.SIGMA_V,
-            self._default_cols.STABILITY: self._default_cols.STABILITY,
-        }
+        if mapping is None:
+            return result
 
         # 指定されたマッピングで上書き
-        for input_col, default_col in mapping.items():
-            if hasattr(self._default_cols, default_col):
-                result[getattr(self._default_cols, default_col)] = input_col
+        for snake_case, actual_col in mapping.items():
+            if snake_case in self._default_cols.defalut_mapping:
+                result[snake_case] = actual_col
             else:
-                self.logger.warning(f"Unknown default column name: {default_col}")
+                self.logger.warning(f"Unknown column mapping key: {snake_case}")
 
         return result
 
@@ -204,6 +257,7 @@ class FluxFootprintAnalyzer:
         Examples
         --------
         >>> import pandas as pd
+        >>> # カスタムのカラム名を持つデータフレームを作成
         >>> df = pd.DataFrame({
         ...     'TIMESTAMP': ['2024-01-01'],
         ...     'WD': [180.0],
@@ -212,20 +266,36 @@ class FluxFootprintAnalyzer:
         ...     'SIGMAV': [0.5],
         ...     'ZL': [0.1]
         ... })
-        >>> analyzer = FluxFootprintAnalyzer()
+        >>> # カスタムのカラム名マッピングを定義
+        >>> custom_mapping = {
+        ...     "datetime": "TIMESTAMP",      # 日時カラム
+        ...     "wind_direction": "WD",       # 風向カラム
+        ...     "wind_speed": "WS",           # 風速カラム
+        ...     "friction_velocity": "USTAR",  # 摩擦速度カラム
+        ...     "sigma_v": "SIGMAV",          # 風速の標準偏差カラム
+        ...     "stability": "ZL"             # 安定度パラメータカラム
+        ... }
+        >>> # カスタムマッピングを使用してアナライザーを初期化
+        >>> analyzer = FluxFootprintAnalyzer(
+        ...     z_m=2.5,
+        ...     column_mapping=custom_mapping
+        ... )
         >>> analyzer.check_required_columns(df)
         True
         """
-        check_columns: list[str] = [
-            col for col in self._required_columns if col != col_datetime
+        check_columns = [
+            self._cols[self._default_cols.WIND_DIRECTION],
+            self._cols[self._default_cols.WIND_SPEED],
+            self._cols[self._default_cols.FRICTION_VELOCITY],
+            self._cols[self._default_cols.SIGMA_V],
+            self._cols[self._default_cols.STABILITY],
         ]
 
         missing_columns = [col for col in check_columns if col not in df.columns]
-
         if missing_columns:
             self.logger.error(
-                f"Required columns are missing: {missing_columns}"
-                f"\nAvailable columns: {df.columns.tolist()}"
+                f"Required columns are missing: {missing_columns}."
+                f"Available columns: {df.columns.tolist()}"
             )
             return False
 
@@ -255,29 +325,10 @@ class FluxFootprintAnalyzer:
             end_time: str, optional
                 フットプリント計算に使用する終了時間。デフォルト値は"16:00"。
 
-        Returns
-        ----------
-            tuple[list[float], list[float], list[float]]
-                以下の3つのリストを含むタプル:
-                    x座標: タワーを原点とした東西方向の距離(メートル)
-                    y座標: タワーを原点とした南北方向の距離(メートル)
-                    対象スカラー量の値: 各地点でのフラックス値
-
-        Notes
-        ----------
-            - 返却される座標は測定タワーを原点(0,0)とした相対位置です
-            - すべての距離はメートル単位で表されます
-            - 正のx値は東方向、正のy値は北方向を示します
-            - 必要なカラム:
-                - 風向(度)
-                - 風速(m/s)
-                - 摩擦速度(m/s)
-                - 風速の標準偏差(m/s)
-                - 安定度パラメータ(無次元)
-
         Examples
         --------
         >>> import pandas as pd
+        >>> # カスタムのカラム名を持つデータフレームを作成
         >>> df = pd.DataFrame({
         ...     'TIMESTAMP': pd.date_range('2024-01-01', periods=24, freq='H'),
         ...     'WD': [180.0] * 24,
@@ -287,61 +338,61 @@ class FluxFootprintAnalyzer:
         ...     'ZL': [0.1] * 24,
         ...     'FCO2': [-2.0] * 24
         ... })
-        >>> analyzer = FluxFootprintAnalyzer()
+        >>> # カスタムのカラム名マッピングを定義
+        >>> custom_mapping = {
+        ...     "datetime": "TIMESTAMP",
+        ...     "wind_direction": "WD",
+        ...     "wind_speed": "WS",
+        ...     "friction_velocity": "USTAR",
+        ...     "sigma_v": "SIGMAV",
+        ...     "stability": "ZL"
+        ... }
+        >>> analyzer = FluxFootprintAnalyzer(
+        ...     z_m=2.5,
+        ...     column_mapping=custom_mapping
+        ... )
         >>> x, y, flux = analyzer.calculate_flux_footprint(df, 'FCO2')
         """
-        col_weekday: str = self.COL_FFA_IS_WEEKDAY
-        df_internal: pd.DataFrame = df.copy()
-
         # インデックスがdatetimeであることを確認し、必要に応じて変換
+        df_internal: pd.DataFrame = df.copy()
         if not isinstance(df_internal.index, pd.DatetimeIndex):
+            datetime_col = self._cols[self._default_cols.DATETIME]
+            df_internal.set_index(datetime_col, inplace=True)
             df_internal.index = pd.to_datetime(df_internal.index)
 
-        # DatetimeIndexから直接dateプロパティにアクセス
-        datelist: np.ndarray = np.array(df_internal.index.date)
+        # 平日/休日の判定を追加
+        df_internal[self.COL_FFA_IS_WEEKDAY] = df_internal.index.map(self.is_weekday)
 
-        # 各日付が平日かどうかを判定し、リストに格納
-        numbers: list[int] = [
-            FluxFootprintAnalyzer.is_weekday(date) for date in datelist
-        ]
-
-        # col_weekdayに基づいてデータフレームに平日情報を追加
-        df_internal.loc[:, col_weekday] = numbers  # .locを使用して値を設定
-
-        # 値が1のもの(平日)をコピーする
-        data_weekday: pd.DataFrame = df_internal[df_internal[col_weekday] == 1].copy()
-        # 特定の時間帯を抽出
-        data_weekday = data_weekday.between_time(
-            start_time, end_time
-        )  # 引数を使用して時間帯を抽出
+        # 平日データの抽出と時間帯フィルタリング
+        data_weekday = df_internal[df_internal[self.COL_FFA_IS_WEEKDAY] == 1].copy()
+        data_weekday = data_weekday.between_time(start_time, end_time)
         data_weekday = data_weekday.dropna(subset=[col_flux])
 
-        directions: list[float] = [
+        # 風向の360度系への変換
+        wind_dir_col = self._cols[self._default_cols.WIND_DIRECTION]
+        directions = [
             wind_direction if wind_direction >= 0 else wind_direction + 360
-            for wind_direction in data_weekday[
-                self._cols[self._default_cols.WIND_DIRECTION]
-            ]
+            for wind_direction in data_weekday[wind_dir_col]
         ]
-
-        data_weekday.loc[:, self.COL_FFA_WIND_DIR_360] = directions
-        data_weekday.loc[:, self.COL_FFA_RADIAN] = (
-            data_weekday[self.COL_FFA_WIND_DIR_360] / 180 * np.pi
+        data_weekday[self.COL_FFA_WIND_DIR_360] = directions
+        data_weekday[self.COL_FFA_RADIAN] = (
+            data_weekday[self.COL_FFA_WIND_DIR_360] * np.pi / 180
         )
 
-        # 風向が欠測なら除去
-        data_weekday = data_weekday.dropna(
-            subset=[self._cols[self._default_cols.WIND_DIRECTION], col_flux]
-        )
+        # 欠測値の除去
+        data_weekday = data_weekday.dropna(subset=[wind_dir_col, col_flux])
 
-        # 数値型への変換を確実に行う
-        numeric_columns: list[str] = [
-            self._cols[self._default_cols.FRICTION_VELOCITY],
-            self._cols[self._default_cols.WIND_SPEED],
-            self._cols[self._default_cols.SIGMA_V],
-            self._cols[self._default_cols.STABILITY],
-        ]
+        # 数値型への変換
+        numeric_columns: set[DefaultColumnsNames] = {
+            self._default_cols.FRICTION_VELOCITY,
+            self._default_cols.WIND_SPEED,
+            self._default_cols.SIGMA_V,
+            self._default_cols.STABILITY,
+        }
         for col in numeric_columns:
-            data_weekday[col] = pd.to_numeric(data_weekday[col], errors="coerce")
+            data_weekday[self._cols[col]] = pd.to_numeric(
+                data_weekday[self._cols[col]], errors="coerce"
+            )
 
         # 地面修正量dの計算
         z_m: float = self._z_m
@@ -368,8 +419,12 @@ class FluxFootprintAnalyzer:
                 self._cols[self._default_cols.FRICTION_VELOCITY]
             ].iloc[i]
             d_u: float = data_weekday[self._cols[self._default_cols.WIND_SPEED]].iloc[i]
-            sigma_v: float = data_weekday[self._cols[self._default_cols.SIGMA_V]].iloc[i]
-            d_z_l: float = data_weekday[self._cols[self._default_cols.STABILITY]].iloc[i]
+            sigma_v: float = data_weekday[self._cols[self._default_cols.SIGMA_V]].iloc[
+                i
+            ]
+            d_z_l: float = data_weekday[self._cols[self._default_cols.STABILITY]].iloc[
+                i
+            ]
 
             if pd.isna(d_u_star) or pd.isna(d_u) or pd.isna(sigma_v) or pd.isna(d_z_l):
                 self.logger.warning(f"NaN fields are exist.: i = {i}")
@@ -380,7 +435,12 @@ class FluxFootprintAnalyzer:
                 )
                 m, u, r, mu, ksi = (
                     FluxFootprintAnalyzer._calculate_footprint_parameters(
-                        d_u_star=d_u_star, d_u=d_u, z_d=z_d, phi_m=phi_m, phi_c=phi_c, n=n
+                        d_u_star=d_u_star,
+                        d_u=d_u,
+                        z_d=z_d,
+                        phi_m=phi_m,
+                        phi_c=phi_c,
+                        n=n,
                     )
                 )
 
@@ -391,22 +451,22 @@ class FluxFootprintAnalyzer:
 
                 if not np.isnan(x80):
                     x1, y1, flux1 = FluxFootprintAnalyzer._prepare_plot_data(
-                        x80,
-                        ksi,
-                        mu,
-                        r,
-                        u,
-                        m,
-                        sigma_v,
-                        data_weekday[col_flux].iloc[i],
+                        x80=x80,
+                        ksi=ksi,
+                        mu=mu,
+                        r=r,
+                        u=u,
+                        m=m,
+                        sigma_v=sigma_v,
+                        flux_value=data_weekday[col_flux].iloc[i],
                         plot_count=plot_count,
                     )
-                    x1_, y1_ = FluxFootprintAnalyzer._rotate_coordinates(
+                    x1_rotated, y1__rotated = FluxFootprintAnalyzer._rotate_coordinates(
                         x=x1, y=y1, radian=data_weekday[self.COL_FFA_RADIAN].iloc[i]
                     )
 
-                    x_list.extend(x1_)
-                    y_list.extend(y1_)
+                    x_list.extend(x1_rotated)
+                    y_list.extend(y1__rotated)
                     c_list.extend(flux1)
 
         return (
@@ -1696,7 +1756,7 @@ class FluxFootprintAnalyzer:
         >>> FluxFootprintAnalyzer.is_weekday(date)
         0
         >>> date = datetime(2024, 1, 4)  # 2024年1月4日(木曜)
-        >>> FluxFootprintAnalyzer.is_weekday(date) 
+        >>> FluxFootprintAnalyzer.is_weekday(date)
         1
         """
         return 1 if not jpholiday.is_holiday(date) and date.weekday() < 5 else 0
@@ -1805,9 +1865,9 @@ class FluxFootprintAnalyzer:
                 回転後の(x_, y_)座標の組
         """
         radian1: float = (radian - (np.pi / 2)) * (-1)
-        x_: np.ndarray = x * np.cos(radian1) - y * np.sin(radian1)
-        y_: np.ndarray = x * np.sin(radian1) + y * np.cos(radian1)
-        return x_, y_
+        x_rotated: np.ndarray = x * np.cos(radian1) - y * np.sin(radian1)
+        y_rotated: np.ndarray = x * np.sin(radian1) + y * np.cos(radian1)
+        return x_rotated, y_rotated
 
     @staticmethod
     def _source_area_kormann2001(

@@ -114,7 +114,8 @@ font_paths: list[str | Path] = [
 center_lan: float = 34.573904320329724  # 観測地点の緯度
 center_lon: float = 135.4829511120712  # 観測地点の経度
 num_sections: int = 4  # セクション数
-plot_count: int = 10000
+plot_count: int = 100
+# plot_count: int = 10000
 # plot_count: int = 50000
 
 # スケールチェック用の仮地点の要素(緯度、経度、ラベル)
@@ -170,7 +171,18 @@ if __name__ == "__main__":
     hotspots: list[HotspotData] = msa.analyze_hotspots(duplicate_check_mode="time_all")
 
     # インスタンスを作成
-    ffa = FluxFootprintAnalyzer(z_m=111, logging_debug=False)
+    ffa = FluxFootprintAnalyzer(
+        z_m=111,
+        # column_mapping={
+        #     "datetime": "Date",  # 日時カラム
+        #     "wind_direction": "Wind direction",  # 風向 [度]
+        #     "wind_speed": "WS vector",  # 風速 [m/s]
+        #     "friction_velocity": "u*",  # 摩擦速度 [m/s]
+        #     "sigma_v": "sigma_v",  # 風速の標準偏差 [m/s]
+        #     "stability": "z/L",  # 安定度パラメータ [-]
+        # },
+        logging_debug=False,
+    )
 
     # 航空写真の取得
     local_image_path: str = (
