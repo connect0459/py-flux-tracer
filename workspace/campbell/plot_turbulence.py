@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+from typing import Literal
 
 from tqdm import tqdm  # プログレスバー用
 
@@ -40,7 +41,9 @@ if __name__ == "__main__":
 
     # 乱流データの設定
     data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-for_turb"
-    turbulence_configs: list[dict[str, str | float]] = [
+    turbulence_configs: list[
+        dict[Literal["filename", "ch4_offset", "c2h6_offset"], str | float]
+    ] = [
         {
             "filename": "TOA5_37477.SAC_Ultra.Eddy_105_2024_10_08_1200-resampled.csv",
             "ch4_offset": 0.012693983,
@@ -122,9 +125,6 @@ if __name__ == "__main__":
             )
             # mfg.logger.info(f"'{date}'の'turbulences'を作成しました。")
 
-        except (IndexError, ValueError):
-            # except (IndexError, ValueError) as e:
-            # mfg.logger.warning(
-            #     f"ファイル名'{filename}'から日時を抽出できませんでした: {e}"
-            # )
+        except (IndexError, ValueError) as e:
+            print(f"ファイル名'{filename}'から日時を抽出できませんでした: {e!s}")
             continue
