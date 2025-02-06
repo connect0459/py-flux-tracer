@@ -14,8 +14,8 @@ from dataclasses import dataclass
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from logging import Logger, DEBUG, INFO
-from typing import Any, Callable, Literal, Mapping
-from ..commons.utilities import setup_logger, setup_plot_params
+from typing import Callable, Literal, Mapping
+from ..commons.utilities import setup_logger
 from ..mobile.mobile_measurement_analyzer import HotspotData, HotspotType
 
 
@@ -66,9 +66,6 @@ class FluxFootprintAnalyzer:
             "nan",
         ],
         column_mapping: Mapping[str, str] | None = None,
-        labelsize: float = 20,
-        ticksize: float = 16,
-        plot_params: dict[str, Any] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -91,12 +88,6 @@ class FluxFootprintAnalyzer:
                     "stability": "STABILITY",
                     "timestamp": "DATETIME",
                 }
-            labelsize : float
-                軸ラベルのフォントサイズ。デフォルトは20。
-            ticksize : float
-                軸目盛りのフォントサイズ。デフォルトは16。
-            plot_params : dict[str, Any] | None
-                matplotlibのプロットパラメータを指定する辞書。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを生成します。
             logging_debug : bool
@@ -119,10 +110,6 @@ class FluxFootprintAnalyzer:
         # 状態を管理するフラグ
         self._got_satellite_image: bool = False
 
-        # 図表の初期設定
-        setup_plot_params(
-            font_size=labelsize, tick_size=ticksize, plot_params=plot_params
-        )
         # ロガー
         log_level: int = INFO
         if logging_debug:

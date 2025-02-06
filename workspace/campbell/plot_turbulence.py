@@ -6,21 +6,24 @@ from py_flux_tracer import (
     setup_plot_params,
 )
 from tqdm import tqdm  # プログレスバー用
-import matplotlib.font_manager as fm
+from pathlib import Path
 
 """
 ------ config start ------
 """
 
 # フォントファイルを登録
-font_paths: list[str] = [
+font_paths: list[str | Path] = [
     "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
-for path in font_paths:
-    fm.fontManager.addfont(path)
 # プロットの書式を設定
-setup_plot_params(font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24)
+setup_plot_params(
+    font_family=["Arial", "MS Gothic"],
+    font_paths=font_paths,
+    font_size=24,
+    tick_size=24,
+)
 
 output_dirpath: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"

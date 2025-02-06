@@ -2,12 +2,12 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
+from pathlib import Path
 from py_flux_tracer import setup_plot_params
 
 
 def plot_gas_stats(
-    input_csv: str,
+    input_csv: str | Path,
     output_dirpath: str,
     output_filename: str = "gas_stats.png",
     figsize: tuple[float, float] = (10, 6),
@@ -19,7 +19,7 @@ def plot_gas_stats(
 
     Parameters
     ----------
-        input_csv : str, optional
+        input_csv : str | Path, optional
             入力CSVファイルのパス, by default "workspace/senior_thesis/private/gas_stats.csv"
         output_dirpath : str, optional
             出力ディレクトリ, by default "workspace/senior_thesis/figures/gas_stats"
@@ -100,14 +100,17 @@ def plot_gas_stats(
 
 if __name__ == "__main__":
     # フォントファイルを登録
-    font_paths: list[str] = [
+    font_paths: list[str | Path] = [
         "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
         "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
     ]
-    for path in font_paths:
-        fm.fontManager.addfont(path)
     # プロットの書式を設定
-    setup_plot_params(font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24)
+    setup_plot_params(
+        font_family=["Arial", "MS Gothic"],
+        font_paths=font_paths,
+        font_size=24,
+        tick_size=24,
+    )
     plot_gas_stats(
         input_csv="workspace/senior_thesis/private/gas_stats.csv",
         output_dirpath="workspace/senior_thesis/private/outputs/gas_stats",

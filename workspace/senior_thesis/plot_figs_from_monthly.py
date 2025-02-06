@@ -1,26 +1,29 @@
 import os
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from py_flux_tracer import (
     MonthlyConverter,
     MonthlyFiguresGenerator,
     setup_plot_params,
 )
-import matplotlib.font_manager as fm
 
 """
 ------ config start ------
 """
 
 # フォントファイルを登録
-font_paths: list[str] = [
+font_paths: list[str | Path] = [
     "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
-for path in font_paths:
-    fm.fontManager.addfont(path)
 # プロットの書式を設定
-setup_plot_params(font_family=["Arial", "MS Gothic"], font_size=24, tick_size=24)
+setup_plot_params(
+    font_family=["Arial", "MS Gothic"],
+    font_paths=font_paths,
+    font_size=24,
+    tick_size=24,
+)
 
 include_end_date: bool = True
 start_date, end_date = "2024-05-15", "2024-12-31"  # yyyy-MM-ddで指定

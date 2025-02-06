@@ -2,12 +2,13 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
+from pathlib import Path
+from py_flux_tracer import setup_plot_params
 
 
 def plot_stacked_fluxes(
-    input_filepath: str,
-    output_dirpath: str,
+    input_filepath: str | Path,
+    output_dirpath: str | Path,
     output_filename: str = "ch4_flux_stacked_bar_directions.png",
     figsize: tuple[float, float] = (20, 13),
     dpi: float | None = 350,
@@ -26,9 +27,9 @@ def plot_stacked_fluxes(
 
     Parameters
     ----------
-        input_filepath : str
+        input_filepath : str | Path
             入力データのCSVファイルパス。
-        output_dirpath : str
+        output_dirpath : str | Path
             出力画像を保存するディレクトリのパス。
         output_filename : str, optional
             出力画像のファイル名。デフォルトは"ch4_flux_stacked_bar_directions.png"。
@@ -165,26 +166,23 @@ Ubuntu環境でのフォントの手動設定
 4. `rm ~/.cache/matplotlib/fontlist-v390.json` # 実際のファイル名に変更
 """
 # フォントファイルを登録
-font_paths: list[str] = [
+font_paths: list[str | Path] = [
     "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
-for path in font_paths:
-    fm.fontManager.addfont(path)
 
 # rcParamsでの全体的な設定
-plt.rcParams.update(
-    {
-        # "font.family": ["Dejavu Sans"],
-        "font.family": ["Arial", "MS Gothic"],
-        "font.size": 30,
-        "axes.labelsize": 30,
-        "axes.titlesize": 30,
-        "xtick.labelsize": 30,
-        "ytick.labelsize": 30,
-        "legend.fontsize": 30,
-    }
-)
+plot_params = {
+    # "font.family": ["Dejavu Sans"],
+    "font.family": ["Arial", "MS Gothic"],
+    "font.size": 30,
+    "axes.labelsize": 30,
+    "axes.titlesize": 30,
+    "xtick.labelsize": 30,
+    "ytick.labelsize": 30,
+    "legend.fontsize": 30,
+}
+setup_plot_params(font_paths=font_paths, plot_params=plot_params)
 
 tag: str = "average-10_16"
 project_files_dir: str = (

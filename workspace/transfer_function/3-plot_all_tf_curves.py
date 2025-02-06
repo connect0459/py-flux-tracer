@@ -1,4 +1,4 @@
-import matplotlib.font_manager as fm
+from pathlib import Path
 from py_flux_tracer import (
     TfCurvesFromCsvConfig,
     TransferFunctionCalculator,
@@ -6,12 +6,10 @@ from py_flux_tracer import (
 )
 
 # # フォントファイルを登録
-font_paths: list[str] = [
+font_paths: list[str | Path] = [
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
-for path in font_paths:
-    fm.fontManager.addfont(path)
 # フォント名を指定
 font_array: list[str] = [
     "Arial",
@@ -19,6 +17,7 @@ font_array: list[str] = [
 ]
 setup_plot_params(
     font_family=font_array,
+    font_paths=font_paths,
     # font_size=24,
     # legend_size=24,
     # tick_size=24,

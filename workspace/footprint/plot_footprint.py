@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-import matplotlib.font_manager as fm
+from pathlib import Path
 from py_flux_tracer import (
     FluxFootprintAnalyzer,
     HotspotData,
@@ -103,12 +103,10 @@ inputs: list[MobileMeasurementConfig] = [
 ]
 
 # フォントファイルを登録（必要な場合のみで可）
-font_paths: list[str] = [
+font_paths: list[str | Path] = [
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
-for path in font_paths:
-    fm.fontManager.addfont(path)
 
 # 変数定義
 center_lan: float = 34.573904320329724  # 観測地点の緯度
@@ -154,6 +152,8 @@ plot_scale_checker: bool = False
 if __name__ == "__main__":
     # 出力先ディレクトリを作成
     os.makedirs(output_dirpath, exist_ok=True)
+    # 図のスタイルの指定
+    setup_plot_params(font_family=["Arial", "MS Gothic"], font_paths=font_paths)
 
     # ホットスポットの検出
     msa = MobileMeasurementAnalyzer(
@@ -177,7 +177,6 @@ if __name__ == "__main__":
     image = ffa.get_satellite_image_from_local(
         local_image_path=local_image_path
     )  # ローカル
-    setup_plot_params(font_family=["Arial", "MS Gothic"])
 
     for i, start_end_date in enumerate(start_end_dates_list):
         start_date = start_end_date[0]
