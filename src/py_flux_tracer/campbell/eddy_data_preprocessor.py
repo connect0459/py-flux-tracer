@@ -100,7 +100,7 @@ class EddyDataPreprocessor:
         # マッピングに必要なキーが存在するか確認
         for key in required_keys:
             if key not in column_mapping:
-                raise ValueError(f"column_mappingに必要なキー '{key}' が存在しません。")
+                raise ValueError(f"column_mapping に必要なキー '{key}' が存在しません。")
 
         # 必要な列がDataFrameに存在するか確認
         for key, column in column_mapping.items():

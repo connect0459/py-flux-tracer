@@ -193,17 +193,7 @@ class FluxFootprintAnalyzer:
     def _create_column_mapping(
         self,
         mapping: Mapping[DefaultColumnsNames, str] | None,
-    ) -> Mapping[
-        Literal[
-            "datetime",
-            "wind_direction",
-            "wind_speed",
-            "friction_velocity",
-            "sigma_v",
-            "stability",
-        ],
-        str,
-    ]:
+    ) -> Mapping[DefaultColumnsNames, str]:
         """
         カラム名のマッピングを作成します。
 

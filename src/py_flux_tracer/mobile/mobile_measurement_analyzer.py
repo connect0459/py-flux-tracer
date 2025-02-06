@@ -327,7 +327,7 @@ class MobileMeasurementAnalyzer:
         hotspot_area_meter: float = 50,
         hotspot_params: HotspotParams | None = None,
         window_minutes: float = 5,
-        column_mapping: dict[str, str] | None = None,
+        columns_rename_dict: dict[str, str] | None = None,
         na_values: list[str] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
@@ -355,8 +355,9 @@ class MobileMeasurementAnalyzer:
                 ホットスポット解析のパラメータ設定。未指定の場合はデフォルト設定を使用します。
             window_minutes: float, optional
                 移動窓の大きさ(分)。デフォルト値は5分です。
-            column_mapping: dict[str, str] | None, optional
+            columns_rename_dict: dict[str, str] | None, optional
                 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。未指定の場合は以下のデフォルト値を使用します:
+                ```py
                 {
                     "Time Stamp": "timestamp",
                     "CH4 (ppm)": "ch4_ppm",
@@ -365,6 +366,7 @@ class MobileMeasurementAnalyzer:
                     "Latitude": "latitude",
                     "Longitude": "longitude",
                 }
+                ```
             na_values: list[str] | None, optional
                 NaNと判定する値のパターン。未指定の場合は["No Data", "nan"]を使用します。
             logger: Logger | None, optional
@@ -391,8 +393,8 @@ class MobileMeasurementAnalyzer:
             log_level = DEBUG
         self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
         # デフォルト値を使用
-        if column_mapping is None:
-            column_mapping = {
+        if columns_rename_dict is None:
+            columns_rename_dict = {
                 "Time Stamp": "timestamp",
                 "CH4 (ppm)": "ch4_ppm",
                 "C2H6 (ppb)": "c2h6_ppb",
@@ -408,7 +410,7 @@ class MobileMeasurementAnalyzer:
         self._ch4_enhance_threshold: float = ch4_enhance_threshold
         self._correlation_threshold: float = correlation_threshold
         self._hotspot_area_meter: float = hotspot_area_meter
-        self._column_mapping: dict[str, str] = column_mapping
+        self._column_mapping: dict[str, str] = columns_rename_dict
         self._na_values: list[str] = na_values
         self._hotspot_params = hotspot_params or HotspotParams()
         self._num_sections: int = num_sections
@@ -501,7 +503,7 @@ class MobileMeasurementAnalyzer:
         >>> analyzer = MobileMeasurementAnalyzer()
         >>> # 重複チェックなしでホットスポットを検出
         >>> hotspots = analyzer.analyze_hotspots()
-        >>> 
+        >>>
         >>> # 時間窓内の重複を除外してホットスポットを検出
         >>> hotspots = analyzer.analyze_hotspots(
         ...     duplicate_check_mode="time_window",
@@ -1346,7 +1348,7 @@ class MobileMeasurementAnalyzer:
             ratio_labels: dict[float, tuple[float, float, str]] | None, optional
                 比率線とラベルの設定。キーは比率値、値は(x位置, y位置, ラベルテキスト)のタプル。
                 未指定の場合は以下のデフォルト値が使用されます:
-                {0.001: (1.25, 2, "0.001"), 0.005: (1.25, 8, "0.005"), 
+                {0.001: (1.25, 2, "0.001"), 0.005: (1.25, 8, "0.005"),
                 0.010: (1.25, 15, "0.01"), 0.020: (1.25, 30, "0.02"),
                 0.030: (1.0, 40, "0.03"), 0.076: (0.20, 42, "0.076 (Osaka)")}
 
@@ -2429,7 +2431,7 @@ class MobileMeasurementAnalyzer:
         check_time_all: bool = True,
         hotspot_area_meter: float = 50.0,
         col_ch4_ppm: str = "ch4_ppm",
-        col_ch4_ppm_mv: str = "ch4_ppm_mv", 
+        col_ch4_ppm_mv: str = "ch4_ppm_mv",
         col_ch4_ppm_delta: str = "ch4_ppm_delta",
     ):
         """
