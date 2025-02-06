@@ -4,7 +4,7 @@ import pandas as pd
 import os
 import tempfile
 from logging import Logger, INFO, DEBUG
-from py_flux_tracer import EddyDataPreprocessor
+from py_flux_tracer import EddyDataPreprocessor, setup_logger
 
 
 @pytest.fixture
@@ -152,13 +152,13 @@ def test_get_resampled_df():
 
 def test_setup_logger():
     """ロガー設定のテスト"""
-    logger = EddyDataPreprocessor.setup_logger(None, INFO)
+    logger = setup_logger(None, INFO)
     assert isinstance(logger, Logger)
     assert logger.level == INFO
 
     # カスタムロガーを渡した場合
     custom_logger = Logger("test")
-    result_logger = EddyDataPreprocessor.setup_logger(custom_logger)
+    result_logger = setup_logger(custom_logger)
     assert result_logger == custom_logger
 
 

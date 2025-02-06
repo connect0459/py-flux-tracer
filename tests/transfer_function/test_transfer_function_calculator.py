@@ -57,7 +57,7 @@ def test_transfer_function():
     # x=aのときの値が期待値と一致することを確認
     assert (
         np.abs(
-            TransferFunctionCalculator.transfer_function(a, a)
+            TransferFunctionCalculator.transfer_function(np.array([a]), a)
             - np.exp(-np.log(np.sqrt(2)))
         )
         < 1e-10
