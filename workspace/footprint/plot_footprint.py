@@ -1,14 +1,16 @@
 import os
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from py_flux_tracer import (
+    BiasRemovalConfig,
     FluxFootprintAnalyzer,
+    H2OCorrectionConfig,
     HotspotData,
-    MonthlyConverter,
     MobileMeasurementAnalyzer,
     MobileMeasurementConfig,
-    H2OCorrectionConfig,
-    BiasRemovalConfig,
+    MonthlyConverter,
     setup_plot_params,
 )
 
@@ -102,7 +104,7 @@ inputs: list[MobileMeasurementConfig] = [
     ),
 ]
 
-# フォントファイルを登録（必要な場合のみで可）
+# フォントファイルを登録(必要な場合のみで可)
 font_paths: list[str | Path] = [
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
@@ -115,7 +117,7 @@ num_sections: int = 4  # セクション数
 # plot_count: int = 10000
 plot_count: int = 50000
 
-# スケールチェック用の仮地点の要素（緯度、経度、ラベル）
+# スケールチェック用の仮地点の要素(緯度、経度、ラベル)
 check_points_for_scale_checker: list[tuple[float, float, str]] = [
     (34.55958388887034, 135.4461794468429, "石津水再生センター"),
     (34.601272994096846, 135.46248381802235, "三宝水再生センター"),

@@ -54,13 +54,67 @@ keywords = [
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/py_flux_tracer"]
+
 [tool.hatch.version]
 source = "vcs"
 raw-options = { local_scheme = "no-local-version" }
 write-to = "src/py_flux_tracer/_version.py"
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/py_flux_tracer"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+# 行の長さ制限
+line-length = 88
+
+# 検査するファイルやディレクトリ
+src = ["src", "tests"]
+
+# 無視するファイルやディレクトリ
+exclude = [".git", ".venv", "__pycache__", "build", "dist"]
+
+# 有効にするルール
+select = [
+  "E",   # pycodestyle errors
+  "F",   # pyflakes
+  "I",   # isort
+  "N",   # pep8-naming
+  "UP",  # pyupgrade
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "RUF", # ruff-specific rules
+]
+
+# 無視するルール
+ignore = [
+  "E501", # line length violations
+]
+
+# 自動修正の対象とするルール
+fixable = ["I", "F401"]
+
+[tool.ruff.isort]
+# isortの設定
+known-first-party = ["py_flux_tracer"]
+known-third-party = ["numpy", "pandas"]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+]
+
+[tool.ruff.mccabe]
+# 循環的複雑度の最大値
+max-complexity = 10
+
+[tool.ruff.pydocstyle]
+# docstringのスタイル
+convention = "numpy"
 
 [tool.uv]
 managed = true
@@ -74,7 +128,3 @@ dev-dependencies = [
   "ruff>=0.6.8",
   "twine>=5.1.1",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]

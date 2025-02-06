@@ -1,16 +1,18 @@
 import os
+from logging import DEBUG, INFO, Logger
+from pathlib import Path
+from typing import Literal
+
 import jpholiday
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from pathlib import Path
-from typing import Literal
-from scipy import linalg, stats
-from logging import Logger, DEBUG, INFO
 from matplotlib.axes import Axes
 from matplotlib.ticker import FuncFormatter, MultipleLocator, NullLocator
+from scipy import linalg, stats
+
 from ..commons.utilities import setup_logger
 
 
@@ -38,10 +40,10 @@ def calculate_rolling_stats(data: pd.Series, window: int, confidence_interval) -
     # 最小窓サイズの設定
     window = max(3, min(window, len(data)))
 
-    # NaNを含むデータの処理（線形補間を行わない）
+    # NaNを含むデータの処理(線形補間を行わない)
     data_cleaned = data.copy()
 
-    # 移動平均の計算（NaNを含む場合はその期間の移動平均もNaNになる）
+    # 移動平均の計算(NaNを含む場合はその期間の移動平均もNaNになる)
     rolling_mean = data_cleaned.rolling(
         window=window,
         center=True,
@@ -154,14 +156,14 @@ class MonthlyFiguresGenerator:
                 valid_data = df_internal[col].dropna()
 
                 if len(valid_data) > 0:
-                    # quantileで計算（0-1の範囲）
+                    # quantileで計算(0-1の範囲)
                     quantile_05 = valid_data.quantile(0.05)
                     quantile_95 = valid_data.quantile(0.95)
                     mean_value = np.nanmean(valid_data)
                     positive_ratio = (valid_data > 0).mean() * 100
 
                     print(f"\n{name}:")
-                    # パーセンタイルで表示（0-100の範囲）
+                    # パーセンタイルで表示(0-100の範囲)
                     print(
                         f"90パーセンタイルレンジ: {quantile_05:.2f} - {quantile_95:.2f}"
                     )
@@ -279,7 +281,7 @@ class MonthlyFiguresGenerator:
                         f"月{month}: {monthly_percentages[month]}% ({monthly_counts[month]}件/{total_counts[month]}件)"
                     )
 
-                # 時間帯ごとの分析（3時間区切り）
+                # 時間帯ごとの分析(3時間区切り)
                 print("\n時間帯別分布:")
                 # copyを作成して新しい列を追加
                 high_values = high_values.copy()
@@ -335,8 +337,8 @@ class MonthlyFiguresGenerator:
         show_ci: bool = True,
         ch4_ylim: tuple[float, float] | None = None,
         c2h6_ylim: tuple[float, float] | None = None,
-        start_date: str | None = None,  # 追加："YYYY-MM-DD"形式
-        end_date: str | None = None,  # 追加："YYYY-MM-DD"形式
+        start_date: str | None = None,  # 追加:"YYYY-MM-DD"形式
+        end_date: str | None = None,  # 追加:"YYYY-MM-DD"形式
         figsize: tuple[float, float] = (16, 6),
         dpi: float | None = 350,
         save_fig: bool = True,
@@ -375,9 +377,9 @@ class MonthlyFiguresGenerator:
             c2h6_ylim : tuple[float, float] | None
                 C2H6のy軸範囲
             start_date : str | None
-                開始日（YYYY-MM-DD形式）
+                開始日(YYYY-MM-DD形式)
             end_date : str | None
-                終了日（YYYY-MM-DD形式）
+                終了日(YYYY-MM-DD形式)
             figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(16, 6)。
             dpi : float | None, optional
@@ -497,7 +499,7 @@ class MonthlyFiguresGenerator:
             # 1ヶ月ごとの主目盛り
             ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
 
-            # カスタムフォーマッタの作成（数字を通常フォントで表示）
+            # カスタムフォーマッタの作成(数字を通常フォントで表示)
             def date_formatter(x, p):
                 date = mdates.num2date(x)
                 return f"{date.strftime('%m')}"
@@ -584,9 +586,9 @@ class MonthlyFiguresGenerator:
             y_lim : tuple[float, float] | None
                 y軸の範囲
             start_date : str | None
-                開始日（YYYY-MM-DD形式）
+                開始日(YYYY-MM-DD形式)
             end_date : str | None
-                終了日（YYYY-MM-DD形式）
+                終了日(YYYY-MM-DD形式)
             include_end_date : bool
                 終了日を含めるかどうか。Falseの場合、終了日の前日までを表示
             legend_loc : str
@@ -596,11 +598,11 @@ class MonthlyFiguresGenerator:
             hourly_mean : bool
                 1時間平均を適用するかどうか
             x_interval : Literal['month', '10days']
-                x軸の目盛り間隔。"month"（月初めのみ）または"10days"（10日刻み）
+                x軸の目盛り間隔。"month"(月初めのみ)または"10days"(10日刻み)
             xlabel : str
-                x軸のラベル（通常は"Month"）
+                x軸のラベル(通常は"Month")
             ylabel : str
-                y軸のラベル（通常は"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)"）
+                y軸のラベル(通常は"CH$_4$ flux (nmol m$^{-2}$ s$^{-1}$)")
             figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
@@ -612,9 +614,6 @@ class MonthlyFiguresGenerator:
         """
         # データの準備
         df_internal = df.copy()
-        # if not isinstance(df_internal.index, pd.DatetimeIndex):
-        #     df_internal[col_datetime] = pd.to_datetime(df_internal[col_datetime])
-        #     df_internal.set_index(col_datetime, inplace=True)
 
         # インデックスを日時型に変換
         df_internal.index = pd.to_datetime(df_internal.index)
@@ -684,7 +683,7 @@ class MonthlyFiguresGenerator:
         fig, ax = plt.subplots(figsize=figsize)
 
         # 各フラックスのプロット
-        for flux_col, label, color in zip(cols_flux, labels, colors):
+        for flux_col, label, color in zip(cols_flux, labels, colors, strict=True):
             if apply_ma:
                 # 移動平均の計算
                 mean, lower, upper = calculate_rolling_stats(
@@ -749,7 +748,7 @@ class MonthlyFiguresGenerator:
                                 if dmin <= date <= dmax:
                                     dates.append(date)
                             except ValueError:
-                                # 30日が存在しない月（2月など）の場合は
+                                # 30日が存在しない月(2月など)の場合は
                                 # その月の最終日を使用
                                 if day == 30:
                                     last_day = (
@@ -904,7 +903,7 @@ class MonthlyFiguresGenerator:
 
         # CH4のプロット (左側)
         ch4_lines = []
-        for col_y, label, color in zip(y_cols_ch4, labels_ch4, colors_ch4):
+        for col_y, label, color in zip(y_cols_ch4, labels_ch4, colors_ch4, strict=True):
             mean_values = hourly_means["all"][col_y]
             line = ax1.plot(
                 time_points,
@@ -928,7 +927,7 @@ class MonthlyFiguresGenerator:
 
         # C2H6のプロット (右側)
         c2h6_lines = []
-        for col_y, label, color in zip(y_cols_c2h6, labels_c2h6, colors_c2h6):
+        for col_y, label, color in zip(y_cols_c2h6, labels_c2h6, colors_c2h6, strict=True):
             mean_values = hourly_means["all"][col_y]
             line = ax2.plot(
                 time_points,
@@ -1163,7 +1162,7 @@ class MonthlyFiguresGenerator:
         selected_conditions = {
             col: means
             for col, means in hourly_means.items()
-            if col in plot_conditions and plot_conditions[col]
+            if plot_conditions.get(col)
         }
 
         # プロットの作成
@@ -1425,7 +1424,7 @@ class MonthlyFiguresGenerator:
             [col_ch4_conc, col_c2h6_conc]
         ].agg(["mean", "std"])
 
-        # 最後のデータポイントを追加（最初のデータを使用）
+        # 最後のデータポイントを追加(最初のデータを使用)
         last_point = hourly_stats.iloc[0:1].copy()
         last_point.index = pd.Index(
             [hourly_stats.index[-1] + (0.5 if interval == "30min" else 1)]
@@ -1580,11 +1579,11 @@ class MonthlyFiguresGenerator:
             output_filename : str
                 出力ファイル名
             window_size : int
-                移動平均の窓サイズ（デフォルト6）
+                移動平均の窓サイズ(デフォルト6)
             show_std : bool
                 標準偏差を表示するかどうか
             alpha_std : float
-                標準偏差の透明度（0-1）
+                標準偏差の透明度(0-1)
             figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(12, 5)。
             dpi : float | None, optional
@@ -1608,7 +1607,7 @@ class MonthlyFiguresGenerator:
             ["mean", "std"]
         )
 
-        # 24時間目のデータ点を追加（0時のデータを使用）
+        # 24時間目のデータ点を追加(0時のデータを使用)
         last_hour = hourly_means.iloc[0:1].copy()
         last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
@@ -1691,7 +1690,7 @@ class MonthlyFiguresGenerator:
             plt.show()
         plt.close(fig=fig)
 
-        # 統計情報の表示（オプション）
+        # 統計情報の表示(オプション)
         if print_summary:
             for col, name in [(col_ch4_flux, "CH4"), (col_c2h6_flux, "C2H6")]:
                 mean_val = hourly_means[(col, "mean")].mean()
@@ -1788,7 +1787,7 @@ class MonthlyFiguresGenerator:
             [col_ratio_1, col_ratio_2]
         ].std()
 
-        # 24時間目のデータ点を追加（0時のデータを使用）
+        # 24時間目のデータ点を追加(0時のデータを使用)
         last_hour = hourly_means.iloc[0:1].copy()
         last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
@@ -2005,7 +2004,7 @@ class MonthlyFiguresGenerator:
         y_range = slope * x_range + intercept
         ax.plot(x_range, y_range, "r", label="TLS regression")
 
-        # 傾き固定の線を追加（フラグがTrueの場合）
+        # 傾き固定の線を追加(フラグがTrueの場合)
         if show_fixed_slope:
             fixed_intercept = (
                 y_mean - fixed_slope * x_mean
@@ -2031,7 +2030,7 @@ class MonthlyFiguresGenerator:
             if ylabel is not None:
                 ax.set_ylabel(ylabel)
 
-        # 1:1の関係を示す点線（軸の範囲が同じ場合のみ表示）
+        # 1:1の関係を示す点線(軸の範囲が同じ場合のみ表示)
         if (
             x_axis_range is not None
             and y_axis_range is not None
@@ -2132,39 +2131,39 @@ class MonthlyFiguresGenerator:
             col_c2h6_flux : str
                 C2H6フラックスの列名
             col_datetime : str, optional
-                日時の列名（デフォルトは"Date"）
+                日時の列名(デフォルトは"Date")
             color_bio : str, optional
-                生物起源の色（デフォルトは青）
+                生物起源の色(デフォルトは青)
             color_gas : str, optional
-                都市ガス起源の色（デフォルトは赤）
+                都市ガス起源の色(デフォルトは赤)
             label_bio : str, optional
-                生物起源のラベル（デフォルトは"bio"）
+                生物起源のラベル(デフォルトは"bio")
             label_gas : str, optional
-                都市ガスのラベル（デフォルトは"gas"）
+                都市ガスのラベル(デフォルトは"gas")
             figsize : tuple[float, float], optional
-                プロットのサイズ（デフォルトは(10, 6)）
+                プロットのサイズ(デフォルトは(10, 6))
             flux_alpha : float, optional
-                フラックスの透明度（デフォルトは0.6）
+                フラックスの透明度(デフォルトは0.6)
             output_filename : str, optional
-                出力ファイル名（デフォルトは"source_contributions.png"）
+                出力ファイル名(デフォルトは"source_contributions.png")
             window_size : int, optional
-                移動平均の窓サイズ（デフォルトは6）
+                移動平均の窓サイズ(デフォルトは6)
             print_summary : bool, optional
-                統計情報を表示するかどうか（デフォルトはTrue）
+                統計情報を表示するかどうか(デフォルトはTrue)
             add_xlabel : bool, optional
-                x軸のラベルを追加するかどうか（デフォルトはTrue）
+                x軸のラベルを追加するかどうか(デフォルトはTrue)
             add_ylabel : bool, optional
-                y軸のラベルを追加するかどうか（デフォルトはTrue）
+                y軸のラベルを追加するかどうか(デフォルトはTrue)
             add_legend : bool, optional
-                凡例を追加するかどうか（デフォルトはTrue）
+                凡例を追加するかどうか(デフォルトはTrue)
             smooth : bool, optional
-                移動平均を適用するかどうか（デフォルトはFalse）
+                移動平均を適用するかどうか(デフォルトはFalse)
             y_max : float, optional
-                y軸の上限値（デフォルトは100）
+                y軸の上限値(デフォルトは100)
             subplot_label : str | None, optional
-                サブプロットのラベル（デフォルトはNone）
+                サブプロットのラベル(デフォルトはNone)
             subplot_fontsize : int, optional
-                サブプロットラベルのフォントサイズ（デフォルトは20）
+                サブプロットラベルのフォントサイズ(デフォルトは20)
             figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(10, 6)。
             dpi : float | None, optional
@@ -2187,7 +2186,7 @@ class MonthlyFiguresGenerator:
         df_with_sources["hour"] = df_with_sources.index.hour
         hourly_means = df_with_sources.groupby("hour")[["ch4_gas", "ch4_bio"]].mean()
 
-        # 24時間目のデータ点を追加（0時のデータを使用）
+        # 24時間目のデータ点を追加(0時のデータを使用)
         last_hour = hourly_means.iloc[0:1].copy()
         last_hour.index = pd.Index([24])
         hourly_means = pd.concat([hourly_means, last_hour])
@@ -2206,7 +2205,7 @@ class MonthlyFiguresGenerator:
         fig = plt.figure(figsize=figsize)
         ax = plt.gca()
 
-        # サブプロットラベルの追加（subplot_labelが指定されている場合）
+        # サブプロットラベルの追加(subplot_labelが指定されている場合)
         if subplot_label:
             ax.text(
                 0.02,  # x位置
@@ -2315,10 +2314,10 @@ class MonthlyFiguresGenerator:
             self.logger.info("\n都市ガス比率の統計:")
             print(f"  全体の都市ガス比率: {gas_ratio.mean():.1f}%")
             print(
-                f"  昼間（{daytime_range[0]}~{daytime_range[1] - 1}時）の都市ガス比率: {daytime_gas_ratio:.1f}%"
+                f"  昼間({daytime_range[0]}~{daytime_range[1] - 1}時)の都市ガス比率: {daytime_gas_ratio:.1f}%"
             )
             print(
-                f"  夜間（{daytime_range[1] - 1}~{daytime_range[0]}時）の都市ガス比率: {nighttime_gas_ratio:.1f}%"
+                f"  夜間({daytime_range[1] - 1}~{daytime_range[0]}時)の都市ガス比率: {nighttime_gas_ratio:.1f}%"
             )
             print(f"  最小比率: {gas_ratio.min():.1f}% (Hour: {gas_ratio.idxmin()})")
             print(f"  最大比率: {gas_ratio.max():.1f}% (Hour: {gas_ratio.idxmax()})")
@@ -2345,10 +2344,10 @@ class MonthlyFiguresGenerator:
                 if min_val != 0:
                     print(f"  最大/最小比: {max_val / min_val:.2f}")
                 print(
-                    f"  昼間（{daytime_range[0]}~{daytime_range[1] - 1}時）の平均: {daytime_mean:.2f}"
+                    f"  昼間({daytime_range[0]}~{daytime_range[1] - 1}時)の平均: {daytime_mean:.2f}"
                 )
                 print(
-                    f"  夜間（{daytime_range[1] - 1}~{daytime_range[0]}時）の平均: {nighttime_mean:.2f}"
+                    f"  夜間({daytime_range[1] - 1}~{daytime_range[0]}時)の平均: {nighttime_mean:.2f}"
                 )
                 if nighttime_mean != 0:
                     print(f"  昼/夜比: {daytime_mean / nighttime_mean:.2f}")
@@ -2392,21 +2391,21 @@ class MonthlyFiguresGenerator:
             col_datetime : str
                 日時カラムの名前
             color_bio : str, optional
-                生物起源の色（デフォルトは青）
+                生物起源の色(デフォルトは青)
             color_gas : str, optional
-                都市ガス起源の色（デフォルトは赤）
+                都市ガス起源の色(デフォルトは赤)
             label_bio : str, optional
-                生物起源のラベル（デフォルトは"bio"）
+                生物起源のラベル(デフォルトは"bio")
             label_gas : str, optional
-                都市ガスのラベル（デフォルトは"gas"）
+                都市ガスのラベル(デフォルトは"gas")
             output_dirpath : str | Path | None
                 出力ディレクトリのパス
             output_filename : str
                 出力ファイル名
             add_xlabel : bool, optional
-                x軸のラベルを追加するかどうか（デフォルトはTrue）
+                x軸のラベルを追加するかどうか(デフォルトはTrue)
             add_ylabel : bool, optional
-                y軸のラベルを追加するかどうか（デフォルトはTrue）
+                y軸のラベルを追加するかどうか(デフォルトはTrue)
             add_legend : bool
                 凡例を表示するか
             subplot_fontsize : int
@@ -2449,7 +2448,7 @@ class MonthlyFiguresGenerator:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
 
         # 平日と休日それぞれのプロット
-        for ax, data, label in [
+        for ax, data, _ in [
             (ax1, data_weekday, "Weekdays"),
             (ax2, data_holiday, "Weekends & Holidays"),
         ]:
@@ -2537,7 +2536,7 @@ class MonthlyFiguresGenerator:
                 labels,
                 loc="center",
                 bbox_to_anchor=(0.5, 0.01),  # x=0.5で中央、y=0.01で下部に配置
-                ncol=len(handles),  # ハンドルの数だけ列を作成（一行に表示）
+                ncol=len(handles),  # ハンドルの数だけ列を作成(一行に表示)
             )
             # 凡例用のスペースを確保
             plt.subplots_adjust(bottom=0.2)  # 下部に30%のスペースを確保
@@ -2606,10 +2605,10 @@ class MonthlyFiguresGenerator:
                     f"  全体に占める割合: {(gas_flux.sum() / (gas_flux.sum() + hourly_means['ch4_bio'].sum()) * 100):.1f}%"
                 )
                 print(
-                    f"  昼間（{daytime_range[0]}~{daytime_range[1] - 1}時）の割合: {daytime_ratio:.1f}%"
+                    f"  昼間({daytime_range[0]}~{daytime_range[1] - 1}時)の割合: {daytime_ratio:.1f}%"
                 )
                 print(
-                    f"  夜間（{daytime_range[1] - 1}~{daytime_range[0]}時）の割合: {nighttime_ratio:.1f}%"
+                    f"  夜間({daytime_range[1] - 1}~{daytime_range[0]}時)の割合: {nighttime_ratio:.1f}%"
                 )
 
                 # 生物起源の統計
@@ -2681,7 +2680,7 @@ class MonthlyFiguresGenerator:
         df_internal = df.copy()
         df_internal.index = pd.to_datetime(df_internal.index)
 
-        # タイムスタンプをインデックスに設定（まだ設定されていない場合）
+        # タイムスタンプをインデックスに設定(まだ設定されていない場合)
         if not isinstance(df_internal.index, pd.DatetimeIndex):
             df_internal[col_timestamp] = pd.to_datetime(df_internal[col_timestamp])
             df_internal.set_index(col_timestamp, inplace=True)
@@ -2693,7 +2692,7 @@ class MonthlyFiguresGenerator:
         # 開始時刻の分を取得
         start_minute = start_time.minute
 
-        # 時間軸の作成（実際の開始時刻からの経過分数）
+        # 時間軸の作成(実際の開始時刻からの経過分数)
         minutes_elapsed = (df_internal.index - start_time).total_seconds() / 60
 
         # プロットの作成
@@ -2761,12 +2760,12 @@ class MonthlyFiguresGenerator:
         label_bio: str = "生物起源",
         label_gas: str = "都市ガス起源",
         flux_alpha: float = 0.4,
-        num_directions: int = 8,  # 方位の数（8方位）
-        gap_degrees: float = 0.0,  # セクター間の隙間（度数）
-        center_on_angles: bool = True,  # 追加：45度刻みの線を境界にするかどうか
+        num_directions: int = 8,  # 方位の数(8方位)
+        gap_degrees: float = 0.0,  # セクター間の隙間(度数)
+        center_on_angles: bool = True,  # 追加:45度刻みの線を境界にするかどうか
         subplot_label: str | None = None,
         add_legend: bool = True,
-        stack_bars: bool = True,  # 追加：積み上げ方式を選択するパラメータ
+        stack_bars: bool = True,  # 追加:積み上げ方式を選択するパラメータ
         print_summary: bool = False,  # 統計情報を表示するかどうか
         figsize: tuple[float, float] = (8, 8),
         dpi: float | None = 350,
@@ -2782,7 +2781,7 @@ class MonthlyFiguresGenerator:
             output_dirpath : str | Path | None
                 生成された図を保存するディレクトリのパス
             output_filename : str
-                保存するファイル名（デフォルトは"edp_wind_rose.png"）
+                保存するファイル名(デフォルトは"edp_wind_rose.png")
             col_ch4_flux : str
                 CH4フラックスを示すカラム名
             col_c2h6_flux : str
@@ -2801,12 +2800,12 @@ class MonthlyFiguresGenerator:
             col_datetime : str
                 日時を示すカラム名
             num_directions : int
-                風向の数（デフォルトは8）
+                風向の数(デフォルトは8)
             gap_degrees : float
-                セクター間の隙間の大きさ（度数）。0の場合は隙間なし。
+                セクター間の隙間の大きさ(度数)。0の場合は隙間なし。
             center_on_angles: bool
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
-                Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
+                Falseの場合、45度の中間(22.5度)を中心として扇形を描画します。
             subplot_label : str
                 サブプロットに表示するラベル
             print_summary : bool
@@ -2814,11 +2813,11 @@ class MonthlyFiguresGenerator:
             flux_unit : str
                 フラックスの単位
             ymax : float | None
-                y軸の上限値（指定しない場合はデータの最大値に基づいて自動設定）
+                y軸の上限値(指定しない場合はデータの最大値に基づいて自動設定)
             flux_alpha : float
                 フラックスの透明度
             stack_bars : bool, optional
-                Trueの場合、生物起源の上に都市ガス起源を積み上げます（デフォルト）。
+                Trueの場合、生物起源の上に都市ガス起源を積み上げます(デフォルト)。
                 Falseの場合、両方を0から積み上げます。
             figsize : tuple[float, float], optional
                 プロットのサイズ。デフォルトは(8, 8)。
@@ -2851,12 +2850,12 @@ class MonthlyFiguresGenerator:
         fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = fig.add_subplot(111, projection="polar")
 
-        # 方位の角度（ラジアン）を計算
+        # 方位の角度(ラジアン)を計算
         theta = np.array(
             [np.radians(angle) for angle in direction_data["center_angle"]]
         )
 
-        # セクターの幅を計算（隙間を考慮）
+        # セクターの幅を計算(隙間を考慮)
         sector_width = np.radians((360.0 / num_directions) - gap_degrees)
 
         # 積み上げ方式に応じてプロット
@@ -2924,13 +2923,13 @@ class MonthlyFiguresGenerator:
         ax.set_xticks(angles)
         ax.set_xticklabels(labels)
 
-        # プロット領域の調整（上部と下部にスペースを確保）
+        # プロット領域の調整(上部と下部にスペースを確保)
         plt.subplots_adjust(
             top=0.8,  # 上部に20%のスペースを確保
-            bottom=0.2,  # 下部に20%のスペースを確保（凡例用）
+            bottom=0.2,  # 下部に20%のスペースを確保(凡例用)
         )
 
-        # サブプロットラベルの追加（デフォルトは左上）
+        # サブプロットラベルの追加(デフォルトは左上)
         if subplot_label:
             ax.text(
                 0.01,
@@ -2939,16 +2938,16 @@ class MonthlyFiguresGenerator:
                 transform=ax.transAxes,
             )
 
-        # 単位の追加（図の下部中央に配置）
+        # 単位の追加(図の下部中央に配置)
         plt.figtext(
-            0.5,  # x位置（中央）
-            0.1,  # y位置（下部）
+            0.5,  # x位置(中央)
+            0.1,  # y位置(下部)
             flux_unit,
             ha="center",  # 水平方向の位置揃え
             va="bottom",  # 垂直方向の位置揃え
         )
 
-        # 凡例の追加（単位の下に配置）
+        # 凡例の追加(単位の下に配置)
         if add_legend:
             # 最初のプロットから凡例のハンドルとラベルを取得
             handles, labels = ax.get_legend_handles_labels()
@@ -2958,7 +2957,7 @@ class MonthlyFiguresGenerator:
                 labels,
                 loc="center",
                 bbox_to_anchor=(0.5, 0.05),  # x=0.5で中央、y=0.05で下部に配置
-                ncol=len(handles),  # ハンドルの数だけ列を作成（一行に表示）
+                ncol=len(handles),  # ハンドルの数だけ列を作成(一行に表示)
             )
 
         # グラフの保存または表示
@@ -2999,10 +2998,10 @@ class MonthlyFiguresGenerator:
         Parameters
         ------
             num_directions : int
-                方位の数（デフォルトは8）
+                方位の数(デフォルトは8)
             center_on_angles : bool
                 Trueの場合、45度刻みの線を境界として扇形を描画します。
-                Falseの場合、45度の中間（22.5度）を中心として扇形を描画します。
+                Falseの場合、45度の中間(22.5度)を中心として扇形を描画します。
 
         Returns
         ------
@@ -3173,7 +3172,7 @@ class MonthlyFiguresGenerator:
             target_columns : list[str]
                 計算対象の列名のリスト
             include_date_types : bool
-                日付タイプ（平日/休日など）の分類を含めるかどうか
+                日付タイプ(平日/休日など)の分類を含めるかどうか
 
         Returns
         ------
@@ -3281,7 +3280,7 @@ class MonthlyFiguresGenerator:
     @staticmethod
     def get_valid_data(df: pd.DataFrame, col_x: str, col_y: str) -> pd.DataFrame:
         """
-        指定された列の有効なデータ（NaNを除いた）を取得します。
+        指定された列の有効なデータ(NaNを除いた)を取得します。
 
         Parameters
         ------
@@ -3423,7 +3422,7 @@ class MonthlyFiguresGenerator:
             transform=plt.gca().transAxes,
             verticalalignment="top",
             fontsize=10,
-            bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+            bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
         )
 
         # 凡例の表示

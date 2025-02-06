@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from py_flux_tracer import (
     TfCurvesFromCsvConfig,
     TransferFunctionCalculator,

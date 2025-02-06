@@ -1,16 +1,18 @@
 import os
+from dataclasses import dataclass
+from logging import DEBUG, INFO, Logger
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from tqdm import tqdm
-from pathlib import Path
-from dataclasses import dataclass
-from logging import Logger, DEBUG, INFO
 from matplotlib.axes import Axes
 from matplotlib.ticker import MultipleLocator
+from tqdm import tqdm
+
 from ..commons.utilities import setup_logger
-from .spectrum_calculator import SpectrumCalculator
 from .eddy_data_preprocessor import EddyDataPreprocessor
+from .spectrum_calculator import SpectrumCalculator
 
 
 @dataclass
@@ -21,12 +23,12 @@ class SlopeLine:
     ----------
         coordinates : tuple[tuple[float, float], tuple[float, float]]
             傾き線の始点と終点の座標。((x1, y1), (x2, y2))の形式で指定。
-            x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
+            x座標は周波数(Hz)、y座標は無次元化されたスペクトル値を表す。
         text : str
-            傾き線に付随するテキスト（例："-2/3", "-4/3"など）。
+            傾き線に付随するテキスト(例:"-2/3", "-4/3"など)。
         text_pos : tuple[float, float] | None
             テキストを表示する位置の座標(x, y)。
-            x座標は周波数（Hz）、y座標は無次元化されたスペクトル値を表す。
+            x座標は周波数(Hz)、y座標は無次元化されたスペクトル値を表す。
             Noneの場合、テキストは表示されない。
         fontsize : float, optional
             テキストのフォントサイズ。デフォルトは20。
@@ -70,10 +72,10 @@ class SpectralPlotConfig:
     ----------
         psd_ylabel : str
             パワースペクトル密度のy軸ラベル。
-            LaTeXの数式表記が使用可能（例r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$"）。
+            LaTeXの数式表記が使用可能(例r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$")。
         co_ylabel : str
             コスペクトルのy軸ラベル。
-            LaTeXの数式表記が使用可能（例:r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$"）。
+            LaTeXの数式表記が使用可能(例:r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$")。
         color : str
             プロットの色。matplotlib.colorsで定義されている色名または16進数カラーコードを指定。
         label : str | None, optional
@@ -185,7 +187,7 @@ class EddyDataFiguresGenerator:
             tv_config : SpectralPlotConfig | None
                 気温のプロット設定。Noneの場合はデフォルト設定を使用。
             lag_second : float | None
-                ラグ時間（秒）。デフォルトはNone。
+                ラグ時間(秒)。デフォルトはNone。
             file_pattern : str, optional
                 入力ファイルのパターン。デフォルトはr"Eddy_(\\d+)"。
             file_suffix : str, optional
@@ -362,7 +364,7 @@ class EddyDataFiguresGenerator:
             fig_power, axes_psd = plt.subplots(1, 2, figsize=figsize, sharex=True)
             configs = [(col_ch4, ch4_config), (col_c2h6, c2h6_config)]
 
-            for ax, (col, config) in zip(axes_psd, configs):
+            for ax, (col, config) in zip(axes_psd, configs, strict=True):
                 ax.plot(
                     freqs,
                     averaged_power_spectra[col],
@@ -407,7 +409,7 @@ class EddyDataFiguresGenerator:
             fig_co, axes_cosp = plt.subplots(1, 2, figsize=figsize, sharex=True)
             configs = [(col_ch4, ch4_config), (col_c2h6, c2h6_config)]
 
-            for ax, (col, config) in zip(axes_cosp, configs):
+            for ax, (col, config) in zip(axes_cosp, configs, strict=True):
                 if add_tv_in_co:
                     ax.plot(
                         freqs,
@@ -510,7 +512,7 @@ class EddyDataFiguresGenerator:
         df_internal = df.copy()
         df_internal.index = pd.to_datetime(df_internal.index)
 
-        # タイムスタンプをインデックスに設定（まだ設定されていない場合）
+        # タイムスタンプをインデックスに設定(まだ設定されていない場合)
         if not isinstance(df_internal.index, pd.DatetimeIndex):
             df_internal[col_timestamp] = pd.to_datetime(df_internal[col_timestamp])
             df_internal.set_index(col_timestamp, inplace=True)
@@ -522,7 +524,7 @@ class EddyDataFiguresGenerator:
         # 開始時刻の分を取得
         start_minute = start_time.minute
 
-        # 時間軸の作成（実際の開始時刻からの経過分数）
+        # 時間軸の作成(実際の開始時刻からの経過分数)
         minutes_elapsed = (df_internal.index - start_time).total_seconds() / 60
 
         # プロットの作成

@@ -1,9 +1,11 @@
-import pytest
-import numpy as np
-import pandas as pd
 import os
 import tempfile
-from logging import Logger, INFO, DEBUG
+from logging import DEBUG, INFO, Logger
+
+import numpy as np
+import pandas as pd
+import pytest
+
 from py_flux_tracer import EddyDataPreprocessor, setup_logger
 
 
@@ -269,7 +271,7 @@ def test_analyze_lag_times_error_cases(preprocessor):
         with open(invalid_file, "w") as f:
             f.write("invalid data format\n")
 
-        with pytest.raises(Exception):  # 具体的な例外は実装に依存
+        with pytest.raises(ValueError):  # 不正なデータ形式による例外
             preprocessor.analyze_lag_times(
                 input_dirpath=input_dir, output_dirpath=output_dir
             )
@@ -333,7 +335,7 @@ def test_output_resampled_data_error_cases(preprocessor):
         with open(invalid_file, "w") as f:
             f.write("invalid data format\n")
 
-        with pytest.raises(Exception):  # 具体的な例外は実装に依存
+        with pytest.raises(ValueError):  # 不正なデータ形式による例外
             preprocessor.output_resampled_data(
                 input_dirpath=input_dir,
                 resampled_dirpath=resampled_dir,

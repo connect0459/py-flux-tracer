@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
+
 from py_flux_tracer import (
     MonthlyConverter,
     MonthlyFiguresGenerator,
@@ -184,7 +186,7 @@ if __name__ == "__main__":
         )
         mfg.logger.info("'timeseries'を作成しました。")
 
-    for month, subplot_label in zip(months, subplot_labels):
+    for month, subplot_label in zip(months, subplot_labels, strict=True):
         # monthを0埋めのMM形式に変換
         month_str = f"{month:02d}"
         mfg.logger.info(f"{month_str}の処理を開始します。")
@@ -417,7 +419,7 @@ if __name__ == "__main__":
 
     # 2ヶ月毎
     months_dos: list[list[int]] = [[5, 6], [7, 8], [9, 10], [11, 12]]
-    for month_dos, subplot_label in zip(months_dos, subplot_labels):
+    for month_dos, subplot_label in zip(months_dos, subplot_labels, strict=True):
         # monthを0埋めのMM形式に変換
         month_str = "_".join(f"{month:02d}" for month in month_dos)
         mfg.logger.info(f"{month_str}の処理を開始します。")
@@ -466,7 +468,7 @@ if __name__ == "__main__":
         seasons_tags: list[str] = ["summer", "fall"]
         seasons_subplot_labels: list[str] = ["(a)", "(b)"]
         for season, tag, subplot_label in zip(
-            seasons, seasons_tags, seasons_subplot_labels
+            seasons, seasons_tags, seasons_subplot_labels, strict=True
         ):
             # 月ごとのDataFrameを作成
             df_season: pd.DataFrame = MonthlyConverter.extract_monthly_data(
@@ -646,7 +648,7 @@ if __name__ == "__main__":
                 label_bio=str(season_mono_config["label_bio"]),
                 label_gas=str(season_mono_config["label_gas"]),
                 gap_degrees=3.0,
-                num_directions=8,  # 方位の数（8方位）
+                num_directions=8,  # 方位の数(8方位)
                 subplot_label=subplot_label,
                 print_summary=False,  # 統計情報を表示するかどうか
                 add_legend=False,
@@ -669,7 +671,7 @@ if __name__ == "__main__":
                 flux_alpha=float(season_mono_config["flux_alpha"]),
                 label_bio=str(season_mono_config["label_bio"]),
                 label_gas=str(season_mono_config["label_gas"]),
-                num_directions=8,  # 方位の数（8方位）
+                num_directions=8,  # 方位の数(8方位)
                 subplot_label=subplot_label,
                 print_summary=False,  # 統計情報を表示するかどうか
                 add_legend=True,

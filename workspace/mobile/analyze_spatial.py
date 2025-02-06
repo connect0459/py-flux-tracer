@@ -1,14 +1,15 @@
 import os
+
 from py_flux_tracer import (
-    HotspotData,
-    MobileMeasurementAnalyzer,
-    MobileMeasurementConfig,
-    H2OCorrectionConfig,
     BiasRemovalConfig,
     EmissionData,
     EmissionFormula,
-    HotspotEmissionConfig,
+    H2OCorrectionConfig,
+    HotspotData,
     HotspotEmissionAnalyzer,
+    HotspotEmissionConfig,
+    MobileMeasurementAnalyzer,
+    MobileMeasurementConfig,
 )
 
 # picoデータの補正式に関するパラメータ
@@ -105,7 +106,7 @@ num_sections: int = 4  # セクション数
 west_sections_list: list[int] = [
     0,
     1,
-]  # 西側となるセクション番号（num_sectionsに応じて変更）
+]  # 西側となるセクション番号(num_sectionsに応じて変更)
 output_dirpath: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs"
 )
@@ -160,7 +161,7 @@ if __name__ == "__main__":
             print(f"  Gas  : {counts['gas']}")
             print(f"  Comb : {counts['comb']}")
 
-    # sectionが0または1（西側）のホットスポットのみを残す
+    # sectionが0または1(西側)のホットスポットのみを残す
     # hotspots = [h for h in hotspots if h.section in west_sections_list]
 
     # 地図の作成と保存

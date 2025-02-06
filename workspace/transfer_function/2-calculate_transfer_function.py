@@ -1,7 +1,8 @@
 import os
-from pathlib import Path
 from dataclasses import dataclass
-from py_flux_tracer import setup_plot_params, TransferFunctionCalculator
+from pathlib import Path
+
+from py_flux_tracer import TransferFunctionCalculator, setup_plot_params
 
 
 @dataclass
@@ -16,7 +17,7 @@ class TFAnalysisConfig:
         output_dirpath : str | Path
             出力ディレクトリのパス
         suffix : str
-            ファイル名の接尾辞（例: "", "-detrend"）
+            ファイル名の接尾辞(例: "", "-detrend")
         show_co_spectra : bool
             コスペクトルのプロットを表示するかどうか
         show_tf : bool

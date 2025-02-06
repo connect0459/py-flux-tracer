@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
 
 
 @dataclass
@@ -14,9 +15,9 @@ class H2OCorrectionConfig:
         coef_c : float | None
             補正曲線の2次係数
         h2o_ppm_threshold : float | None
-            水蒸気濃度の下限値（この値未満のデータは除外）
+            水蒸気濃度の下限値(この値未満のデータは除外)
         target_h2o_ppm : float
-            換算先の水蒸気濃度（デフォルト: 10000 ppm）
+            換算先の水蒸気濃度(デフォルト: 10000 ppm)
     """
 
     coef_b: float | None = None
@@ -84,9 +85,9 @@ class CorrectingUtils:
             col_h2o_ppm : str
                 水蒸気濃度を示すカラム名
             h2o_ppm_threshold : float | None
-                水蒸気濃度の下限値（この値未満のデータは除外）
+                水蒸気濃度の下限値(この値未満のデータは除外)
             target_h2o_ppm : float
-                換算先の水蒸気濃度（デフォルト: 10000 ppm）
+                換算先の水蒸気濃度(デフォルト: 10000 ppm)
 
         Returns
         ----------
@@ -104,7 +105,7 @@ class CorrectingUtils:
         # 目標水蒸気濃度での補正項
         target_term = coef_b * target_h2o_ppm + coef_c * np.power(target_h2o_ppm, 2)
         
-        # CH4濃度の補正（現在の補正項を引いて、目標水蒸気濃度での補正項を足す）
+        # CH4濃度の補正(現在の補正項を引いて、目標水蒸気濃度での補正項を足す)
         df_h2o_corrected[col_ch4_ppm] = (
             df_h2o_corrected[col_ch4_ppm] - term_ch4 + target_term
         )

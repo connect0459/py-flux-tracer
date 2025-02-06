@@ -1,23 +1,24 @@
-import os
 import math
+import os
+from dataclasses import dataclass
+from datetime import timedelta
+from logging import DEBUG, INFO, Logger
+from pathlib import Path
+from typing import Literal, get_args
+
 import folium
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import plotly.offline as pyo
 import plotly.graph_objs as go
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from tqdm import tqdm
-from pathlib import Path
-from datetime import timedelta
-from matplotlib import gridspec
-from dataclasses import dataclass
+import plotly.offline as pyo
 from geopy.distance import geodesic
-from typing import get_args, Literal
-from logging import Logger, DEBUG, INFO
-from ..commons.utilities import setup_logger
-from .correcting_utils import CorrectingUtils, H2OCorrectionConfig, BiasRemovalConfig
+from matplotlib import gridspec
+from tqdm import tqdm
 
+from ..commons.utilities import setup_logger
+from .correcting_utils import BiasRemovalConfig, CorrectingUtils, H2OCorrectionConfig
 
 # ホットスポットの種類を表す型エイリアス
 HotspotType = Literal["bio", "gas", "comb", "scale_check"]
@@ -202,15 +203,15 @@ class MobileMeasurementConfig:
     Parameters
     ----------
         fs : float
-            サンプリング周波数（Hz）
+            サンプリング周波数(Hz)
         lag : float
-            測器の遅れ時間（秒）
+            測器の遅れ時間(秒)
         path : Path | str
             ファイルパス
         bias_removal : BiasRemovalConfig | None
-            バイアス除去の設定。None（または未定義）の場合は補正を実施しない。
+            バイアス除去の設定。None(または未定義)の場合は補正を実施しない。
         h2o_correction : H2OCorrectionConfig | None
-            水蒸気補正の設定。None（または未定義）の場合は補正を実施しない。
+            水蒸気補正の設定。None(または未定義)の場合は補正を実施しない。
     """
 
     fs: float
@@ -224,12 +225,12 @@ class MobileMeasurementConfig:
         インスタンス生成後に入力値の検証を行います。
         """
         # fsが有効かを確認
-        if not isinstance(self.fs, (int, float)) or self.fs <= 0:
+        if not isinstance(self.fs, int | float) or self.fs <= 0:
             raise ValueError(
                 f"Invalid sampling frequency: {self.fs}. Must be a positive float."
             )
         # lagが0以上のfloatかを確認
-        if not isinstance(self.lag, (int, float)) or self.lag < 0:
+        if not isinstance(self.lag, int | float) or self.lag < 0:
             raise ValueError(
                 f"Invalid lag value: {self.lag}. Must be a non-negative float."
             )
@@ -268,9 +269,9 @@ class MobileMeasurementConfig:
             path : Path | str
                 入力ファイルのパス。サポートされている拡張子は.txtと.csvです。
             bias_removal : BiasRemovalConfig | None
-                バイアス除去の設定。None（または未定義）の場合は補正を実施しない。
+                バイアス除去の設定。None(または未定義)の場合は補正を実施しない。
             h2o_correction : H2OCorrectionConfig | None
-                水蒸気補正の設定。None（または未定義）の場合は補正を実施しない。
+                水蒸気補正の設定。None(または未定義)の場合は補正を実施しない。
 
         Returns
         ----------
@@ -291,7 +292,7 @@ class MobileMeasurementAnalyzer:
     移動観測で得られた測定データを解析するクラス
     """
 
-    EARTH_RADIUS_METERS: float = 6371000  # 地球の半径（メートル）
+    EARTH_RADIUS_METERS: float = 6371000  # 地球の半径(メートル)
 
     def __init__(
         self,
@@ -304,15 +305,8 @@ class MobileMeasurementAnalyzer:
         hotspot_area_meter: float = 50,
         hotspot_params: HotspotParams | None = None,
         window_minutes: float = 5,
-        column_mapping: dict[str, str] = {
-            "Time Stamp": "timestamp",
-            "CH4 (ppm)": "ch4_ppm",
-            "C2H6 (ppb)": "c2h6_ppb",
-            "H2O (ppm)": "h2o_ppm",
-            "Latitude": "latitude",
-            "Longitude": "longitude",
-        },
-        na_values: list[str] = ["No Data", "nan"],
+        column_mapping: dict[str, str] | None = None,
+        na_values: list[str] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -334,15 +328,15 @@ class MobileMeasurementAnalyzer:
             correlation_threshold : float
                 相関係数の閾値。デフォルトは0.7。
             hotspot_area_meter : float
-                ホットスポットの検出に使用するエリアの半径（メートル）。デフォルトは50メートル。
+                ホットスポットの検出に使用するエリアの半径(メートル)。デフォルトは50メートル。
             hotspot_params : HotspotParams | None, optional
                 ホットスポット解析のパラメータ設定
             window_minutes : float
-                移動窓の大きさ（分）。デフォルトは5分。
+                移動窓の大きさ(分)。デフォルトは5分。
             column_mapping : dict[str, str]
                 元のデータファイルのヘッダーを汎用的な単語に変換するための辞書型データ。
                 - timestamp,ch4_ppm,c2h6_ppm,h2o_ppm,latitude,longitudeをvalueに、それぞれに対応するカラム名をcolに指定してください。
-                - デフォルト: {
+                - Noneの場合のデフォルト値: {
                     "Time Stamp": "timestamp",
                     "CH4 (ppm)": "ch4_ppm",
                     "C2H6 (ppb)": "c2h6_ppb",
@@ -351,7 +345,7 @@ class MobileMeasurementAnalyzer:
                     "Longitude": "longitude",
                 }
             na_values : list[str]
-                NaNと判定する値のパターン。
+                NaNと判定する値のパターン。Noneの場合はデフォルト値(["No Data", "nan"])を使用。
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
@@ -362,6 +356,18 @@ class MobileMeasurementAnalyzer:
         if logging_debug:
             log_level = DEBUG
         self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
+        # デフォルト値を使用
+        if column_mapping is None:
+            column_mapping = {
+                "Time Stamp": "timestamp",
+                "CH4 (ppm)": "ch4_ppm",
+                "C2H6 (ppb)": "c2h6_ppb",
+                "H2O (ppm)": "h2o_ppm",
+                "Latitude": "latitude",
+                "Longitude": "longitude",
+            }
+        if na_values is None:
+            na_values = ["No Data", "nan"]
         # プライベートなプロパティ
         self._center_lat: float = center_lat
         self._center_lon: float = center_lon
@@ -378,7 +384,7 @@ class MobileMeasurementAnalyzer:
         self._sections = MobileMeasurementAnalyzer._initialize_sections(
             num_sections, section_size
         )
-        # window_sizeをデータポイント数に変換（分→秒→データポイント数）
+        # window_sizeをデータポイント数に変換(分→秒→データポイント数)
         self._window_size: int = MobileMeasurementAnalyzer._calculate_window_size(
             window_minutes
         )
@@ -448,9 +454,9 @@ class MobileMeasurementAnalyzer:
                 - "time_window": 指定された時間窓内の重複のみを除外。
                 - "time_all": すべての時間範囲で重複チェックを行う。
             min_time_threshold_seconds : float
-                重複とみなす最小時間の閾値（秒）。デフォルトは300秒。
+                重複とみなす最小時間の閾値(秒)。デフォルトは300秒。
             max_time_threshold_hours : float
-                重複チェックを一時的に無視する最大時間の閾値（時間）。デフォルトは12時間。
+                重複チェックを一時的に無視する最大時間の閾値(時間)。デフォルトは12時間。
 
         Returns
         ----------
@@ -660,7 +666,7 @@ class MobileMeasurementAnalyzer:
             # ポップアップのサイズを指定
             popup = folium.Popup(
                 folium.Html(popup_html, script=True),
-                max_width=200,  # 最大幅（ピクセル）
+                max_width=200,  # 最大幅(ピクセル)
             )
 
             folium.CircleMarker(
@@ -683,25 +689,25 @@ class MobileMeasurementAnalyzer:
         for section in range(self._num_sections):
             start_angle = math.radians(-180 + section * self._section_size)
 
-            R = self.EARTH_RADIUS_METERS
+            const_r = self.EARTH_RADIUS_METERS
 
             # 境界線の座標を計算
             lat1 = self._center_lat
             lon1 = self._center_lon
             lat2 = math.degrees(
                 math.asin(
-                    math.sin(math.radians(lat1)) * math.cos(radius_meters / R)
+                    math.sin(math.radians(lat1)) * math.cos(radius_meters / const_r)
                     + math.cos(math.radians(lat1))
-                    * math.sin(radius_meters / R)
+                    * math.sin(radius_meters / const_r)
                     * math.cos(start_angle)
                 )
             )
             lon2 = self._center_lon + math.degrees(
                 math.atan2(
                     math.sin(start_angle)
-                    * math.sin(radius_meters / R)
+                    * math.sin(radius_meters / const_r)
                     * math.cos(math.radians(lat1)),
-                    math.cos(radius_meters / R)
+                    math.cos(radius_meters / const_r)
                     - math.sin(math.radians(lat1)) * math.sin(math.radians(lat2)),
                 )
             )
@@ -777,7 +783,7 @@ class MobileMeasurementAnalyzer:
     @staticmethod
     def extract_source_name_from_path(path: str | Path) -> str:
         """
-        ファイルパスからソース名（拡張子なしのファイル名）を抽出します。
+        ファイルパスからソース名(拡張子なしのファイル名)を抽出します。
 
         Parameters
         ----------
@@ -855,7 +861,7 @@ class MobileMeasurementAnalyzer:
         Returns
         ----------
             float
-                1セクションのサイズ（度単位）
+                1セクションのサイズ(度単位)
         """
         return self._section_size
 
@@ -895,11 +901,7 @@ class MobileMeasurementAnalyzer:
         dpi: int = 200,
         figsize: tuple[float, float] = (8, 6),
         fontsize: float = 20,
-        hotspot_colors: dict[HotspotType, str] = {
-            "bio": "blue",
-            "gas": "red",
-            "comb": "green",
-        },
+        hotspot_colors: dict[HotspotType, str] | None = None,
         xlabel: str = "Δ$\\mathregular{CH_{4}}$ (ppm)",
         ylabel: str = "Frequency",
         xlim: tuple[float, float] | None = None,
@@ -910,7 +912,7 @@ class MobileMeasurementAnalyzer:
         print_bins_analysis: bool = False,
     ) -> None:
         """
-        CH4の増加量（ΔCH4）の積み上げヒストグラムをプロットします。
+        CH4の増加量(ΔCH4)の積み上げヒストグラムをプロットします。
 
         Parameters
         ----------
@@ -926,8 +928,15 @@ class MobileMeasurementAnalyzer:
                 図のサイズ。デフォルトは(8, 6)。
             fontsize : float
                 フォントサイズ。デフォルトは20。
-            hotspot_colors : dict[HotspotType, str]
-                ホットスポットの色を定義する辞書。
+            hotspot_colors : dict[HotspotType, str] | None
+                ホットスポットの色を定義する辞書。Noneの場合はデフォルト値を使用。
+                ```py
+                {
+                    "bio": "blue",
+                    "gas": "red",
+                    "comb": "green",
+                }
+                ```
             xlabel : str
                 x軸のラベル。
             ylabel : str
@@ -945,6 +954,12 @@ class MobileMeasurementAnalyzer:
             print_bins_analysis : bool
                 ビンごとの内訳を表示するオプション。
         """
+        if hotspot_colors is None:
+            hotspot_colors = {
+                "bio": "blue",
+                "gas": "red",
+                "comb": "green",
+            }
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
 
@@ -1098,9 +1113,9 @@ class MobileMeasurementAnalyzer:
             zoom : float
                 マップの初期ズームレベル。デフォルトは12
             width : int
-                プロットの幅（ピクセル）。デフォルトは700
+                プロットの幅(ピクセル)。デフォルトは700
             height : int
-                プロットの高さ（ピクセル）。デフォルトは700
+                プロットの高さ(ピクセル)。デフォルトは700
             tick_font_family : str
                 カラーバーの目盛りフォントファミリー。デフォルトは"Arial"
             title_font_family : str
@@ -1145,35 +1160,38 @@ class MobileMeasurementAnalyzer:
             text=df_mapping[col_conc].astype(str),
             hoverinfo="text",
             mode="markers",
-            marker=dict(
-                color=df_mapping[col_conc],
-                size=marker_size,
-                reversescale=False,
-                autocolorscale=False,
-                colorscale=colorscale,
-                cmin=cmin,
-                cmax=cmax,
-                colorbar=dict(
-                    tickformat="3.2f",
-                    outlinecolor="black",
-                    outlinewidth=1.5,
-                    ticks="outside",
-                    ticklen=7,
-                    tickwidth=1.5,
-                    tickcolor="black",
-                    tickfont=dict(
-                        family=tick_font_family, color="black", size=tick_font_size
-                    ),
-                    title=dict(
-                        text=title_text, side="top"
-                    ),  # カラーバーのタイトルを設定
-                    titlefont=dict(
-                        family=title_font_family,
-                        color="black",
-                        size=title_font_size,
-                    ),
-                ),
-            ),
+            marker={
+                "color": df_mapping[col_conc],
+                "size": marker_size,
+                "reversescale": False,
+                "autocolorscale": False,
+                "colorscale": colorscale,
+                "cmin": cmin,
+                "cmax": cmax,
+                "colorbar": {
+                    "tickformat": "3.2f",
+                    "outlinecolor": "black",
+                    "outlinewidth": 1.5,
+                    "ticks": "outside",
+                    "ticklen": 7,
+                    "tickwidth": 1.5,
+                    "tickcolor": "black",
+                    "tickfont": {
+                        "family": tick_font_family,
+                        "color": "black",
+                        "size": tick_font_size,
+                    },
+                    "title": {
+                        "text": title_text,
+                        "side": "top",
+                    },  # カラーバーのタイトルを設定
+                    "titlefont": {
+                        "family": title_font_family,
+                        "color": "black",
+                        "size": title_font_size,
+                    },
+                },
+            },
         )
 
         # レイアウトの設定
@@ -1181,11 +1199,11 @@ class MobileMeasurementAnalyzer:
             width=width,
             height=height,
             showlegend=False,
-            mapbox=dict(
-                accesstoken=mapbox_access_token,
-                center=dict(lat=center_lat, lon=center_lon),
-                zoom=zoom,
-            ),
+            mapbox={
+                "accesstoken": mapbox_access_token,
+                "center": {"lat": center_lat, "lon": center_lon},
+                "zoom": zoom,
+            },
         )
 
         # 図の作成
@@ -1213,16 +1231,8 @@ class MobileMeasurementAnalyzer:
         output_filename: str = "scatter_c2c1.png",
         dpi: int = 200,
         figsize: tuple[float, float] = (4, 4),
-        hotspot_colors: dict[HotspotType, str] = {
-            "bio": "blue",
-            "gas": "red",
-            "comb": "green",
-        },
-        hotspot_labels: dict[HotspotType, str] = {
-            "bio": "bio",
-            "gas": "gas",
-            "comb": "comb",
-        },
+        hotspot_colors: dict[HotspotType, str] | None = None,
+        hotspot_labels: dict[HotspotType, str] | None = None,
         fontsize: float = 12,
         xlim: tuple[float, float] = (0, 2.0),
         ylim: tuple[float, float] = (0, 50),
@@ -1233,14 +1243,8 @@ class MobileMeasurementAnalyzer:
         add_legend: bool = True,
         save_fig: bool = True,
         show_fig: bool = True,
-        ratio_labels: dict[float, tuple[float, float, str]] | None = {
-            0.001: (1.25, 2, "0.001"),
-            0.005: (1.25, 8, "0.005"),
-            0.010: (1.25, 15, "0.01"),
-            0.020: (1.25, 30, "0.02"),
-            0.030: (1.0, 40, "0.03"),
-            0.076: (0.20, 42, "0.076 (Osaka)"),
-        },
+        add_ratio_labels: bool = True,
+        ratio_labels: dict[float, tuple[float, float, str]] | None = None,
     ) -> None:
         """
         検出されたホットスポットのΔC2H6とΔCH4の散布図をプロットします。
@@ -1259,10 +1263,24 @@ class MobileMeasurementAnalyzer:
                 図のサイズ。デフォルトは(4, 4)。
             fontsize : float
                 フォントサイズ。デフォルトは12。
-            hotspot_colors : dict[HotspotType, str]
-                ホットスポットの色を定義する辞書。
-            hotspot_labels : dict[HotspotType, str]
-                ホットスポットのラベルを定義する辞書。
+            hotspot_colors : dict[HotspotType, str] | None
+                ホットスポットの色を定義する辞書。Noneの場合はデフォルト値を使用。
+                ```py
+                {
+                    "bio": "blue",
+                    "gas": "red",
+                    "comb": "green",
+                }
+                ```
+            hotspot_labels : dict[HotspotType, str] | None
+                ホットスポットのラベルを定義する辞書。Noneの場合はデフォルト値を使用。
+                ```py
+                {
+                    "bio": "bio",
+                    "gas": "gas",
+                    "comb": "comb",
+                }
+                ```
             xlim : tuple[float, float]
                 x軸の範囲を指定します。デフォルトは(0, 2.0)です。
             ylim : tuple[float, float]
@@ -1281,10 +1299,12 @@ class MobileMeasurementAnalyzer:
                 図の保存を許可するフラグ。デフォルトはTrue。
             show_fig : bool
                 図の表示を許可するフラグ。デフォルトはTrue。
+            add_ratio_labels : bool
+                比率戦を表示するか。デフォルトはTrue。
             ratio_labels : dict[float, tuple[float, float, str]] | None
                 比率線とラベルの設定。
                 キーは比率値、値は (x位置, y位置, ラベルテキスト) のタプル。
-                Noneの場合は表示しない。デフォルト値:
+                Noneの場合はデフォルト値を使用:
                 {
                     0.001: (1.25, 2, "0.001"),
                     0.005: (1.25, 8, "0.005"),
@@ -1294,6 +1314,28 @@ class MobileMeasurementAnalyzer:
                     0.076: (0.20, 42, "0.076 (Osaka)")
                 }
         """
+        # デフォルト値の設定
+        if hotspot_colors is None:
+            hotspot_colors = {
+                "bio": "blue",
+                "gas": "red",
+                "comb": "green",
+            }
+        if hotspot_labels is None:
+            hotspot_labels = {
+                "bio": "bio",
+                "gas": "gas",
+                "comb": "comb",
+            }
+        if ratio_labels is None:
+            ratio_labels = {
+                0.001: (1.25, 2, "0.001"),
+                0.005: (1.25, 8, "0.005"),
+                0.010: (1.25, 15, "0.01"),
+                0.020: (1.25, 30, "0.02"),
+                0.030: (1.0, 40, "0.03"),
+                0.076: (0.20, 42, "0.076 (Osaka)"),
+            }
         plt.rcParams["font.size"] = fontsize
         fig = plt.figure(figsize=figsize, dpi=dpi)
 
@@ -1306,10 +1348,10 @@ class MobileMeasurementAnalyzer:
         for spot in hotspots:
             type_data[spot.type].append((spot.delta_ch4, spot.delta_c2h6))
 
-        # タイプごとにプロット（データが存在する場合のみ）
+        # タイプごとにプロット(データが存在する場合のみ)
         for spot_type, data in type_data.items():
             if data:  # データが存在する場合のみプロット
-                ch4_values, c2h6_values = zip(*data)
+                ch4_values, c2h6_values = zip(*data, strict=True)
                 plt.plot(
                     ch4_values,
                     c2h6_values,
@@ -1327,6 +1369,10 @@ class MobileMeasurementAnalyzer:
 
         # 各比率に対して線を引く
         if ratio_labels is not None:
+            if not add_ratio_labels:
+                raise ValueError(
+                    "ratio_labels に基づいて比率線を描画する場合は、 add_ratio_labels = True を指定してください。"
+                )
             for ratio, (x_pos, y_pos, label) in ratio_labels.items():
                 y = (x - base_ch4) * 1000 * ratio + base
                 plt.plot(x, y, "-", c="black", alpha=0.5)
@@ -1522,7 +1568,7 @@ class MobileMeasurementAnalyzer:
         font_size: float = 12,
         label_pad: float = 10,
         line_color: str = "black",
-        hotspot_colors: dict[str, str] = {"bio": "blue", "gas": "red", "comb": "green"},
+        hotspot_colors: dict[HotspotType, str] | None = None,
         hotspot_markerscale: float = 1,
         hotspot_size: int = 10,
         time_margin_minutes: float = 2.0,
@@ -1578,8 +1624,8 @@ class MobileMeasurementAnalyzer:
                 y軸ラベルのパディング。デフォルトは10。
             line_color : str
                 線の色。デフォルトは"black"。
-            hotspot_colors : dict[str, str]
-                ホットスポットタイプごとの色指定。
+            hotspot_colors : dict[str, str] | None
+                ホットスポットタイプごとの色指定。Noneの場合はデフォルト値({"bio": "blue", "gas": "red", "comb": "green"})を使用。
             hotspot_markerscale : float
                 ホットスポットの凡例でのサイズ。hotspot_size のサイズに合わせて相対的に決める。デフォルトは1。
             hotspot_size : int
@@ -1609,6 +1655,8 @@ class MobileMeasurementAnalyzer:
             yscale_log_ratio : bool
                 比率データのy軸を対数スケールで表示するかどうかを指定します。デフォルトはFalseです。
         """
+        if hotspot_colors is None:
+            hotspot_colors = {"bio": "blue", "gas": "red", "comb": "green"}
         # プロットパラメータの設定
         plt.rcParams.update(
             {
@@ -1638,7 +1686,7 @@ class MobileMeasurementAnalyzer:
         # サブプロットのグリッドを作成 (4行1列)
         gs = gridspec.GridSpec(4, 1, height_ratios=[1, 1, 1, 1])
 
-        # 時間軸の範囲を設定（余白付き）
+        # 時間軸の範囲を設定(余白付き)
         time_min = df.index.min()
         time_max = df.index.max()
         time_margin = pd.Timedelta(minutes=time_margin_minutes)
@@ -1722,7 +1770,7 @@ class MobileMeasurementAnalyzer:
                 legend_ncol if legend_ncol is not None else len(set(hotspot_df["type"]))
             )
             # markerscaleは元のサイズに対する倍率を指定するため、
-            # 目的のサイズ（100）をプロットのマーカーサイズで割ることで、適切な倍率を計算しています
+            # 目的のサイズ(100)をプロットのマーカーサイズで割ることで、適切な倍率を計算しています
             fig.legend(
                 bbox_to_anchor=legend_bbox_to_anchor,
                 loc="upper center",
@@ -1732,7 +1780,7 @@ class MobileMeasurementAnalyzer:
                 markerscale=hotspot_markerscale,
             )
 
-        # x軸のフォーマット調整（全てのサブプロットで共通）
+        # x軸のフォーマット調整(全てのサブプロットで共通)
         for ax in [ax1, ax2, ax3, ax4]:
             ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
             ax.xaxis.set_major_locator(mdates.AutoDateLocator())
@@ -1840,7 +1888,7 @@ class MobileMeasurementAnalyzer:
         Returns
         ----------
             int
-                区画番号（0-based-index）
+                区画番号(0-based-index)
         """
         for section_num, (start, end) in self._sections.items():
             if start <= angle < end:
@@ -1876,7 +1924,7 @@ class MobileMeasurementAnalyzer:
     def _load_data(
         self,
         config: MobileMeasurementConfig,
-        columns_to_shift: list[str] = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"],
+        columns_to_shift: list[str] | None = None,
         col_timestamp: str = "timestamp",
         col_latitude: str = "latitude",
         col_longitude: str = "longitude",
@@ -1888,8 +1936,8 @@ class MobileMeasurementAnalyzer:
         ----------
             config : MobileMeasurementConfig
                 入力ファイルの設定を含むオブジェクト。ファイルパス、遅れ時間、サンプリング周波数、補正タイプなどの情報を持つ。
-            columns_to_shift : list[str], optional
-                シフトを適用するカラム名のリスト。デフォルトは["ch4_ppm", "c2h6_ppb", "h2o_ppm"]で、これらのカラムに対して遅れ時間の補正が行われる。
+            columns_to_shift : list[str] | None, optional
+                シフトを適用するカラム名のリスト。Noneの場合のデフォルトは["ch4_ppm", "c2h6_ppb", "h2o_ppm"]で、これらのカラムに対して遅れ時間の補正が行われる。
             col_timestamp : str, optional
                 タイムスタンプのカラム名。デフォルトは"timestamp"。
             col_latitude : str, optional
@@ -1902,15 +1950,17 @@ class MobileMeasurementAnalyzer:
             tuple[pd.DataFrame, str]
                 読み込まれたデータフレームとそのソース名を含むタプル。データフレームは前処理が施されており、ソース名はファイル名から抽出されたもの。
         """
+        if columns_to_shift is None:
+            columns_to_shift = ["ch4_ppm", "c2h6_ppb", "h2o_ppm"]
         source_name: str = MobileMeasurementAnalyzer.extract_source_name_from_path(
             config.path
         )
         df: pd.DataFrame = pd.read_csv(config.path, na_values=self._na_values)
 
-        # カラム名の標準化（測器に依存しない汎用的な名前に変更）
+        # カラム名の標準化(測器に依存しない汎用的な名前に変更)
         df = df.rename(columns=self._column_mapping)
         df[col_timestamp] = pd.to_datetime(df[col_timestamp])
-        # インデックスを設定（元のtimestampカラムは保持）
+        # インデックスを設定(元のtimestampカラムは保持)
         df = df.set_index(col_timestamp, drop=False)
 
         if config.lag < 0:
@@ -1926,7 +1976,7 @@ class MobileMeasurementAnalyzer:
             df[col] = df[col].shift(shift_periods)
 
         # 緯度経度とシフト対象カラムのnanを一度に削除
-        df = df.dropna(subset=[col_latitude, col_longitude] + columns_to_shift)
+        df = df.dropna(subset=[col_latitude, col_longitude, *columns_to_shift])
 
         # 水蒸気補正の適用
         if config.h2o_correction is not None and all(
@@ -1978,13 +2028,13 @@ class MobileMeasurementAnalyzer:
         Returns
         ----------
             float
-                真北を0°として時計回りの角度（-180°から180°）
+                真北を0°として時計回りの角度(-180°から180°)
         """
         d_lat: float = lat - center_lat
         d_lon: float = lon - center_lon
-        # arctanを使用して角度を計算（ラジアン）
+        # arctanを使用して角度を計算(ラジアン)
         angle_rad: float = math.atan2(d_lon, d_lat)
-        # ラジアンから度に変換（-180から180の範囲）
+        # ラジアンから度に変換(-180から180の範囲)
         angle_deg: float = math.degrees(angle_rad)
         return angle_deg
 
@@ -1993,7 +2043,7 @@ class MobileMeasurementAnalyzer:
         cls, lat1: float, lon1: float, lat2: float, lon2: float
     ) -> float:
         """
-        2点間の距離をメートル単位で計算（Haversine formula）
+        2点間の距離をメートル単位で計算(Haversine formula)
 
         Parameters
         ----------
@@ -2009,9 +2059,9 @@ class MobileMeasurementAnalyzer:
         Returns
         ----------
             float
-                2地点間の距離（メートル）
+                2地点間の距離(メートル)
         """
-        R = cls.EARTH_RADIUS_METERS
+        const_r = cls.EARTH_RADIUS_METERS
 
         # 緯度経度をラジアンに変換
         lat1_rad: float = math.radians(lat1)
@@ -2030,7 +2080,7 @@ class MobileMeasurementAnalyzer:
         )
         c: float = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-        return R * c  # メートル単位での距離
+        return const_r * c  # メートル単位での距離
 
     @staticmethod
     def _calculate_hotspots_parameters(
@@ -2049,7 +2099,7 @@ class MobileMeasurementAnalyzer:
     ) -> pd.DataFrame:
         """
         ホットスポットのパラメータを計算します。
-        このメソッドは、指定されたデータフレームに対して移動平均（または指定されたquantile）や相関を計算し、
+        このメソッドは、指定されたデータフレームに対して移動平均(または指定されたquantile)や相関を計算し、
         各種のデルタ値や比率を追加します。
 
         Parameters
@@ -2079,7 +2129,7 @@ class MobileMeasurementAnalyzer:
                 - 'quantile'はquantileを使用します。
                 - 'mean'は平均を使用します。
             quantile_value : float
-                使用するquantileの値（デフォルトは0.05）
+                使用するquantileの値(デフォルトは0.05)
 
         Returns
         ----------
@@ -2107,7 +2157,7 @@ class MobileMeasurementAnalyzer:
             .corr(df_internal[col_c2h6_ppb])
         )
 
-        # バックグラウンド値の計算（指定されたパーセンタイルまたは移動平均）
+        # バックグラウンド値の計算(指定されたパーセンタイルまたは移動平均)
         if rolling_method == "quantile":
             df_internal["ch4_ppm_mv"] = (
                 df_internal[col_ch4_ppm]
@@ -2178,7 +2228,7 @@ class MobileMeasurementAnalyzer:
         Parameters
         ----------
             window_minutes : float
-                時間窓の大きさ（分）
+                時間窓の大きさ(分)
 
         Returns
         ----------
@@ -2204,7 +2254,7 @@ class MobileMeasurementAnalyzer:
         Returns
         ----------
             dict[int, tuple[float, float]]
-                区画番号（0-based-index）とその範囲の辞書。各区画は-180度から180度の範囲に分割されます。
+                区画番号(0-based-index)とその範囲の辞書。各区画は-180度から180度の範囲に分割されます。
         """
         sections: dict[int, tuple[float, float]] = {}
         for i in range(num_sections):
@@ -2241,11 +2291,11 @@ class MobileMeasurementAnalyzer:
             check_time_all : bool
                 時間に関係なく重複チェックを行うかどうか
             min_time_threshold_seconds : float
-                重複とみなす最小時間の閾値（秒）
+                重複とみなす最小時間の閾値(秒)
             max_time_threshold_hours : float
-                重複チェックを一時的に無視する最大時間の閾値（時間）
+                重複チェックを一時的に無視する最大時間の閾値(時間)
             hotspot_area_meter : float
-                重複とみなす距離の閾値（m）
+                重複とみなす距離の閾値(m)
 
         Returns
         ----------
@@ -2259,7 +2309,7 @@ class MobileMeasurementAnalyzer:
             )
 
             if distance < hotspot_area_meter:
-                # 時間差の計算（秒単位）
+                # 時間差の計算(秒単位)
                 time_diff = pd.Timedelta(
                     pd.to_datetime(current_time) - pd.to_datetime(used_time)
                 ).total_seconds()
@@ -2317,7 +2367,7 @@ class MobileMeasurementAnalyzer:
         min_time_threshold_seconds: float = 300,  # 5分以内は重複とみなす
         max_time_threshold_hours: float = 12.0,  # 12時間以上離れている場合は別のポイントとして扱う
         check_time_all: bool = True,  # 時間閾値を超えた場合の重複チェックを継続するかどうか
-        hotspot_area_meter: float = 50.0,  # 重複とみなす距離の閾値（メートル）
+        hotspot_area_meter: float = 50.0,  # 重複とみなす距離の閾値(メートル)
         col_ch4_ppm: str = "ch4_ppm",
         col_ch4_ppm_mv: str = "ch4_ppm_mv",
         col_ch4_ppm_delta: str = "ch4_ppm_delta",
@@ -2329,19 +2379,19 @@ class MobileMeasurementAnalyzer:
         ----------
             df : pandas.DataFrame
                 入力データフレーム。必須カラム:
-                - ch4_ppm: メタン濃度（ppm）
-                - ch4_ppm_mv: メタン濃度の移動平均（ppm）
-                - ch4_ppm_delta: メタン濃度の増加量（ppm）
+                - ch4_ppm: メタン濃度(ppm)
+                - ch4_ppm_mv: メタン濃度の移動平均(ppm)
+                - ch4_ppm_delta: メタン濃度の増加量(ppm)
                 - latitude: 緯度
                 - longitude: 経度
             min_time_threshold_seconds : float, optional
-                重複とみなす最小時間差（秒）。デフォルトは300秒（5分）。
+                重複とみなす最小時間差(秒)。デフォルトは300秒(5分)。
             max_time_threshold_hours : float, optional
-                別ポイントとして扱う最大時間差（時間）。デフォルトは12時間。
+                別ポイントとして扱う最大時間差(時間)。デフォルトは12時間。
             check_time_all : bool, optional
                 時間閾値を超えた場合の重複チェックを継続するかどうか。デフォルトはTrue。
             hotspot_area_meter : float, optional
-                重複とみなす距離の閾値（メートル）。デフォルトは50メートル。
+                重複とみなす距離の閾値(メートル)。デフォルトは50メートル。
 
         Returns
         ----------
@@ -2371,7 +2421,7 @@ class MobileMeasurementAnalyzer:
                 ).meters
 
                 if distance < hotspot_area_meter:
-                    # 時間差の計算（秒単位）
+                    # 時間差の計算(秒単位)
                     time_diff = pd.Timedelta(
                         spot.name - pd.to_datetime(used_time)
                     ).total_seconds()
@@ -2380,7 +2430,7 @@ class MobileMeasurementAnalyzer:
                     # 時間差に基づく判定
                     if check_time_all:
                         # 時間に関係なく、距離が近ければ重複とみなす
-                        # ΔCH4が大きい方を残す（現在のスポットは必ず小さい）
+                        # ΔCH4が大きい方を残す(現在のスポットは必ず小さい)
                         should_add = False
                         break
                     else:
@@ -2424,11 +2474,11 @@ class MobileMeasurementAnalyzer:
             check_time_all : bool
                 時間に関係なく重複チェックを行うかどうか。
             min_time_threshold_seconds : float
-                重複とみなす最小時間の閾値（秒）。
+                重複とみなす最小時間の閾値(秒)。
             max_time_threshold_hours : float
-                重複チェックを一時的に無視する最大時間の閾値（時間）。
+                重複チェックを一時的に無視する最大時間の閾値(時間)。
             hotspot_area_meter : float
-                重複とみなす距離の閾値（メートル）。
+                重複とみなす距離の閾値(メートル)。
 
         Returns
         ----------

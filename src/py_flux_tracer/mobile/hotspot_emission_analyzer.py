@@ -1,12 +1,14 @@
-import os
 import math
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import os
+from dataclasses import dataclass, field
+from logging import DEBUG, INFO, Logger
 from pathlib import Path
 from typing import get_args
-from dataclasses import dataclass, field
-from logging import Logger, DEBUG, INFO
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
 from ..commons.utilities import setup_logger
 from .mobile_measurement_analyzer import HotspotData, HotspotType
 
@@ -39,7 +41,7 @@ class EmissionData:
         section : str | int | float
             セクション情報
         type : HotspotType
-            ホットスポットの種類（`HotspotType`を参照）
+            ホットスポットの種類(`HotspotType`を参照)
     """
 
     timestamp: str
@@ -70,39 +72,33 @@ class EmissionData:
         # HotspotTypeはLiteral["bio", "gas", "comb"]として定義されているため、
         # 不正な値は型チェック時に検出されます
 
-        # section のバリデーション（Noneは許可）
-        if self.section is not None and not isinstance(self.section, (str, int, float)):
+        # section のバリデーション(Noneは許可)
+        if self.section is not None and not isinstance(self.section, str | int | float):
             raise ValueError("'section' must be a string, int, float, or None")
 
         # avg_lat のバリデーション
-        if (
-            not isinstance(self.avg_lat, (int, float))
-            or not -90 <= self.avg_lat <= 90
-        ):
+        if not isinstance(self.avg_lat, int | float) or not -90 <= self.avg_lat <= 90:
             raise ValueError("'avg_lat' must be a number between -90 and 90")
 
         # avg_lon のバリデーション
-        if (
-            not isinstance(self.avg_lon, (int, float))
-            or not -180 <= self.avg_lon <= 180
-        ):
+        if not isinstance(self.avg_lon, int | float) or not -180 <= self.avg_lon <= 180:
             raise ValueError("'avg_lon' must be a number between -180 and 180")
 
         # delta_ch4 のバリデーション
-        if not isinstance(self.delta_ch4, (int, float)) or self.delta_ch4 < 0:
+        if not isinstance(self.delta_ch4, int | float) or self.delta_ch4 < 0:
             raise ValueError("'delta_ch4' must be a non-negative number")
 
         # delta_c2h6 のバリデーション
-        if not isinstance(self.delta_c2h6, (int, float)):
+        if not isinstance(self.delta_c2h6, int | float):
             raise ValueError("'delta_c2h6' must be a int or float")
 
         # delta_ratio のバリデーション
-        if not isinstance(self.delta_ratio, (int, float)):
+        if not isinstance(self.delta_ratio, int | float):
             raise ValueError("'delta_ratio' must be a int or float")
 
         # emission_per_min のバリデーション
         if (
-            not isinstance(self.emission_per_min, (int, float))
+            not isinstance(self.emission_per_min, int | float)
             or self.emission_per_min < 0
         ):
             raise ValueError("'emission_per_min' must be a non-negative number")
@@ -159,7 +155,7 @@ class EmissionFormula:
     Parameters
     ----------
         name : str
-            計算式の名前（例: "weller", "weitzel", "joo", "umezawa"など）
+            計算式の名前(例: "weller", "weitzel", "joo", "umezawa"など)
         coef_a : float
             計算式の係数a
         coef_b : float
@@ -187,9 +183,9 @@ class EmissionFormula:
         """
         if not isinstance(self.name, str) or not self.name.strip():
             raise ValueError("'name' must be a non-empty string")
-        if not isinstance(self.coef_a, (int, float)):
+        if not isinstance(self.coef_a, (int | float)):
             raise ValueError("'coef_a' must be a number")
-        if not isinstance(self.coef_b, (int, float)):
+        if not isinstance(self.coef_b, (int | float)):
             raise ValueError("'coef_b' must be a number")
 
 
@@ -399,11 +395,7 @@ class HotspotEmissionAnalyzer:
         output_dirpath: str | Path | None = None,
         output_filename: str = "emission_analysis.png",
         figsize: tuple[float, float] = (12, 5),
-        hotspot_colors: dict[HotspotType, str] = {
-            "bio": "blue",
-            "gas": "red",
-            "comb": "green",
-        },
+        hotspot_colors: dict[HotspotType, str] | None = None,
         add_legend: bool = True,
         hist_log_y: bool = False,
         hist_xlim: tuple[float, float] | None = None,
@@ -412,7 +404,7 @@ class HotspotEmissionAnalyzer:
         scatter_ylim: tuple[float, float] | None = None,
         hist_bin_width: float = 0.5,
         print_summary: bool = False,
-        stack_bars: bool = True,  # 追加：積み上げ方式を選択するパラメータ
+        stack_bars: bool = True,  # 追加:積み上げ方式を選択するパラメータ
         save_fig: bool = False,
         show_fig: bool = True,
         show_scatter: bool = True,  # 散布図の表示を制御するオプションを追加
@@ -432,8 +424,15 @@ class HotspotEmissionAnalyzer:
                 プロットの解像度。デフォルトは300。
             figsize : tuple[float, float]
                 プロットのサイズ。デフォルトは(12, 5)。
-            hotspot_colors : dict[HotspotType, str]
-                ホットスポットの色を定義する辞書。
+            hotspot_colors : dict[HotspotType, str] | None
+                ホットスポットの色を定義する辞書。Noneの場合はデフォルト値を使用。
+                ```py
+                {
+                    "bio": "blue",
+                    "gas": "red",
+                    "comb": "green",
+                }
+                ```
             add_legend : bool
                 凡例を追加するかどうか。デフォルトはTrue。
             hist_log_y : bool
@@ -455,12 +454,18 @@ class HotspotEmissionAnalyzer:
             show_fig : bool
                 図を表示するかどうか。デフォルトはTrue。
             show_scatter : bool
-                散布図（右図）を表示するかどうか。デフォルトはTrue。
+                散布図(右図)を表示するかどうか。デフォルトはTrue。
         """
+        if hotspot_colors is None:
+            hotspot_colors = {
+                "bio": "blue",
+                "gas": "red",
+                "comb": "green",
+            }
         # データをDataFrameに変換
         df = pd.DataFrame([e.to_dict() for e in emissions])
 
-        # プロットの作成（散布図の有無に応じてサブプロット数を調整）
+        # プロットの作成(散布図の有無に応じてサブプロット数を調整)
         if show_scatter:
             fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
             axes = [ax1, ax2]
@@ -483,11 +488,11 @@ class HotspotEmissionAnalyzer:
         else:
             end = np.ceil(df["emission_per_min"].max() * 1.05)
 
-        # ビン数を計算（end値をbin_widthで割り切れるように調整）
+        # ビン数を計算(end値をbin_widthで割り切れるように調整)
         n_bins = int(np.ceil(end / hist_bin_width))
         end = n_bins * hist_bin_width
 
-        # ビンの生成（0から開始し、bin_widthの倍数で区切る）
+        # ビンの生成(0から開始し、bin_widthの倍数で区切る)
         bins = np.linspace(start, end, n_bins + 1)
 
         # タイプごとにヒストグラムを積み上げ
@@ -527,7 +532,7 @@ class HotspotEmissionAnalyzer:
         ax1.set_ylabel("Frequency")
         if hist_log_y:
             # ax1.set_yscale("log")
-            # 非線形スケールを設定（linthreshで線形から対数への遷移点を指定）
+            # 非線形スケールを設定(linthreshで線形から対数への遷移点を指定)
             ax1.set_yscale("symlog", linthresh=1.0)
         if hist_xlim is not None:
             ax1.set_xlim(hist_xlim)

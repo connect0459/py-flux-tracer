@@ -1,7 +1,8 @@
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 from scipy import signal
-from typing import Literal
 
 WindowFunctionType = Literal["hanning", "hamming", "blackman"]
 
@@ -23,7 +24,7 @@ class SpectrumCalculator:
             df : pd.DataFrame
                 pandasのデータフレーム。解析対象のデータを含む。
             fs : float
-                サンプリング周波数（Hz）。データのサンプリングレートを指定。
+                サンプリング周波数(Hz)。データのサンプリングレートを指定。
             apply_window : bool, optional
                 窓関数を適用するフラグ。デフォルトはTrue。
             plots : int
@@ -64,7 +65,7 @@ class SpectrumCalculator:
             frequency_weighted : bool, optional
                 周波数の重みづけを適用するかどうか。デフォルトはTrue。
             interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
+                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。デフォルトはTrue。
             scaling : str
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
             detrend_1st : bool, optional
@@ -74,16 +75,16 @@ class SpectrumCalculator:
             apply_lag_correction_to_col2 : bool, optional
                 col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
             lag_second : float | None, optional
-                col1からcol2が遅れている時間（秒）。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
+                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
 
         Returns
         ----------
             tuple
                 (freqs, co_spectrum, corr_coef)
                 - freqs : np.ndarray
-                    周波数軸（対数スケールの場合は対数変換済み）。
+                    周波数軸(対数スケールの場合は対数変換済み)。
                 - co_spectrum : np.ndarray
-                    コスペクトル（対数スケールの場合は対数変換済み）。
+                    コスペクトル(対数スケールの場合は対数変換済み)。
                 - corr_coef : float
                     変数の相関係数。
         """
@@ -128,7 +129,7 @@ class SpectrumCalculator:
             frequency_weighted : bool, optional
                 周波数の重みづけを適用するかどうか。デフォルトはTrue。
             interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。デフォルトはTrue。
+                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。デフォルトはTrue。
             scaling : str
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"。
             detrend_1st : bool, optional
@@ -138,16 +139,16 @@ class SpectrumCalculator:
             apply_lag_correction_to_col2 : bool, optional
                 col2に遅れ時間補正を適用するかどうか。デフォルトはTrue。
             lag_second : float | None, optional
-                col1からcol2が遅れている時間（秒）。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
+                col1からcol2が遅れている時間(秒)。apply_lag_correction_to_col2がTrueの場合に必要。デフォルトはNone。
 
         Returns
         ----------
             tuple
                 (freqs, co_spectrum, corr_coef)
                 - freqs : np.ndarray
-                    周波数軸（対数スケールの場合は対数変換済み）。
+                    周波数軸(対数スケールの場合は対数変換済み)。
                 - co_spectrum : np.ndarray
-                    クロススペクトル（対数スケールの場合は対数変換済み）。
+                    クロススペクトル(対数スケールの場合は対数変換済み)。
                 - corr_coef : float
                     変数の相関係数。
         """
@@ -168,7 +169,7 @@ class SpectrumCalculator:
         if apply_lag_correction_to_col2:
             if lag_second is None:
                 raise ValueError(
-                    "apply_lag_correction_to_col2=True の場合は lag_second に有効な遅れ時間（秒）を指定してください。"
+                    "apply_lag_correction_to_col2=True の場合は lag_second に有効な遅れ時間(秒)を指定してください。"
                 )
             data1, data2 = SpectrumCalculator._correct_lag_time(
                 data1=data1, data2=data2, fs=fs, lag_second=lag_second
@@ -187,7 +188,7 @@ class SpectrumCalculator:
         corr_coef: float = np.corrcoef(data1, data2)[0, 1]
 
         # クロススペクトル計算
-        freqs, Pxy = signal.csd(
+        freqs, p_xy = signal.csd(
             data1,
             data2,
             fs=self._fs,
@@ -197,8 +198,8 @@ class SpectrumCalculator:
         )
 
         # コスペクトルとクアドラチャスペクトルの抽出
-        co_spectrum = np.real(Pxy)
-        quad_spectrum = np.imag(Pxy)
+        co_spectrum = np.real(p_xy)
+        quad_spectrum = np.imag(p_xy)
 
         # 周波数の重みづけ
         if frequency_weighted:
@@ -263,7 +264,7 @@ class SpectrumCalculator:
             frequency_weighted : bool, optional
                 周波数の重みづけを適用するかどうか。デフォルトはTrueです。
             interpolate_points : bool, optional
-                等間隔なデータ点を生成するかどうか（対数軸上で等間隔）。
+                等間隔なデータ点を生成するかどうか(対数軸上で等間隔)。
             scaling : str, optional
                 "density"でスペクトル密度、"spectrum"でスペクトル。デフォルトは"spectrum"です。
             detrend_1st : bool, optional
@@ -274,8 +275,8 @@ class SpectrumCalculator:
         Returns
         ----------
             tuple
-                - freqs (np.ndarray): 周波数軸（対数スケールの場合は対数変換済み）
-                - power_spectrum (np.ndarray): パワースペクトル（対数スケールの場合は対数変換済み）
+                - freqs (np.ndarray): 周波数軸(対数スケールの場合は対数変換済み)
+                - power_spectrum (np.ndarray): パワースペクトル(対数スケールの場合は対数変換済み)
         """
         # バリデーション
         valid_scaling_options = ["density", "spectrum"]
@@ -298,17 +299,17 @@ class SpectrumCalculator:
             data, fs=self._fs, window=self._window_type, nperseg=1024, scaling=scaling
         )
 
-        # 周波数の重みづけ（0Hz除外の前に実施）
+        # 周波数の重みづけ(0Hz除外の前に実施)
         if frequency_weighted:
             power_spectrum = freqs * power_spectrum
 
-        # 無次元化（0Hz除外の前に実施）
+        # 無次元化(0Hz除外の前に実施)
         if dimensionless:
             variance = np.var(data)
             power_spectrum /= variance
 
         if interpolate_points:
-            # 補間処理（0Hz除外の前に実施）
+            # 補間処理(0Hz除外の前に実施)
             log_freq_min = np.log10(0.001)
             log_freq_max = np.log10(freqs[-1])
             log_freq_resampled = np.logspace(log_freq_min, log_freq_max, self._plots)
@@ -348,13 +349,13 @@ class SpectrumCalculator:
             fs : float
                 サンプリング周波数
             lag_second : float
-                data1からdata2が遅れている時間（秒）。負の値は許可されない。
+                data1からdata2が遅れている時間(秒)。負の値は許可されない。
 
         Returns
         ----------
             tuple
                 - data1 : np.ndarray
-                    基準データ（シフトなし）
+                    基準データ(シフトなし)
                 - data2 : np.ndarray
                     補正された遅れているデータ
         """
@@ -367,7 +368,7 @@ class SpectrumCalculator:
         # データの長さを取得
         data_length = len(data1)
 
-        # data2のみをシフト（NaNで初期化）
+        # data2のみをシフト(NaNで初期化)
         shifted_data2 = np.full(data_length, np.nan)
         shifted_data2[:-lag_index] = data2[lag_index:] if lag_index > 0 else data2
 

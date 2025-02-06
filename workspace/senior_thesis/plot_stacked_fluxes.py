@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
+
 from py_flux_tracer import setup_plot_params
 
 
@@ -59,7 +61,7 @@ def plot_stacked_fluxes(
     # データの読み込み
     df: pd.DataFrame = pd.read_csv(input_filepath, skiprows=[1])
 
-    # 方角の配置順序を定義（左上から時計回り）
+    # 方角の配置順序を定義(左上から時計回り)
     directions_order: list[str] = ["nw", "ne", "sw", "se"]
     titles: dict[str, str] = {"nw": "北西", "ne": "北東", "sw": "南西", "se": "南東"}
 
@@ -78,7 +80,7 @@ def plot_stacked_fluxes(
         # diurnalが10以下のデータをマスク
         valid_mask = diurnal > 10
 
-        # gas由来とbio由来のCH4フラックスを計算（信頼性の低いデータは0に設定）
+        # gas由来とbio由来のCH4フラックスを計算(信頼性の低いデータは0に設定)
         gas = np.where(valid_mask, diurnal * gasratio / 100, 0)
         bio = np.where(valid_mask, diurnal * (100 - gasratio) / 100, 0)
 
@@ -110,8 +112,8 @@ def plot_stacked_fluxes(
         if ylim is not None:
             ax.set_ylim(0, ylim)
 
-        # gas比率の表示（信頼性の低いデータは表示しない）
-        for i, (g, b, is_valid) in enumerate(zip(gas, bio, valid_mask)):
+        # gas比率の表示(信頼性の低いデータは表示しない)
+        for i, (g, b, is_valid) in enumerate(zip(gas, bio, valid_mask, strict=True)):
             if is_valid:
                 total = g + b
                 ratio = g / total * 100

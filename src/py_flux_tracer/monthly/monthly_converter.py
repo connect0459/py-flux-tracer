@@ -1,17 +1,19 @@
-import pandas as pd
 import warnings
-from pathlib import Path
 from datetime import datetime
 from importlib.metadata import version
-from logging import Logger, DEBUG, INFO
+from logging import DEBUG, INFO, Logger
+from pathlib import Path
+
+import pandas as pd
+
 from ..commons.utilities import setup_logger
 
 
 class MonthlyConverter:
     """
-    Monthlyシート（Excel）を一括で読み込み、DataFrameに変換するクラス。
+    Monthlyシート(Excel)を一括で読み込み、DataFrameに変換するクラス。
     デフォルトは'SA.Ultra.*.xlsx'に対応していますが、コンストラクタのfile_patternを
-    変更すると別のシートにも対応可能です（例: 'SA.Picaro.*.xlsx'）。
+    変更すると別のシートにも対応可能です(例: 'SA.Picaro.*.xlsx')。
     """
 
     FILE_DATE_FORMAT = "%Y.%m"  # ファイル名用
@@ -21,15 +23,7 @@ class MonthlyConverter:
         self,
         directory: str | Path,
         file_pattern: str = "SA.Ultra.*.xlsx",
-        na_values: list[str] = [
-            "#DIV/0!",
-            "#VALUE!",
-            "#REF!",
-            "#N/A",
-            "#NAME?",
-            "NAN",
-            "nan",
-        ],
+        na_values: list[str] | None = None,
         logger: Logger | None = None,
         logging_debug: bool = False,
     ):
@@ -42,8 +36,19 @@ class MonthlyConverter:
                 Excelファイルが格納されているディレクトリのパス
             file_pattern : str
                 ファイル名のパターン。デフォルトは'SA.Ultra.*.xlsx'。
-            na_values : list[str]
-                NaNと判定する値のパターン。
+            na_values : list[str] | None
+                NaNと判定する値のパターン。Noneの場合のデフォルト値:
+                ```py
+                [
+                    "#DIV/0!",
+                    "#VALUE!",
+                    "#REF!",
+                    "#N/A",
+                    "#NAME?",
+                    "NAN",
+                    "nan",
+                ]
+                ```
             logger : Logger | None
                 使用するロガー。Noneの場合は新しいロガーを作成します。
             logging_debug : bool
@@ -55,6 +60,8 @@ class MonthlyConverter:
             log_level = DEBUG
         self.logger: Logger = setup_logger(logger=logger, log_level=log_level)
 
+        if na_values is None:
+            na_values = ["#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NAME?", "NAN", "nan"]
         self._na_values: list[str] = na_values
         self._directory = Path(directory)
         if not self._directory.exists():
@@ -117,7 +124,7 @@ class MonthlyConverter:
         columns: list[str] | None = None,
         col_datetime: str = "Date",
         header: int = 0,
-        skiprows: int | list[int] = [1],
+        skiprows: int | list[int] | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         include_end_date: bool = True,
@@ -125,7 +132,7 @@ class MonthlyConverter:
     ) -> pd.DataFrame:
         """
         指定されたシートを読み込み、DataFrameとして返却します。
-        デフォルトでは2行目（単位の行）はスキップされます。
+        デフォルトでは2行目(単位の行)はスキップされます。
         重複するカラム名がある場合は、より先に指定されたシートに存在するカラムの値を保持します。
 
         Parameters
@@ -138,8 +145,8 @@ class MonthlyConverter:
                 日付と時刻の情報が含まれるカラム名。デフォルトは'Date'。
             header : int
                 データのヘッダー行を指定します。デフォルトは0。
-            skiprows : int | list[int]
-                スキップする行数。デフォルトでは1行目をスキップします。
+            skiprows : int | list[int] | None
+                スキップする行数。Noneの場合のデフォルトでは2行目をスキップします。
             start_date : str | None
                 開始日 ('yyyy-MM-dd')。この日付の'00:00:00'のデータが開始行となります。
             end_date : str | None
@@ -154,6 +161,8 @@ class MonthlyConverter:
             pd.DataFrame
                 読み込まれたデータを結合したDataFrameを返します。
         """
+        if skiprows is None:
+            skiprows = [1]
         if isinstance(sheet_names, str):
             sheet_names = [sheet_names]
 
@@ -317,11 +326,11 @@ class MonthlyConverter:
             df : pd.DataFrame
                 入力データフレーム。
             target_months : list[int]
-                抽出したい月のリスト（1から12の整数）。
+                抽出したい月のリスト(1から12の整数)。
             start_day : int | None
-                開始日（1から31の整数）。Noneの場合は月初め。
+                開始日(1から31の整数)。Noneの場合は月初め。
             end_day : int | None
-                終了日（1から31の整数）。Noneの場合は月末。
+                終了日(1から31の整数)。Noneの場合は月末。
             datetime_column : str, optional
                 日付を含む列の名前。デフォルトは"Date"。
 
@@ -393,9 +402,9 @@ class MonthlyConverter:
             df : pd.DataFrame
                 入力データフレーム
             start_date : str | pd.Timestamp
-                開始日（'YYYY-MM-DD'形式の文字列またはTimestamp）
+                開始日('YYYY-MM-DD'形式の文字列またはTimestamp)
             end_date : str | pd.Timestamp
-                終了日（'YYYY-MM-DD'形式の文字列またはTimestamp）
+                終了日('YYYY-MM-DD'形式の文字列またはTimestamp)
             datetime_column : str
                 日付を含む列の名前。デフォルトは"Date"
 
@@ -472,7 +481,7 @@ class MonthlyConverter:
 
         # 重複するカラムを処理
         for col in overlapping_cols:
-            # 元のカラムはdf1の値を保持（既に result に含まれている）
+            # 元のカラムはdf1の値を保持(既に result に含まれている)
             # _x サフィックスでdf1の値を追加
             result[f"{col}_x"] = df1[col]
             # _y サフィックスでdf2の値を追加

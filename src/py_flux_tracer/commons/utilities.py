@@ -1,9 +1,10 @@
 import os
-import matplotlib.pyplot as plt
-import matplotlib.font_manager as fm
-from typing import Any
+from logging import INFO, Formatter, Logger, StreamHandler, getLogger
 from pathlib import Path
-from logging import getLogger, Formatter, Logger, StreamHandler, INFO
+from typing import Any
+
+import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 
 
 def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
@@ -45,7 +46,7 @@ def setup_logger(logger: Logger | None, log_level: int = INFO) -> Logger:
 
 
 def setup_plot_params(
-    font_family: list[str] = ["Arial", "MS Gothic", "Dejavu Sans"],
+    font_family: list[str] | None = None,
     font_paths: list[str | Path] | None = None,
     font_size: float = 20,
     legend_size: float = 20,
@@ -58,8 +59,8 @@ def setup_plot_params(
 
     Parameters
     ----------
-        font_family : list[str]
-            使用するフォントファミリーのリスト。
+        font_family : list[str] | None
+            使用するフォントファミリーのリスト。Noneの場合はデフォルト値(["Arial", "MS Gothic", "sans-serif"])を使用。
         font_paths : list[str | Path] | None
             フォントファイルのパスのリスト。デフォルトはNoneで、リストが指定されたときにfontManagerでフォントを登録する。
         font_size : float
@@ -79,6 +80,10 @@ def setup_plot_params(
             if not os.path.exists(path):
                 raise FileNotFoundError(f"The font file at {path} does not exist.")
             fm.fontManager.addfont(path)
+
+    # デフォルト値の設定
+    if font_family is None:
+        font_family = ["Arial", "MS Gothic", "sans-serif"]
 
     # デフォルトのプロットパラメータ
     default_params = {

@@ -1,4 +1,5 @@
 import os
+
 from py_flux_tracer import FftFileReorganizer
 
 # 変数定義
@@ -10,7 +11,9 @@ output_dirpath_names: list[str] = ["sorted", "sorted-detrend"]
 # メイン処理
 try:
     flag_filepath: str = os.path.join(base_path, flag_filename)
-    for input_dirpath_name, output_dirpath_name in zip(input_dirpath_names, output_dirpath_names):
+    for input_dirpath_name, output_dirpath_name in zip(
+        input_dirpath_names, output_dirpath_names, strict=True
+    ):
         input_dirpath_path: str = os.path.join(base_path, input_dirpath_name)
         output_dirpath_path: str = os.path.join(base_path, output_dirpath_name)
 

@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
+
 from py_flux_tracer import setup_plot_params
 
 
@@ -37,7 +39,7 @@ def plot_gas_stats(
     # データの読み込み
     df = pd.read_csv(input_csv)
 
-    # 千m³からMm³に変換（1000で割る）
+    # 千m³からMm³に変換(1000で割る)
     for col in ["家庭用", "工業用", "商業用", "公用・医療用"]:
         df[col] = df[col] / 1000
 
@@ -49,7 +51,7 @@ def plot_gas_stats(
     fig, ax = plt.subplots(figsize=figsize)
 
     bottom = np.zeros(len(df))
-    for category, color in zip(categories, colors):
+    for category, color in zip(categories, colors, strict=True):
         ax.bar(
             df.index,
             df[category],

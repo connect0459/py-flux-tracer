@@ -22,7 +22,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 ```
 
-プロジェクト構造の例：
+プロジェクト構造の例:
 
 ```txt
 project/
@@ -35,7 +35,7 @@ project/
     └── test_module.py
 ```
 
-テストファイルの例：
+テストファイルの例:
 
 ```python
 # tests/test_module.py
@@ -48,19 +48,19 @@ def test_my_function():
 
 ## テストファイルを実行
 
-特定のファイル（例: `tests/commons/test_dataclasses.py`）を実行：
+特定のファイル(例: `tests/commons/test_dataclasses.py`)を実行:
 
 ```bash
 uv run pytest tests/commons/test_dataclasses.py -v
 ```
 
-特定のディレクトリ（例: `tests/commons`）を実行：
+特定のディレクトリ(例: `tests/commons`)を実行:
 
 ```bash
 uv run pytest tests/commons/ -v
 ```
 
-`tests`ディレクトリ全体を実行：
+`tests`ディレクトリ全体を実行:
 
 ```bash
 uv run pytest tests/ -v
@@ -68,7 +68,7 @@ uv run pytest tests/ -v
 
 ## オプション設定
 
-`pyproject.toml`にテストの設定を追加することで、テストの実行をカスタマイズできます：
+`pyproject.toml`にテストの設定を追加することで、テストの実行をカスタマイズできます:
 
 ```toml
 [tool.pytest.ini_options]

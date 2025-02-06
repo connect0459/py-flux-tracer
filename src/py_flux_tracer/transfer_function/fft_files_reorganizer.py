@@ -1,10 +1,13 @@
+import csv
 import os
 import re
-import csv
 import shutil
-from tqdm import tqdm
 from datetime import datetime
-from logging import Logger, DEBUG, INFO
+from logging import DEBUG, INFO, Logger
+from typing import ClassVar
+
+from tqdm import tqdm
+
 from ..commons.utilities import setup_logger
 
 
@@ -15,15 +18,15 @@ class FftFileReorganizer:
     入力ディレクトリからファイルを読み取り、フラグファイルに基づいて
     出力ディレクトリに再編成します。時間の完全一致を要求し、
     一致しないファイルはスキップして警告を出します。
-    オプションで相対湿度（RH）に基づいたサブディレクトリへの分類も可能です。
+    オプションで相対湿度(RH)に基づいたサブディレクトリへの分類も可能です。
     """
 
     # クラス定数の定義
-    DEFAULT_FILENAME_PATTERNS: list[str] = [
+    DEFAULT_FILENAME_PATTERNS: ClassVar[list[str]] = [
         r"FFT_TOA5_\d+\.SAC_Eddy_\d+_(\d{4})_(\d{2})_(\d{2})_(\d{4})(?:\+)?\.csv",
         r"FFT_TOA5_\d+\.SAC_Ultra\.Eddy_\d+_(\d{4})_(\d{2})_(\d{2})_(\d{4})(?:\+)?(?:-resampled)?\.csv",
-    ]  # デフォルトのファイル名のパターン（正規表現）
-    DEFAULT_OUTPUT_DIRS = {
+    ]  # デフォルトのファイル名のパターン(正規表現)
+    DEFAULT_OUTPUT_DIRS: ClassVar[dict[str, str]] = {
         "GOOD_DATA": "good_data_all",
         "BAD_DATA": "bad_data",
     }  # 出力ディレクトリの構造に関する定数
@@ -51,7 +54,7 @@ class FftFileReorganizer:
             flag_csv_path : str
                 フラグ情報が記載されているCSVファイルのパス
             filename_patterns : list[str] | None
-                ファイル名のパターン（正規表現）のリスト
+                ファイル名のパターン(正規表現)のリスト
             output_dirpaths_struct : dict[str, str] | None
                 出力ディレクトリの構造を定義する辞書
             sort_by_rh : bool
@@ -164,7 +167,7 @@ class FftFileReorganizer:
                 self._parse_datetime(file)
                 valid_files.append(file)
             except ValueError as e:
-                self._warnings.append(f"{file} をスキップします: {str(e)}")
+                self._warnings.append(f"{file} をスキップします: {e!s}")
         return sorted(valid_files, key=self._parse_datetime)
 
     def _parse_datetime(self, filename: str) -> datetime:
@@ -214,7 +217,7 @@ class FftFileReorganizer:
         """
         フラグファイルを読み込み、self._flagsディクショナリに格納します。
         """
-        with open(self._flag_filepath, "r") as f:
+        with open(self._flag_filepath) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 time = datetime.strptime(row["time"], "%Y/%m/%d %H:%M")
@@ -229,7 +232,7 @@ class FftFileReorganizer:
     @staticmethod
     def get_rh_directory(rh: float):
         """
-        すべての値を10刻みで切り上げる（例: 80.1 → RH90, 86.0 → RH90, 91.2 → RH100）
+        すべての値を10刻みで切り上げる(例: 80.1 → RH90, 86.0 → RH90, 91.2 → RH100)
         """
         if rh < 0 or rh > 100:  # 相対湿度として不正な値を除外
             return "bad_data"

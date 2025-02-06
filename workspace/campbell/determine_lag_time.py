@@ -1,6 +1,6 @@
 import os
-from py_flux_tracer import EddyDataPreprocessor
 
+from py_flux_tracer import EddyDataPreprocessor
 
 if __name__ == "__main__":
     target_home: str = (

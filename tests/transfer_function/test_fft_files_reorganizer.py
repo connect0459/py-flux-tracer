@@ -1,6 +1,8 @@
-import pytest
-import os
 import csv
+import os
+
+import pytest
+
 from py_flux_tracer import FftFileReorganizer
 
 
@@ -93,6 +95,6 @@ def test_invalid_filename(temp_dirs, flag_file):
     )
     reorganizer.reorganize()
 
-    # 警告が生成されることを確認（実装方法によって確認方法は変更が必要かもしれません）
+    # 警告が生成されることを確認(実装方法によって確認方法は変更が必要かもしれません)
     assert not os.path.exists(os.path.join(output_dirpath, "good_data_all", invalid_file))
     assert not os.path.exists(os.path.join(output_dirpath, "bad_data", invalid_file))

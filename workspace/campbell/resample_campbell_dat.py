@@ -1,6 +1,6 @@
 import os
-from py_flux_tracer import EddyDataPreprocessor
 
+from py_flux_tracer import EddyDataPreprocessor
 
 if __name__ == "__main__":
     root_path: str = "/mnt/c/Users/nakao/workspace/sac/ultra/data/2025.01.29/Ultra_Eddy"

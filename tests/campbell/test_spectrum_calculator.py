@@ -1,6 +1,7 @@
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+
 from py_flux_tracer import SpectrumCalculator, WindowFunctionType
 
 
@@ -140,7 +141,7 @@ def test_correct_lag_time():
     )
     assert len(corrected_data1) == len(corrected_data2)
 
-    # 異常系：負の遅れ時間
+    # 異常系:負の遅れ時間
     with pytest.raises(ValueError):
         SpectrumCalculator._correct_lag_time(
             data1=data1, data2=data2, fs=fs, lag_second=-1.0
@@ -149,7 +150,7 @@ def test_correct_lag_time():
 
 def test_detrend():
     """トレンド除去のテスト"""
-    # テストデータの作成（線形トレンド + ノイズ）
+    # テストデータの作成(線形トレンド + ノイズ)
     x = np.linspace(0, 10, 100)
     trend = 2 * x + 1
     noise = np.random.normal(0, 0.1, 100)
@@ -163,7 +164,7 @@ def test_detrend():
     detrended_second = SpectrumCalculator._detrend(data, first=False, second=True)
     assert len(detrended_second) == len(data)
 
-    # エラーケース：両方False
+    # エラーケース:両方False
     with pytest.raises(ValueError):
         SpectrumCalculator._detrend(data, first=False, second=False)
 
@@ -225,7 +226,7 @@ def test_lag_time_correction_with_timestamp():
     # SpectrumCalculatorのインスタンス化
     calculator = SpectrumCalculator(df=df, fs=fs)
 
-    # クロススペクトル計算（遅れ時間補正あり）
+    # クロススペクトル計算(遅れ時間補正あり)
     freqs, co_spec, quad_spec, corr = calculator.calculate_cross_spectrum(
         col1="col_base",
         col2="col_target",
@@ -246,10 +247,10 @@ def test_lag_time_correction_with_timestamp():
     assert len(corrected_data1) == len(corrected_data2)
 
     # 2. 遅れ時間補正後、対応するデータポイントが一致することを確認
-    # 最初の数ポイントをチェック（数値誤差を考慮）
+    # 最初の数ポイントをチェック(数値誤差を考慮)
     np.testing.assert_allclose(
         corrected_data1[:10], corrected_data2[:10], rtol=1e-10, atol=1e-10
     )
 
-    # 3. 相関係数が高いことを確認（正しく補正されていれば高い相関を示すはず）
+    # 3. 相関係数が高いことを確認(正しく補正されていれば高い相関を示すはず)
     assert corr > 0.99

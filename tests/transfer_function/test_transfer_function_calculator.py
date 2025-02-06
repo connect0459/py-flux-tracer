@@ -1,9 +1,11 @@
-import pytest
 import os
 import tempfile
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import pytest
+
 from py_flux_tracer import TransferFunctionCalculator
 
 
@@ -16,9 +18,9 @@ def sample_data_file():
         # テストデータの作成
         frequencies = np.logspace(-2, 1, 50)  # 0.01から10Hzまでの50点
         co1_values = 1.0 / (1 + frequencies)  # サンプルのコスペクトル1
-        co2_values = 0.8 / (1 + frequencies)  # サンプルのコスペクトル2（減衰を含む）
+        co2_values = 0.8 / (1 + frequencies)  # サンプルのコスペクトル2(減衰を含む)
 
-        for freq, co1, co2 in zip(frequencies, co1_values, co2_values):
+        for freq, co1, co2 in zip(frequencies, co1_values, co2_values, strict=True):
             f.write(f"{freq:.6f},{co1:.6f},{co2:.6f}\n")
 
     yield f.name

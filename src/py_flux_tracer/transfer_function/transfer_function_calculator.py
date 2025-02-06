@@ -1,9 +1,10 @@
 import os
+from dataclasses import dataclass
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
-from dataclasses import dataclass
 from scipy.optimize import curve_fit
 
 
@@ -97,7 +98,7 @@ class TransferFunctionCalculator:
             TransferFunctionCalculator.transfer_function, array_x, array_y
         )
 
-        # 標準誤差を計算（共分散行列の対角成分の平方根）
+        # 標準誤差を計算(共分散行列の対角成分の平方根)
         perr = np.sqrt(np.diag(pcov))
 
         # 係数aとその標準誤差、および計算に用いたDataFrameを返す
