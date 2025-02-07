@@ -1,0 +1,171 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e76d105d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import sys\n",
+    "\n",
+    "import matplotlib.font_manager as fm\n",
+    "from dotenv import load_dotenv\n",
+    "\n",
+    "from py_flux_tracer import (\n",
+    "    BiasRemovalConfig,\n",
+    "    H2OCorrectionConfig,\n",
+    "    HotspotData,\n",
+    "    MobileMeasurementAnalyzer,\n",
+    "    MobileMeasurementConfig,\n",
+    ")\n",
+    "\n",
+    "print(sys.version)\n",
+    "\n",
+    "# ローカルフォントの読み込み(必要ない場合はコメントアウト)\n",
+    "font_filepaths: list[str] = [\n",
+    "    \"/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf\",  # 英語のデフォルト\n",
+    "    \"/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc\",  # 日本語のデフォルト\n",
+    "]\n",
+    "for path in font_filepaths:\n",
+    "    fm.fontManager.addfont(path)\n",
+    "del font_filepaths\n",
+    "\n",
+    "# 環境変数の設定\n",
+    "dotenv_path = \"/home/connect0459/labo/py-flux-tracer/workspace/.env\"  # .envファイル\n",
+    "load_dotenv(dotenv_path)\n",
+    "mapbox_access_token: str | None = os.getenv(\"MAPBOX_ACCESS_TOKEN\")\n",
+    "if not mapbox_access_token:\n",
+    "    raise ValueError(\"MAPBOX_ACCESS_TOKEN is not set in .env file\")\n",
+    "g_mapbox_access_token: str = mapbox_access_token\n",
+    "del dotenv_path, mapbox_access_token\n",
+    "\n",
+    "\"\"\"\n",
+    "このNotebookで使いまわすグローバル変数を定義\n",
+    "'g_'プレフィックスを付けて定義\n",
+    "\"\"\"\n",
+    "g_print_measurement_stats: bool = False\n",
+    "g_timeseries: bool = False\n",
+    "g_scatter_c2c1: bool = False\n",
+    "g_plot_ch4: bool = True\n",
+    "g_plot_c2h6: bool = False\n",
+    "g_plot_c2c1_ratio: bool = True\n",
+    "g_hotspot_area_meter: float = 50\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "82bb8a9d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Ultra-2データの補正式に関するパラメータ\n",
+    "ultra_2_h2o_correction = H2OCorrectionConfig(\n",
+    "    coef_b=-1.42907e-6,  # 1次の係数\n",
+    "    coef_c=2.11169e-11,  # 2次の係数\n",
+    ")\n",
+    "ultra_2_bias_removal = BiasRemovalConfig(\n",
+    "    quantile_value=0.05,\n",
+    ")\n",
+    "\n",
+    "# MobileMeasurementConfigによる詳細指定\n",
+    "configs: list[MobileMeasurementConfig] = [\n",
+    "    MobileMeasurementConfig(\n",
+    "        lag=10,\n",
+    "        fs=1,\n",
+    "        path=\"/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/opu_roof/inputs/Ultra100915_250127_142738+.txt\",\n",
+    "        h2o_correction=ultra_2_h2o_correction,\n",
+    "        bias_removal=ultra_2_bias_removal,\n",
+    "    ),\n",
+    "]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c33039f0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# インスタンスの作成\n",
+    "g_msa = MobileMeasurementAnalyzer(\n",
+    "    center_lat=34.573904320329724,\n",
+    "    center_lon=135.4829511120712,\n",
+    "    configs=configs,\n",
+    "    num_sections=4,\n",
+    "    hotspot_area_meter=g_hotspot_area_meter,\n",
+    "    window_minutes=5,\n",
+    "    logging_debug=False,\n",
+    ")\n",
+    "del configs, ultra_2_bias_removal, ultra_2_h2o_correction\n",
+    "\n",
+    "# # 距離などの情報を表示\n",
+    "# if g_print_measurement_stats:\n",
+    "#     g_msa.calculate_measurement_stats()\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "281be5f3-4925-45cc-9bd7-ba722b071315",
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [],
+   "source": [
+    "hotspots: list[HotspotData] = g_msa.analyze_hotspots(\n",
+    "    duplicate_check_mode=\"none\",\n",
+    "    # duplicate_check_mode=\"time_window\",\n",
+    "    # duplicate_check_mode=\"time_all\",\n",
+    ")\n",
+    "# ホットスポットのc2c1を描画\n",
+    "g_msa.plot_conc_timeseries(\n",
+    "    save_fig=False,\n",
+    ")\n",
+    "g_msa.plot_conc_timeseries_with_hotspots(\n",
+    "    hotspots=hotspots,\n",
+    "    hotspot_markerscale=3,\n",
+    "    hotspot_size=5,\n",
+    "    save_fig=False,\n",
+    "    show_fig=True,\n",
+    "    ylim_ch4=(1, 10e3),\n",
+    "    ylim_c2h6=(1, 10e5),\n",
+    "    yscale_log_ch4=True,\n",
+    "    yscale_log_c2h6=True,\n",
+    ")\n",
+    "del hotspots"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3c9e3be8",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": ".venv",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

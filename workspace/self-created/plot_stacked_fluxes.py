@@ -168,9 +168,9 @@ Ubuntu環境でのフォントの手動設定
 4. `rm ~/.cache/matplotlib/fontlist-v390.json` # 実際のファイル名に変更
 """
 # フォントファイルを登録
-font_paths: list[str | Path] = [
-    "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
-    "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
+font_filepaths: list[str | Path] = [
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
 
 # rcParamsでの全体的な設定
@@ -184,23 +184,23 @@ plot_params = {
     "ytick.labelsize": 30,
     "legend.fontsize": 30,
 }
-setup_plot_params(font_paths=font_paths, plot_params=plot_params)
+setup_plot_params(font_filepaths=font_filepaths, plot_params=plot_params)
 
 tag: str = "average-10_16"
-project_files_dir: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private"
+home_dirpath: str = (
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created"
 )
 
 if __name__ == "__main__":
     plot_stacked_fluxes(
-        input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
-        output_dirpath=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
+        input_filepath=os.path.join(home_dirpath, "analyze_monthly-2025.01.27.csv"),
+        output_dirpath=os.path.join(home_dirpath, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}.png",
         ylim=100,
     )
     plot_stacked_fluxes(
-        input_filepath=f"{project_files_dir}/analyze_monthly-2025.01.27.csv",
-        output_dirpath=os.path.join(project_files_dir, "outputs", "stacked_fluxes"),
+        input_filepath=os.path.join(home_dirpath, "analyze_monthly-2025.01.27.csv"), 
+        output_dirpath=os.path.join(home_dirpath, "outputs", "stacked_fluxes"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}-ja.png",
         ylim=100,
         label_bio="生物起源",

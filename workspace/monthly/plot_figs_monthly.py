@@ -15,21 +15,18 @@ from py_flux_tracer import (
 """
 
 # フォントファイルを登録
-font_paths: list[str | Path] = [
+font_filepaths: list[str | Path] = [
     "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
 # プロットの書式を設定
 setup_plot_params(
     font_family=["Arial", "MS Gothic"],
-    font_paths=font_paths,
-    font_size=24,
-    tick_size=24,
+    font_filepaths=font_filepaths,
 )
 
 include_end_date: bool = True
 start_date, end_date = "2024-05-15", "2024-12-31"  # yyyy-MM-ddで指定
-# months: list[int] = [5, 6, 7, 8, 9, 10, 11]
 months: list[int] = [5, 6, 7, 8, 9, 10, 11, 12]
 subplot_labels: list[list[str | None]] = [
     ["(a)", None],
@@ -41,20 +38,17 @@ subplot_labels: list[list[str | None]] = [
     ["(g)", None],
     ["(h)", None],
 ]
-lags_list: list[float] = [9.2, 10.0, 10.0, 10.0, 11.7, 13.2, 15.5]
-output_dirpath = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
+output_dirpath: str = (
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly/outputs"
 )
 
 # フラグ
-plot_timeseries: bool = False
-plot_comparison: bool = False
-plot_diurnals: bool = False
+plot_timeseries: bool = True
+plot_comparison: bool = True
+plot_diurnals: bool = True
 diurnal_subplot_fontsize: float = 36
-plot_scatter: bool = False
+plot_scatter: bool = True
 plot_sources: bool = True
-plot_wind_rose: bool = False
-plot_seasonal: bool = True
 
 """
 ------ config end ------
@@ -63,7 +57,7 @@ plot_seasonal: bool = True
 if __name__ == "__main__":
     # Ultra
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
         file_pattern="SA.Ultra.*.xlsx",
     ) as converter:
         df_ultra = converter.read_sheets(
@@ -92,7 +86,7 @@ if __name__ == "__main__":
 
     # Picarro
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
         file_pattern="SA.Picaro.*.xlsx",
     ) as converter:
         df_picarro = converter.read_sheets(
@@ -186,7 +180,9 @@ if __name__ == "__main__":
 
         # 月ごとのDataFrameを作成(extract_period_dataを使用)
         start_date = f"2024-{month:02d}-01"
-        end_date = f"2024-{month:02d}-{MonthlyConverter.get_last_day_of_month(2024, month)}"
+        end_date = (
+            f"2024-{month:02d}-{MonthlyConverter.get_last_day_of_month(2024, month)}"
+        )
         df_month: pd.DataFrame = MonthlyConverter.extract_period_data(
             df=df_combined,
             start_date=start_date,
@@ -415,31 +411,31 @@ if __name__ == "__main__":
             )
 
     # 2ヶ月毎
-    months_dos: list[list[int]] = [[5, 6], [7, 8], [9, 10], [11, 12]]
-    subplot_labels_dos: list[list[str | None]] = [
+    months_two: list[list[int]] = [[5, 6], [7, 8], [9, 10], [11, 12]]
+    subplot_labels_two: list[list[str | None]] = [
         ["(a)", None],
         ["(b)", None],
         ["(c)", None],
         ["(d)", None],
     ]
-    for month_dos, subplot_label in zip(months_dos, subplot_labels_dos, strict=True):
+    for month_two, subplot_label in zip(months_two, subplot_labels_two, strict=True):
         # monthを0埋めのMM形式に変換
-        month_str = "_".join(f"{month:02d}" for month in month_dos)
+        month_str = "_".join(f"{month:02d}" for month in month_two)
         mfg.logger.info(f"{month_str}の処理を開始します。")
 
         # 月ごとのDataFrameを作成(extract_period_dataを使用)
-        start_date = f"2024-{month_dos[0]:02d}-01"
-        end_date = f"2024-{month_dos[1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, month_dos[1])}"
-        df_month_dos: pd.DataFrame = MonthlyConverter.extract_period_data(
+        start_date = f"2024-{month_two[0]:02d}-01"
+        end_date = f"2024-{month_two[1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, month_two[1])}"
+        df_month_two: pd.DataFrame = MonthlyConverter.extract_period_data(
             df=df_combined,
             start_date=start_date,
             end_date=end_date,
         )
         if month == 11 or month == 12:
-            df_month_dos["Fch4_open"] = np.nan
+            df_month_two["Fch4_open"] = np.nan
 
         if plot_diurnals:
-            df_month_for_diurnanls = df_month_dos.copy()
+            df_month_for_diurnanls = df_month_two.copy()
             # 日変化パターンを2ヶ月ごとに作成
             mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
                 df=df_month_for_diurnanls,
@@ -452,15 +448,15 @@ if __name__ == "__main__":
                 subplot_label_ch4=subplot_label[0],
                 subplot_label_c2h6=subplot_label[1],
                 output_dirpath=(os.path.join(output_dirpath, "diurnal_by_date")),
-                output_filename=f"diurnal_by_date_dos-{month_str}.png",
+                output_filename=f"diurnal_by_date_two-{month_str}.png",
                 ax1_ylim=(-20, 150),
                 ax2_ylim=(-1, 8),
             )
-            mfg.logger.info("'diurnals_by_date_dos'を作成しました。")
+            mfg.logger.info("'diurnals_by_date_two'を作成しました。")
             mfg.plot_source_contributions_diurnal_by_date(
                 df=df_month_for_diurnanls,
                 output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename=f"source_contributions_by_date_dos-{month_str}.png",
+                output_filename=f"source_contributions_by_date_two-{month_str}.png",
                 col_ch4_flux="Fch4_ultra",
                 col_c2h6_flux="Fc2h6_ultra",
                 add_legend=False,
@@ -468,271 +464,4 @@ if __name__ == "__main__":
                 subplot_label_weekday=subplot_label[0],
                 y_max=125,
             )
-            mfg.logger.info("'source_contributions_by_date_dos'を作成しました。")
-
-    if plot_seasonal:
-        seasons: list[list[int]] = [[6, 7, 8], [9, 10, 11]]
-        seasons_tags: list[str] = ["summer", "fall"]
-        seasons_subplot_labels: list[str] = ["(a)", "(b)"]
-        for season, tag, subplot_label in zip(
-            seasons, seasons_tags, seasons_subplot_labels, strict=True
-        ):
-            # 季節ごとのDataFrameを作成(extract_period_dataを使用)
-            start_date = f"2024-{season[0]:02d}-01"
-            end_date = f"2024-{season[-1]:02d}-{MonthlyConverter.get_last_day_of_month(2024, season[-1])}"
-            df_season: pd.DataFrame = MonthlyConverter.extract_period_data(
-                df=df_combined,
-                start_date=start_date,
-                end_date=end_date,
-            )
-
-            mfg.logger.info(f"season:'{tag}'の図を作成します。")
-            # 日変化パターンを月ごとに作成
-            mfg.plot_c1c2_fluxes_diurnal_patterns(
-                df=df_season,
-                y_cols_ch4=["Fch4_ultra", "Fch4_open", "Fch4_picaro"],
-                y_cols_c2h6=["Fc2h6_ultra"],
-                labels_ch4=["Ultra", "Open Path", "G2401"],
-                labels_c2h6=["Ultra"],
-                legend_only_ch4=True,
-                add_label=True,
-                # add_legend=True,
-                # add_label=False,
-                add_legend=False,
-                subplot_fontsize=diurnal_subplot_fontsize,
-                colors_ch4=["black", "red", "blue"],
-                colors_c2h6=["black"],
-                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
-                output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
-            )
-            # ultraのみ
-            mfg.plot_c1c2_fluxes_diurnal_patterns(
-                df=df_season,
-                y_cols_ch4=["Fch4_ultra"],
-                y_cols_c2h6=["Fc2h6_ultra"],
-                labels_ch4=["Ultra"],
-                labels_c2h6=["Ultra"],
-                legend_only_ch4=True,
-                # add_label=True,
-                # add_legend=True,
-                # add_label=False,
-                add_legend=False,
-                figsize=(10, 6),
-                subplot_fontsize=diurnal_subplot_fontsize,
-                colors_ch4=["red"],
-                colors_c2h6=["orange"],
-                output_dirpath=(os.path.join(output_dirpath, "diurnal")),
-                output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
-            )
-
-            mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
-                df=df_season,
-                y_col_ch4="Fch4_ultra",
-                y_col_c2h6="Fc2h6_ultra",
-                legend_only_ch4=True,
-                add_label=True,
-                # add_legend=True,
-                # add_label=False,
-                add_legend=False,
-                subplot_fontsize=diurnal_subplot_fontsize,
-                plot_holiday=False,
-                output_dirpath=(os.path.join(output_dirpath, "diurnal_by_date")),
-                output_filename=f"diurnal_by_date-{tag}.png",  # タグ付けしたファイル名
-            )
-            mfg.logger.info("'diurnals-seasons'を作成しました。")
-
-            mfg.plot_source_contributions_diurnal(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename=f"source_contributions_seasons-{tag}.png",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                subplot_label=subplot_label,
-                subplot_fontsize=24,
-                y_max=110,
-                print_summary=False,
-            )
-            # スライド用のサイズ
-            mfg.plot_source_contributions_diurnal(
-                df=df_season,
-                figsize=(10, 8),
-                output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename=f"source_contributions_seasons-slide-{tag}.png",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                subplot_label=subplot_label,
-                subplot_fontsize=24,
-                y_max=100,
-                label_bio="生物起源",
-                label_gas="都市ガス起源",
-                print_summary=False,
-            )
-            mfg.plot_source_contributions_diurnal(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename="source_contributions-legend-ja.png",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                subplot_label=subplot_label,
-                subplot_fontsize=24,
-                y_max=110,
-                label_bio="生物起源",
-                label_gas="都市ガス起源",
-                add_legend=True,
-                print_summary=False,
-            )
-
-            season_mono_config: dict[str, str | float | bool] = {
-                # "color_bio": "gray",
-                # "color_gas": "black",
-                "color_bio": "black",
-                "color_gas": "gray",
-                "label_bio": "生物起源",
-                "label_gas": "都市ガス起源",
-                "flux_alpha": 0.7,
-            }
-            mfg.plot_source_contributions_diurnal(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename=f"source_contributions_seasons-mono-{tag}.png",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                subplot_fontsize=24,
-                figsize=(6, 5),
-                y_max=100,
-                color_bio=str(season_mono_config["color_bio"]),
-                color_gas=str(season_mono_config["color_gas"]),
-                flux_alpha=float(season_mono_config["flux_alpha"]),
-                label_bio=str(season_mono_config["label_bio"]),
-                label_gas=str(season_mono_config["label_gas"]),
-                # add_legend=(tag == "fall"),
-                add_xlabel=False,
-                add_ylabel=False,
-                add_legend=False,
-                print_summary=False,
-            )
-            mfg.plot_source_contributions_diurnal_by_date(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "sources")),
-                output_filename=f"source_contributions_seasons_by_date-mono-{tag}.png",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                subplot_fontsize=24,
-                y_max=110,
-                color_bio=str(season_mono_config["color_bio"]),
-                color_gas=str(season_mono_config["color_gas"]),
-                flux_alpha=float(season_mono_config["flux_alpha"]),
-                label_bio=str(season_mono_config["label_bio"]),
-                label_gas=str(season_mono_config["label_gas"]),
-                add_xlabel=False,
-                add_ylabel=False,
-                add_legend=False,
-                # print_summary=False,
-            )
-
-            # 2024年7月1日から2024年7月31日までのデータを除外
-            df_season_filtered = df_season.copy()
-            mask = ~(
-                (df_season_filtered["Date"] >= "2024-07-01")
-                & (df_season_filtered["Date"] <= "2024-07-31")
-                & (df_season_filtered["Wind direction"] >= 90)
-                & (df_season_filtered["Wind direction"] <= 180)
-            )
-            df_season = df_season_filtered[mask]
-
-            df_season = df_season[
-                (df_season["Date"].dt.hour >= 10) & (df_season["Date"].dt.hour < 16)
-            ]
-
-            mfg.plot_wind_rose_sources(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "wind_rose")),
-                output_filename=f"wind_rose_stacked-mono-{tag}.png",
-                col_datetime="Date",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                col_wind_dir="Wind direction",
-                ymax=100,
-                color_bio=str(season_mono_config["color_bio"]),
-                color_gas=str(season_mono_config["color_gas"]),
-                flux_alpha=float(season_mono_config["flux_alpha"]),
-                label_bio=str(season_mono_config["label_bio"]),
-                label_gas=str(season_mono_config["label_gas"]),
-                gap_degrees=3.0,
-                num_directions=8,  # 方位の数(8方位)
-                subplot_label=subplot_label,
-                print_summary=False,  # 統計情報を表示するかどうか
-                add_legend=False,
-                stack_bars=True,
-                save_fig=True,
-                show_fig=False,
-            )
-
-            mfg.plot_wind_rose_sources(
-                df=df_season,
-                output_dirpath=(os.path.join(output_dirpath, "wind_rose")),
-                output_filename="wind_rose_stacked-mono-legend-ja.png",
-                col_datetime="Date",
-                col_ch4_flux="Fch4_ultra",
-                col_c2h6_flux="Fc2h6_ultra",
-                col_wind_dir="Wind direction",
-                ymax=100,
-                color_bio=str(season_mono_config["color_bio"]),
-                color_gas=str(season_mono_config["color_gas"]),
-                flux_alpha=float(season_mono_config["flux_alpha"]),
-                label_bio=str(season_mono_config["label_bio"]),
-                label_gas=str(season_mono_config["label_gas"]),
-                num_directions=8,  # 方位の数(8方位)
-                subplot_label=subplot_label,
-                print_summary=False,  # 統計情報を表示するかどうか
-                add_legend=True,
-                stack_bars=True,
-                save_fig=True,
-                show_fig=False,
-            )
-
-    # 正月の平日/休日
-    mfg.logger.info("年末年始の処理を開始します。")
-
-    # 月ごとのDataFrameを作成
-    df_around_year: pd.DataFrame = pd.read_csv(
-        "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/around_year_2025.csv",
-        skiprows=[1],
-        na_values=[
-            "#DIV/0!",
-            "#VALUE!",
-            "#REF!",
-            "#N/A",
-            "#NAME?",
-            "NAN",
-            "nan",
-        ],
-    )
-    setup_plot_params(font_size=20)
-    df_around_year_for_diurnal = df_around_year.copy()
-    mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
-        df=df_around_year_for_diurnal,
-        y_col_ch4="Fch4_ultra",
-        y_col_c2h6="Fc2h6_ultra",
-        output_dirpath=os.path.join(output_dirpath, "around_year"),
-        output_filename="diurnal_by_date_around_year.png",
-        add_label=True,
-        subplot_label_ch4=None,
-        subplot_label_c2h6=None,
-        plot_holiday=False,
-        ax1_ylim=(-20, 150),
-        ax2_ylim=(-1, 8),
-    )
-    mfg.plot_source_contributions_diurnal_by_date(
-        df=df_around_year_for_diurnal,
-        output_dirpath=(os.path.join(output_dirpath, "around_year")),
-        output_filename="source_contributions_by_date_around_year.png",
-        col_ch4_flux="Fch4_ultra",
-        col_c2h6_flux="Fc2h6_ultra",
-        subplot_fontsize=24,
-        y_max=100,
-        # add_xlabel=False,
-        # add_ylabel=False,
-        add_legend=True,
-        # print_summary=False,
-    )
+            mfg.logger.info("'source_contributions_by_date_two'を作成しました。")

@@ -526,26 +526,7 @@ class MobileMeasurementAnalyzer:
         ... )
         """
         all_hotspots: list[HotspotData] = []
-        params: HotspotParams = self._hotspot_params
-
-        # 各データソースに対して解析を実行
-        # パラメータの計算
-        df_processed: pd.DataFrame = (
-            MobileMeasurementAnalyzer._calculate_hotspots_parameters(
-                df=self.df,
-                window_size=self._window_size,
-                col_ch4_ppm=params.col_ch4_ppm,
-                col_c2h6_ppb=params.col_c2h6_ppb,
-                col_h2o_ppm=params.col_h2o_ppm,
-                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
-                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
-                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
-                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
-                h2o_ppm_threshold=params.h2o_ppm_min,
-                rolling_method=params.rolling_method,
-                quantile_value=params.quantile_value,
-            )
-        )
+        df_processed: pd.DataFrame = self.get_preprocessed_data()
 
         # ホットスポットの検出
         hotspots: list[HotspotData] = self._detect_hotspots(
@@ -605,43 +586,62 @@ class MobileMeasurementAnalyzer:
         """
         total_distance: float = 0.0
         total_time: timedelta = timedelta()
-        individual_stats: list[dict] = []  # 個別の統計情報を保存するリスト
+        individual_stats: list[dict] = []
 
-        # プログレスバーを表示しながら計算
+        # 必要な列のみを読み込むように指定
+        columns_to_read = [col_latitude, col_longitude, "timestamp"]
+
         for config in tqdm(self._configs, desc="Calculating", unit="file"):
-            df, source_name = self._load_data(config=config)
+            # 必要な列のみを読み込み、メモリ使用を最適化
+            df = pd.read_csv(config.path, usecols=columns_to_read)
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            source_name = self.extract_source_name_from_path(config.path)
+
             # 時間の計算
-            time_spent = df.index[-1] - df.index[0]
+            time_spent = df["timestamp"].max() - df["timestamp"].min()
 
-            # 距離の計算
-            distance_km = 0.0
-            for i in range(len(df) - 1):
-                lat1, lon1 = df.iloc[i][[col_latitude, col_longitude]]
-                lat2, lon2 = df.iloc[i + 1][[col_latitude, col_longitude]]
-                distance_km += (
-                    MobileMeasurementAnalyzer._calculate_distance(
-                        lat1=lat1, lon1=lon1, lat2=lat2, lon2=lon2
+            # ベクトル化した距離計算
+            lat_shift = df[col_latitude].shift(-1)
+            lon_shift = df[col_longitude].shift(-1)
+
+            # nanを除外して距離計算
+            mask = ~(lat_shift.isna() | lon_shift.isna())
+            if mask.any():
+                # ラジアンに変換(一度に計算)
+                lat1_rad = np.radians(df[col_latitude][mask])
+                lon1_rad = np.radians(df[col_longitude][mask])
+                lat2_rad = np.radians(lat_shift[mask])
+                lon2_rad = np.radians(lon_shift[mask])
+
+                # Haversine formulaをベクトル化
+                dlat = lat2_rad - lat1_rad
+                dlon = lon2_rad - lon1_rad
+
+                # 距離計算を一度に実行
+                a = (
+                    np.sin(dlat / 2) ** 2
+                    + np.cos(lat1_rad) * np.cos(lat2_rad) * np.sin(dlon / 2) ** 2
+                )
+                c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+                distance_km = (self.EARTH_RADIUS_METERS * c).sum() / 1000
+
+                # 合計に加算
+                total_distance += distance_km
+                total_time += time_spent
+
+                # 統計情報を保存
+                if print_summary_individual:
+                    average_speed = distance_km / (time_spent.total_seconds() / 3600)
+                    individual_stats.append(
+                        {
+                            "source": source_name,
+                            "distance": distance_km,
+                            "time": time_spent,
+                            "speed": average_speed,
+                        }
                     )
-                    / 1000
-                )
 
-            # 合計に加算
-            total_distance += distance_km
-            total_time += time_spent
-
-            # 統計情報を保存
-            if print_summary_individual:
-                average_speed = distance_km / (time_spent.total_seconds() / 3600)
-                individual_stats.append(
-                    {
-                        "source": source_name,
-                        "distance": distance_km,
-                        "time": time_spent,
-                        "speed": average_speed,
-                    }
-                )
-
-        # 計算完了後に統計情報を表示
+        # 統計情報の表示(変更なし)
         if print_summary_individual:
             self.logger.info("=== Individual Stats ===")
             for stat in individual_stats:
@@ -650,11 +650,8 @@ class MobileMeasurementAnalyzer:
                 print(f"  Time      : {stat['time']}")
                 print(f"  Avg. Speed: {stat['speed']:.1f} km/h\n")
 
-        # 合計を表示
         if print_summary_total:
-            average_speed_total: float = total_distance / (
-                total_time.total_seconds() / 3600
-            )
+            average_speed_total = total_distance / (total_time.total_seconds() / 3600)
             self.logger.info("=== Total Stats ===")
             print(f"  Distance  : {total_distance:.2f} km")
             print(f"  Time      : {total_time}")
@@ -914,12 +911,33 @@ class MobileMeasurementAnalyzer:
         データ前処理を行い、CH4とC2H6の相関解析に必要な形式に整えます。
         コンストラクタで読み込んだすべてのデータを前処理し、結合したDataFrameを返します。
 
+        内部で`MobileMeasurementAnalyzer._calculate_hotspots_parameters()`を適用し、
+        `ch4_ppm_mv`などのパラメータが追加されたDataFrameが戻り値として取得できます。
+
         Returns
         ----------
             pd.DataFrame
                 前処理済みの結合されたDataFrame
         """
-        return self.df.copy()
+        params: HotspotParams = self._hotspot_params
+        # ホットスポットのパラメータを計算
+        df_processed: pd.DataFrame = (
+            MobileMeasurementAnalyzer._calculate_hotspots_parameters(
+                df=self.df,
+                window_size=self._window_size,
+                col_ch4_ppm=params.col_ch4_ppm,
+                col_c2h6_ppb=params.col_c2h6_ppb,
+                col_h2o_ppm=params.col_h2o_ppm,
+                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
+                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
+                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
+                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
+                h2o_ppm_threshold=params.h2o_ppm_min,
+                rolling_method=params.rolling_method,
+                quantile_value=params.quantile_value,
+            )
+        )
+        return df_processed
 
     def get_section_size(self) -> float:
         """
@@ -1563,7 +1581,9 @@ class MobileMeasurementAnalyzer:
                 "ytick.labelsize": font_size,
             }
         )
-        df_internal: pd.DataFrame = self.df.copy()
+        # timestampをインデックスとして設定
+        df_internal = self.df.copy()
+        df_internal.set_index("timestamp", inplace=True)
 
         # プロットの作成
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -1762,7 +1782,9 @@ class MobileMeasurementAnalyzer:
             }
         )
 
-        df_internal: pd.DataFrame = self.df.copy()
+        # timestampをインデックスとして設定
+        df_internal = self.df.copy()
+        df_internal.set_index("timestamp", inplace=True)
 
         # プロットの作成
         fig = plt.figure(figsize=figsize, dpi=dpi)
@@ -2520,7 +2542,7 @@ class MobileMeasurementAnalyzer:
                 if distance < hotspot_area_meter:
                     # 時間差の計算(秒単位)
                     time_diff = pd.Timedelta(
-                        spot.name - pd.to_datetime(used_time)
+                        pd.to_datetime(spot.name) - pd.to_datetime(used_time)
                     ).total_seconds()
                     time_diff_abs = abs(time_diff)
 

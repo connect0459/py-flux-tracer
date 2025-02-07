@@ -16,20 +16,20 @@ from py_flux_tracer import (
 """
 
 # フォントファイルを登録
-font_paths: list[str | Path] = [
+font_filepaths: list[str | Path] = [
     "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
 # プロットの書式を設定
 setup_plot_params(
     font_family=["Arial", "MS Gothic"],
-    font_paths=font_paths,
+    font_filepaths=font_filepaths,
     font_size=24,
     tick_size=24,
 )
 
 output_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/private/campbell/outputs"
 )
 
 """
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     edfg = EddyDataFiguresGenerator(fs=10)
 
     # 乱流データの設定
-    data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-for_turb"
+    data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/private/campbell/eddy_csv-resampled-for_turb"
     turbulence_configs: list[
         dict[Literal["filename", "ch4_offset", "c2h6_offset"], str | float]
     ] = [
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     ]
 
     # 各設定に対して処理を実行
-    for config in tqdm(turbulence_configs, desc="Processing turbulences"):
+    for config in tqdm(turbulence_configs, desc="Processing"):
         target_filename: str = str(config["filename"])
         ch4_offset = config["ch4_offset"]
         c2h6_offset = config["c2h6_offset"]

@@ -102,18 +102,21 @@ def plot_gas_stats(
 
 if __name__ == "__main__":
     # フォントファイルを登録
-    font_paths: list[str | Path] = [
-        "/home/connect0459/.local/share/fonts/arial.ttf",  # 英語のデフォルト
-        "/home/connect0459/.local/share/fonts/msgothic.ttc",  # 日本語のデフォルト
+    font_filepaths: list[str | Path] = [
+        "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
+        "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
     ]
+    home_dirpath: str = (
+        "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created"
+    )
     # プロットの書式を設定
     setup_plot_params(
         font_family=["Arial", "MS Gothic"],
-        font_paths=font_paths,
+        font_filepaths=font_filepaths,
         font_size=24,
         tick_size=24,
     )
     plot_gas_stats(
-        input_csv="workspace/senior_thesis/private/gas_stats.csv",
-        output_dirpath="workspace/senior_thesis/private/outputs/gas_stats",
+        input_csv=os.path.join(home_dirpath, "gas_stats.csv"),
+        output_dirpath=os.path.join(home_dirpath, "outputs", "gas_stats"),
     )
