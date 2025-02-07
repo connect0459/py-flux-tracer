@@ -70,8 +70,8 @@ class SpectralPlotConfig:
 
     Parameters
     ----------
-        psd_ylabel: str
-            パワースペクトル密度のy軸ラベル。
+        power_ylabel: str
+            パワースペクトルのy軸ラベル。
             LaTeXの数式表記が使用可能(例r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$")。
         co_ylabel: str
             コスペクトルのy軸ラベル。
@@ -84,14 +84,14 @@ class SpectralPlotConfig:
     Examples
     --------
         >>> ch4_config = SpectralPlotConfig(
-        ...     psd_ylabel=r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$",
+        ...     power_ylabel=r"$fS_{\\mathrm{CH_4}} / s_{\\mathrm{CH_4}}^2$",
         ...     co_ylabel=r"$fC_{w\\mathrm{CH_4}} / \\overline{w'\\mathrm{CH_4}'}$",
         ...     color="red",
         ...     label="CH4"
         ... )
     """
 
-    psd_ylabel: str
+    power_ylabel: str
     co_ylabel: str
     color: str
     label: str | None = None
@@ -146,7 +146,7 @@ class EddyDataFiguresGenerator:
         ylim_power: tuple[float, float] | None = None,
         xlim_co: tuple[float, float] | None = (0.001, 10),
         ylim_co: tuple[float, float] | None = (0.0001, 10),
-        scaling_power: str = "density",
+        scaling_power: str = "spectrum",
         scaling_co: str = "spectrum",
         power_slope: SlopeLine | None = None,
         co_slope: SlopeLine | None = None,
@@ -158,9 +158,9 @@ class EddyDataFiguresGenerator:
         add_tv_in_co: bool = True,
         xlabel: str = "f (Hz)",
     ) -> None:
-        """月間平均のスペクトル密度を計算してプロットする。
+        """月間平均のスペクトルを計算してプロットする。
 
-        データファイルを指定されたディレクトリから読み込み、スペクトル密度を計算し、
+        データファイルを指定されたディレクトリから読み込み、スペクトルを計算し、
         結果を指定された出力ディレクトリにプロットして保存します。
 
         Parameters
@@ -207,7 +207,7 @@ class EddyDataFiguresGenerator:
                 コスペクトルのy軸の範囲。デフォルトは`(0.0001, 10)`。
             scaling_power: str, optional
                 パワースペクトルのスケーリング方法。`'spectrum'`または`'density'`などが指定可能。
-                signal.welchのパラメータに渡すものと同様の値を取ることが可能。デフォルトは`"density"`。
+                signal.welchのパラメータに渡すものと同様の値を取ることが可能。デフォルトは`"spectrum"`。
             scaling_co: str, optional
                 コスペクトルのスケーリング方法。`'spectrum'`または`'density'`などが指定可能。
                 signal.welchのパラメータに渡すものと同様の値を取ることが可能。デフォルトは`"spectrum"`。
@@ -247,7 +247,7 @@ class EddyDataFiguresGenerator:
         # デフォルトのconfig設定
         if ch4_config is None:
             ch4_config = SpectralPlotConfig(
-                psd_ylabel=r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
+                power_ylabel=r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
                 co_ylabel=r"$fC_{w\mathrm{CH_4}} / \overline{w'\mathrm{CH_4}'}$",
                 color="red",
                 label="CH4",
@@ -255,7 +255,7 @@ class EddyDataFiguresGenerator:
 
         if c2h6_config is None:
             c2h6_config = SpectralPlotConfig(
-                psd_ylabel=r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
+                power_ylabel=r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
                 co_ylabel=r"$fC_{w\mathrm{C_2H_6}} / \overline{w'\mathrm{C_2H_6}'}$",
                 color="orange",
                 label="C2H6",
@@ -263,7 +263,7 @@ class EddyDataFiguresGenerator:
 
         if tv_config is None:
             tv_config = SpectralPlotConfig(
-                psd_ylabel=r"$fS_{T_v} / s_{T_v}^2$",
+                power_ylabel=r"$fS_{T_v} / s_{T_v}^2$",
                 co_ylabel=r"$fC_{wT_v} / \overline{w'T_v'}$",
                 color="blue",
                 label="Tv",
@@ -392,7 +392,7 @@ class EddyDataFiguresGenerator:
                 if power_slope:
                     power_slope.plot(ax)
 
-                ax.set_ylabel(config.psd_ylabel)
+                ax.set_ylabel(config.power_ylabel)
                 if config.label is not None:
                     ax.text(0.02, 0.98, config.label, transform=ax.transAxes, va="top")
                 ax.grid(True, alpha=0.3)

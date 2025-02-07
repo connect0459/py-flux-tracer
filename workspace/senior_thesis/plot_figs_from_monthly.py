@@ -402,7 +402,7 @@ if __name__ == "__main__":
                 cols_flux=["Fch4_picaro", "Fch4_ultra"],
                 labels=["G2401", "Ultra"],
                 colors=["blue", "red"],
-                # y_lim=(10, 60),
+                # ylim=(10, 60),
                 start_date=start_date,
                 end_date=end_date,
                 include_end_date=False,

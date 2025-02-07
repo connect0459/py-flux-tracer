@@ -37,14 +37,14 @@ terms_tags: list[str] = [
 ]
 
 ch4_config = SpectralPlotConfig(
-    # psd_ylabel=r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
-    psd_ylabel="無次元パワースペクトル",
+    # power_ylabel=r"$fS_{\mathrm{CH_4}} / s_{\mathrm{CH_4}}^2$",
+    power_ylabel="無次元パワースペクトル",
     co_ylabel=r"$fC_{w\mathrm{CH_4}} / \overline{w'\mathrm{CH_4}'}$",
     color="red",
 )
 c2h6_config = SpectralPlotConfig(
-    # psd_ylabel=r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
-    psd_ylabel="無次元パワースペクトル",
+    # power_ylabel=r"$fS_{\mathrm{C_2H_6}} / s_{\mathrm{C_2H_6}}^2$",
+    power_ylabel="無次元パワースペクトル",
     co_ylabel=r"$fC_{w\mathrm{C_2H_6}} / \overline{w'\mathrm{C_2H_6}'}$",
     color="orange",
 )

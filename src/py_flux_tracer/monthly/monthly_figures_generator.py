@@ -560,7 +560,7 @@ class MonthlyFiguresGenerator:
         subplot_label: str | None = None,
         subplot_fontsize: int = 20,
         show_ci: bool = True,
-        y_lim: tuple[float, float] | None = None,
+        ylim: tuple[float, float] | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         include_end_date: bool = True,
@@ -603,7 +603,7 @@ class MonthlyFiguresGenerator:
                 サブプロットのフォントサイズを指定します。デフォルト値は20です。
             show_ci: bool, optional
                 信頼区間を表示するかどうかを指定します。デフォルト値はTrueです。
-            y_lim: tuple[float, float] | None, optional
+            ylim: tuple[float, float] | None, optional
                 y軸の範囲を指定します。デフォルト値はNoneです。
             start_date: str | None, optional
                 開始日をYYYY-MM-DD形式で指定します。デフォルト値はNoneです。
@@ -751,8 +751,8 @@ class MonthlyFiguresGenerator:
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
-        if y_lim is not None:
-            ax.set_ylim(y_lim)
+        if ylim is not None:
+            ax.set_ylim(ylim)
 
         ax.grid(True, alpha=0.3)
         ax.legend(loc=legend_loc)
