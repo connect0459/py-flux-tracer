@@ -222,12 +222,26 @@ class MobileMeasurementConfig:
 
     Examples
     --------
-    >>> config = MobileMeasurementConfig(
-    ...     fs=1.0,
-    ...     lag=2.0,
+    >>> # 水蒸気補正の設定
+    >>> h2o_config = H2OCorrectionConfig(
+    ...     coef_b=0.001,
+    ...     coef_c=0.0001,
+    ...     h2o_ppm_threshold=2000,
+    ...     target_h2o_ppm=10000
+    ... )
+    >>> # バイアス除去の設定
+    >>> bias_config = BiasRemovalConfig(
+    ...     quantile_value=0.05,
+    ...     base_ch4_ppm=2.0,
+    ...     base_c2h6_ppb=0
+    ... )
+    >>> # 車載観測の設定
+    >>> analyzer_config = MobileMeasurementConfig(
+    ...     fs=1.0,  # サンプリング周波数 1Hz
+    ...     lag=2.0,  # 遅れ時間 2秒
     ...     path="data.csv",
-    ...     bias_removal=BiasRemovalConfig(method="linear"),
-    ...     h2o_correction=H2OCorrectionConfig(method="default")
+    ...     bias_removal=bias_config,
+    ...     h2o_correction=h2o_config
     ... )
     """
 
