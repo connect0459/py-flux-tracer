@@ -67,7 +67,7 @@
 
 ※下記のように、`FftFileReorganizer`のコンストラクタに渡す`sort_by_rh`にTrueを指定した場合、`good_data_all`に加えてRH10～RH100のディレクトリが作成され、相対湿度(RH)によってFlgが0のデータを分別する。H2Oフラックスの計算には`sort_by_rh=True`を指定すること。
 
-```py
+```python
 # メイン処理
 try:
    input_dirpath_path = os.path.join(base_path, input_dirpath_name)
@@ -114,7 +114,7 @@ except KeyboardInterrupt:
 
 1. `3-plot_all_tf_curves.py`を開き、`TF_Ultra_a.csv`までの絶対パスを`tf_csv_path`に入力する。
 
-   ```py
+   ```python
    # メイン処理
    try:
       tf_csv_path: str = (

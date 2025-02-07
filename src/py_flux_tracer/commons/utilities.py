@@ -67,20 +67,20 @@ def setup_plot_params(
 
     Parameters
     ----------
-    font_family: list[str] | None, optional
-        使用するフォントファミリーのリスト。デフォルト値は["Arial", "MS Gothic", "sans-serif"]です。
-    font_paths: list[str | Path] | None, optional
-        フォントファイルのパスのリスト。デフォルト値はNoneです。指定された場合、fontManagerでフォントを登録します。
-    font_size: float, optional
-        軸ラベルのフォントサイズ。デフォルト値は20です。
-    legend_size: float, optional
-        凡例のフォントサイズ。デフォルト値は20です。
-    tick_size: float, optional
-        軸目盛りのフォントサイズ。デフォルト値は20です。
-    title_size: float, optional
-        タイトルのフォントサイズ。デフォルト値は20です。
-    plot_params: dict[str, Any] | None, optional
-        matplotlibのプロットパラメータの辞書。デフォルト値はNoneです。指定された場合、デフォルトのパラメータに上書きされます。
+        font_family: list[str] | None, optional
+            使用するフォントファミリーのリスト。デフォルト値は["Arial", "MS Gothic", "sans-serif"]です。
+        font_paths: list[str | Path] | None, optional
+            フォントファイルのパスのリスト。デフォルト値はNoneです。指定された場合、fontManagerでフォントを登録します。
+        font_size: float, optional
+            軸ラベルのフォントサイズ。デフォルト値は20です。
+        legend_size: float, optional
+            凡例のフォントサイズ。デフォルト値は20です。
+        tick_size: float, optional
+            軸目盛りのフォントサイズ。デフォルト値は20です。
+        title_size: float, optional
+            タイトルのフォントサイズ。デフォルト値は20です。
+        plot_params: dict[str, Any] | None, optional
+            matplotlibのプロットパラメータの辞書。デフォルト値はNoneです。指定された場合、デフォルトのパラメータに上書きされます。
 
     Returns
     -------

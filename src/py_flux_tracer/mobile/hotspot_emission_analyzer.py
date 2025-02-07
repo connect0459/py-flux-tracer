@@ -148,7 +148,7 @@ class EmissionFormula:
     排出量計算式の係数セットを保持するデータクラス
     設定した`coef_a`と`coef_b`は以下のように使用される。
 
-    ```py
+    ```python
     emission_per_min = np.exp((np.log(spot.delta_ch4) + coef_a) / coef_b)
     ```
 
@@ -201,11 +201,11 @@ class HotspotEmissionConfig:
         emission_categories: dict[str, dict[str, float]]
             排出量カテゴリーの閾値設定
             デフォルト値:
-            ```py
+            ```python
             {
-                "low": {"min": 0, "max": 6},  # < 6 L/min
-                "medium": {"min": 6, "max": 40},  # 6-40 L/min
-                "high": {"min": 40, "max": float("inf")},  # > 40 L/min
+                "low": {"min": 0, "max": 6},               # < 6 L/min
+                "medium": {"min": 6, "max": 40},           # 6-40 L/min
+                "high": {"min": 40, "max": float("inf")}  # > 40 L/min
             }
             ```
 
