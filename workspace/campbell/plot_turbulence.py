@@ -40,7 +40,7 @@ if __name__ == "__main__":
     edfg = EddyDataFiguresGenerator(fs=10)
 
     # 乱流データの設定
-    data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/private/campbell/eddy_csv-resampled-for_turb"
+    data_dir = "/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/eddy_csv-resampled-for_turb"
     turbulence_configs: list[
         dict[Literal["filename", "ch4_offset", "c2h6_offset"], str | float]
     ] = [

@@ -28,7 +28,7 @@ setup_plot_params(
 include_end_date: bool = True
 start_date, end_date = "2024-05-15", "2024-12-31"  # yyyy-MM-ddで指定
 output_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private/outputs"
 )
 diurnal_subplot_fontsize: float = 36
 
@@ -39,7 +39,7 @@ diurnal_subplot_fontsize: float = 36
 if __name__ == "__main__":
     # Ultra
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private",
         file_pattern="SA.Ultra.*.xlsx",
     ) as converter:
         df_ultra = converter.read_sheets(
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # Picarro
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private",
         file_pattern="SA.Picaro.*.xlsx",
     ) as converter:
         df_picarro = converter.read_sheets(

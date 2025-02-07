@@ -26,7 +26,7 @@ setup_plot_params(
     # tick_size=24,
 )
 output_dirpath = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/campbell/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/outputs"
 )
 terms_tags: list[str] = [
     # "example",
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     for term_tag in terms_tags:
         eda.logger.info(f"{term_tag}の処理を開始します。")
-        input_dirpath: str = f"/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/data/eddy_csv-resampled-two-{term_tag}"
+        input_dirpath: str = f"/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/eddy_csv-resampled-two-{term_tag}"
 
         # パワースペクトルのプロット
         eda.plot_c1c2_spectra(

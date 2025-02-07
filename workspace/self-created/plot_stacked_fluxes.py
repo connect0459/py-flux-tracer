@@ -188,7 +188,7 @@ setup_plot_params(font_filepaths=font_filepaths, plot_params=plot_params)
 
 tag: str = "average-10_16"
 home_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created"
+    "/home/connect0459/labo/py-flux-tracer/workspace/self-created/private"
 )
 
 if __name__ == "__main__":

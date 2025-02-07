@@ -107,7 +107,7 @@ if __name__ == "__main__":
         "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
     ]
     home_dirpath: str = (
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created"
+        "/home/connect0459/labo/py-flux-tracer/workspace/self-created/private"
     )
     # プロットの書式を設定
     setup_plot_params(

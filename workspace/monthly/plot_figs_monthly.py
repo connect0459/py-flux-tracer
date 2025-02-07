@@ -39,7 +39,7 @@ subplot_labels: list[list[str | None]] = [
     ["(h)", None],
 ]
 output_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private/outputs"
 )
 
 # フラグ
@@ -57,7 +57,7 @@ plot_sources: bool = True
 if __name__ == "__main__":
     # Ultra
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private",
         file_pattern="SA.Ultra.*.xlsx",
     ) as converter:
         df_ultra = converter.read_sheets(
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     # Picarro
     with MonthlyConverter(
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
+        "/home/connect0459/labo/py-flux-tracer/workspace/monthly/private",
         file_pattern="SA.Picaro.*.xlsx",
     ) as converter:
         df_picarro = converter.read_sheets(

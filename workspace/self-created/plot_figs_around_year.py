@@ -24,7 +24,7 @@ setup_plot_params(
 )
 
 output_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/self-created/private/outputs"
 )
 
 """
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     mfg.logger.info("年末年始の処理を開始します。")
     # 月ごとのDataFrameを作成
     df_around_year: pd.DataFrame = pd.read_csv(
-        "/home/connect0459/labo/py-flux-tracer/workspace/private/self-created/around_year_2025.csv",
+        "/home/connect0459/labo/py-flux-tracer/workspace/self-created/private/around_year_2025.csv",
         skiprows=[1],
         na_values=[
             "#DIV/0!",
