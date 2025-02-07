@@ -526,7 +526,7 @@ class MobileMeasurementAnalyzer:
         ... )
         """
         all_hotspots: list[HotspotData] = []
-        df_processed: pd.DataFrame = self.get_preprocessed_data()
+        df_processed: pd.DataFrame = self.df.copy()
 
         # ホットスポットの検出
         hotspots: list[HotspotData] = self._detect_hotspots(
@@ -911,33 +911,12 @@ class MobileMeasurementAnalyzer:
         データ前処理を行い、CH4とC2H6の相関解析に必要な形式に整えます。
         コンストラクタで読み込んだすべてのデータを前処理し、結合したDataFrameを返します。
 
-        内部で`MobileMeasurementAnalyzer._calculate_hotspots_parameters()`を適用し、
-        `ch4_ppm_mv`などのパラメータが追加されたDataFrameが戻り値として取得できます。
-
         Returns
         ----------
             pd.DataFrame
                 前処理済みの結合されたDataFrame
         """
-        params: HotspotParams = self._hotspot_params
-        # ホットスポットのパラメータを計算
-        df_processed: pd.DataFrame = (
-            MobileMeasurementAnalyzer._calculate_hotspots_parameters(
-                df=self.df,
-                window_size=self._window_size,
-                col_ch4_ppm=params.col_ch4_ppm,
-                col_c2h6_ppb=params.col_c2h6_ppb,
-                col_h2o_ppm=params.col_h2o_ppm,
-                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
-                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
-                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
-                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
-                h2o_ppm_threshold=params.h2o_ppm_min,
-                rolling_method=params.rolling_method,
-                quantile_value=params.quantile_value,
-            )
-        )
-        return df_processed
+        return self.df
 
     def get_section_size(self) -> float:
         """
@@ -2009,6 +1988,7 @@ class MobileMeasurementAnalyzer:
     ) -> pd.DataFrame:
         """
         全入力ファイルのデータを読み込み、結合したデータフレームを返します。
+        ホットスポットのパラメータを計算して追加します。
 
         Parameters
         ----------
@@ -2024,7 +2004,27 @@ class MobileMeasurementAnalyzer:
         for config in input_configs:
             df, _ = self._load_data(config)
             dfs.append(df)
-        return pd.concat(dfs, ignore_index=True)
+        df_combined: pd.DataFrame = pd.concat(dfs, ignore_index=True)
+
+        # ホットスポットのパラメータを計算
+        params: HotspotParams = self._hotspot_params
+        df_processed: pd.DataFrame = (
+            MobileMeasurementAnalyzer._calculate_hotspots_parameters(
+                df=df_combined,
+                window_size=self._window_size,
+                col_ch4_ppm=params.col_ch4_ppm,
+                col_c2h6_ppb=params.col_c2h6_ppb,
+                col_h2o_ppm=params.col_h2o_ppm,
+                ch4_ppm_delta_min=params.ch4_ppm_delta_min,
+                ch4_ppm_delta_max=params.ch4_ppm_delta_max,
+                c2h6_ppb_delta_min=params.c2h6_ppb_delta_min,
+                c2h6_ppb_delta_max=params.c2h6_ppb_delta_max,
+                h2o_ppm_threshold=params.h2o_ppm_min,
+                rolling_method=params.rolling_method,
+                quantile_value=params.quantile_value,
+            )
+        )
+        return df_processed
 
     def _load_data(
         self,
