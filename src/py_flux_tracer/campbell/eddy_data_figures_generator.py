@@ -370,10 +370,10 @@ class EddyDataFiguresGenerator:
 
         # パワースペクトルの図を作成
         if plot_power:
-            fig_power, axes_psd = plt.subplots(1, 2, figsize=figsize, sharex=True)
+            fig_power, axes_power = plt.subplots(1, 2, figsize=figsize, sharex=True)
             configs = [(col_ch4, ch4_config), (col_c2h6, c2h6_config)]
 
-            for ax, (col, config) in zip(axes_psd, configs, strict=True):
+            for ax, (col, config) in zip(axes_power, configs, strict=True):
                 ax.plot(
                     freqs,
                     averaged_power_spectra[col],
@@ -401,11 +401,11 @@ class EddyDataFiguresGenerator:
             plt.tight_layout()
 
             if save_fig:
-                output_filepath_psd: str = os.path.join(
+                output_filepath_power: str = os.path.join(
                     output_dirpath, output_filename_power
                 )
                 plt.savefig(
-                    output_filepath_psd,
+                    output_filepath_power,
                     dpi=dpi,
                     bbox_inches="tight",
                 )
