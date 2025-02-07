@@ -14,7 +14,11 @@ pip install pdoc
 uv pip install pdoc
 ```
 
-## 生成
+## pdocでドキュメントを生成・表示
+
+メジャーバージョンが`0`である場合を想定しています。
+
+### 生成
 
 ```bash
 pdoc -o docs/v0 py_flux_tracer
@@ -26,7 +30,7 @@ pdoc -o docs/v0 py_flux_tracer
 uv run pdoc -o docs/v0 py_flux_tracer
 ```
 
-## ブラウザで表示
+### ブラウザで表示
 
 ```bash
 pdoc -h localhost -p 8080 -t docs/v0 py_flux_tracer
