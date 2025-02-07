@@ -200,11 +200,14 @@ class HotspotEmissionConfig:
             使用する計算式の設定
         emission_categories: dict[str, dict[str, float]]
             排出量カテゴリーの閾値設定
-            デフォルト値: {
+            デフォルト値:
+            ```py
+            {
                 "low": {"min": 0, "max": 6},  # < 6 L/min
                 "medium": {"min": 6, "max": 40},  # 6-40 L/min
                 "high": {"min": 40, "max": float("inf")},  # > 40 L/min
             }
+            ```
 
     Examples
     ----------

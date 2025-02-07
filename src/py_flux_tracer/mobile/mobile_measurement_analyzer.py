@@ -971,11 +971,13 @@ class MobileMeasurementAnalyzer:
                 フォントサイズ。デフォルト値は20です。
             hotspot_colors: dict[HotspotType, str] | None, optional
                 ホットスポットの色を定義する辞書。未指定の場合は以下のデフォルト値を使用します:
+                ```py
                 {
                     "bio": "blue",
                     "gas": "red",
                     "comb": "green",
                 }
+                ```
             xlabel: str, optional
                 x軸のラベル。デフォルト値は"Δ$\\mathregular{CH_{4}}$ (ppm)"です。
             ylabel: str, optional
@@ -1362,9 +1364,16 @@ class MobileMeasurementAnalyzer:
             ratio_labels: dict[float, tuple[float, float, str]] | None, optional
                 比率線とラベルの設定。キーは比率値、値は(x位置, y位置, ラベルテキスト)のタプル。
                 未指定の場合は以下のデフォルト値が使用されます:
-                {0.001: (1.25, 2, "0.001"), 0.005: (1.25, 8, "0.005"),
-                0.010: (1.25, 15, "0.01"), 0.020: (1.25, 30, "0.02"),
-                0.030: (1.0, 40, "0.03"), 0.076: (0.20, 42, "0.076 (Osaka)")}
+                ```py
+                {
+                    0.001: (1.25, 2, "0.001"),
+                    0.005: (1.25, 8, "0.005"),
+                    0.010: (1.25, 15, "0.01"),
+                    0.020: (1.25, 30, "0.02"),
+                    0.030: (1.0, 40, "0.03"),
+                    0.076: (0.20, 42, "0.076 (Osaka)"),
+                }
+                ```
 
         Returns
         -------

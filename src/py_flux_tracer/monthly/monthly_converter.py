@@ -38,6 +38,7 @@ class MonthlyConverter:
                 ファイル名のパターン。デフォルト値は'SA.Ultra.*.xlsx'です。
             na_values: list[str] | None, optional
                 NaNと判定する値のパターン。デフォルト値はNoneで、その場合は以下の値が使用されます:
+                ```py
                 [
                     "#DIV/0!",
                     "#VALUE!",
@@ -47,6 +48,7 @@ class MonthlyConverter:
                     "NAN",
                     "nan",
                 ]
+                ```
             logger: Logger | None, optional
                 使用するロガー。デフォルト値はNoneで、その場合は新しいロガーが作成されます。
             logging_debug: bool, optional
