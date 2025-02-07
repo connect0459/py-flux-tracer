@@ -9,7 +9,9 @@ from py_flux_tracer import (
 )
 
 # 変数定義
-dotenv_path = "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
+dotenv_path: str = (
+    "/home/connect0459/labo/py-flux-tracer/workspace/footprint/.env"  # .envファイル
+)
 
 SiteConfigKeys = Literal["name", "center_lat", "center_lon"]
 
