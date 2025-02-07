@@ -113,20 +113,20 @@ class FluxFootprintAnalyzer:
                 デフォルト値はNoneで、その場合は以下のデフォルトマッピングを使用:
                 ```python
                 {
-                    "datetime": "Date",              # 日時カラム
+                    "datetime": "Date",                 # 日時カラム
                     "wind_direction": "Wind direction", # 風向 [度]
-                    "wind_speed": "WS vector",       # 風速 [m/s]
-                    "friction_velocity": "u*",        # 摩擦速度 [m/s]
-                    "sigma_v": "sigmaV",             # 風速の標準偏差 [m/s]
-                    "stability": "z/L"               # 安定度パラメータ [-]
+                    "wind_speed": "WS vector",          # 風速 [m/s]
+                    "friction_velocity": "u*",          # 摩擦速度 [m/s]
+                    "sigma_v": "sigmaV",                # 風速の標準偏差 [m/s]
+                    "stability": "z/L"                  # 安定度パラメータ [-]
                 }
                 ```
                 例えば、入力データのカラム名が異なる場合は以下のように指定:
                 ```python
                 {
-                    "wind_direction": "WD",          # 風向カラム名が"WD"の場合
-                    "wind_speed": "WS",              # 風速カラム名が"WS"の場合
-                    "friction_velocity": "USTAR"      # 摩擦速度カラム名が"USTAR"の場合
+                    "wind_direction": "WD",      # 風向カラム名が"WD"の場合
+                    "wind_speed": "WS",          # 風速カラム名が"WS"の場合
+                    "friction_velocity": "USTAR" # 摩擦速度カラム名が"USTAR"の場合
                 }
                 ```
                 指定されなかったキーはデフォルト値が使用されます。

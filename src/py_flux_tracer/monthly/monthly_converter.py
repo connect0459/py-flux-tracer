@@ -38,15 +38,9 @@ class MonthlyConverter:
                 ファイル名のパターン。デフォルト値は'SA.Ultra.*.xlsx'です。
             na_values: list[str] | None, optional
                 NaNと判定する値のパターン。デフォルト値はNoneで、その場合は以下の値が使用されます:
-                [
-                    "#DIV/0!",
-                    "#VALUE!",
-                    "#REF!",
-                    "#N/A",
-                    "#NAME?",
-                    "NAN",
-                    "nan",
-                ]
+                ```python
+                ["#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NAME?", "NAN", "nan"]
+                ```
             logger: Logger | None, optional
                 使用するロガー。デフォルト値はNoneで、その場合は新しいロガーが作成されます。
             logging_debug: bool, optional
@@ -351,8 +345,8 @@ class MonthlyConverter:
         ...     'Value': [1, 2, 3]
         ... })
         >>> MonthlyConverter.extract_period_data(
-        ...     df, 
-        ...     '2023-01-01', 
+        ...     df,
+        ...     '2023-01-01',
         ...     '2023-01-02'
         ... )
            Date  Value

@@ -48,13 +48,6 @@ except ImportError:
     except Exception:
         __version__ = "0.0.0"
 
-__version__ = __version__
-"""
-@private
-このモジュールはバージョン情報の管理に使用され、ドキュメントには含めません。
-private属性を適用するために再宣言してdocstringを記述しています。
-"""
-
 # モジュールを __all__ にセット
 __all__ = [
     "BiasRemovalConfig",

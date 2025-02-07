@@ -1,7 +1,8 @@
 [project]
 name = "py-flux-tracer"
-# version属性は"setuptools_scm"が自動的に設定
-dynamic = ["version"]
+version = "1.0.0"
+# # version属性は"setuptools_scm"が自動的に設定
+# dynamic = ["version"]
 description = "This package provides methods for analyzing atmospheric observation data, primarily eddy covariance methods."
 authors = [{ name = "connect0459", email = "connect0459@gmail.com" }]
 # PILの代わりにfork先のpillowをインストール

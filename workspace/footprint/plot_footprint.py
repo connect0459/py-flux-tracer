@@ -28,84 +28,84 @@ configs: list[MobileMeasurementConfig] = [
     MobileMeasurementConfig(
         lag=7,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.10.17/input/Pico100121_241017_092120+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.10.17/input/Pico100121_241017_092120+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.09/input/Pico100121_241109_103128.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.09/input/Pico100121_241109_103128.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.11/input/Pico100121_241111_091102+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.11/input/Pico100121_241111_091102+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.14/input/Pico100121_241114_093745+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.14/input/Pico100121_241114_093745+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.18/input/Pico100121_241118_092855+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.18/input/Pico100121_241118_092855+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.20/input/Pico100121_241120_092932+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.20/input/Pico100121_241120_092932+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.24/input/Pico100121_241124_092712+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.24/input/Pico100121_241124_092712+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.25/input/Pico100121_241125_090721+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.25/input/Pico100121_241125_090721+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.28/input/Pico100121_241128_090240+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.28/input/Pico100121_241128_090240+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.11.30/input/Pico100121_241130_092420+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.11.30/input/Pico100121_241130_092420+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
     MobileMeasurementConfig(
         lag=13,
         fs=1,
-        path="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/data/2024.12.02/input/Pico100121_241202_090316+.txt",
+        path="/home/connect0459/labo/py-flux-tracer/workspace/private/mobile/sac/2024.12.02/input/Pico100121_241202_090316+.txt",
         h2o_correction=pico_h2o_correction,
         bias_removal=pico_bias_removal,
     ),
 ]
 
 # フォントファイルを登録(必要な場合のみで可)
-font_paths: list[str | Path] = [
+font_filepaths: list[str | Path] = [
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
@@ -114,8 +114,8 @@ font_paths: list[str | Path] = [
 center_lan: float = 34.573904320329724  # 観測地点の緯度
 center_lon: float = 135.4829511120712  # 観測地点の経度
 num_sections: int = 4  # セクション数
-plot_count: int = 100
-# plot_count: int = 10000
+# plot_count: int = 100
+plot_count: int = 10000
 # plot_count: int = 50000
 
 # スケールチェック用の仮地点の要素(緯度、経度、ラベル)
@@ -133,7 +133,7 @@ hotspot_custom_sizes: dict[str, tuple[tuple[float, float], float]] = {
 }
 
 # ファイルおよびディレクトリのパス
-output_dirpath: str = "/home/connect0459/labo/py-flux-tracer/workspace/footprint/private/outputs"  # 出力先のディレクトリ
+output_dirpath: str = "/home/connect0459/labo/py-flux-tracer/workspace/private/footprint/outputs"  # 出力先のディレクトリ
 dotenv_path: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/.env"  # .envファイル
 )
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     # 出力先ディレクトリを作成
     os.makedirs(output_dirpath, exist_ok=True)
     # 図のスタイルの指定
-    setup_plot_params(font_family=["Arial", "MS Gothic"], font_paths=font_paths)
+    setup_plot_params(font_family=["Arial", "MS Gothic"], font_filepaths=font_filepaths)
 
     # ホットスポットの検出
     msa = MobileMeasurementAnalyzer(
@@ -201,7 +201,7 @@ if __name__ == "__main__":
 
         # with文でブロック終了時に__exit__を自動呼出し
         with MonthlyConverter(
-            "/home/connect0459/labo/py-flux-tracer/workspace/senior_thesis/private/monthly",
+            "/home/connect0459/labo/py-flux-tracer/workspace/private/monthly",
             file_pattern="SA.Ultra.*.xlsx",
         ) as converter:
             # 特定の期間のデータを読み込む
