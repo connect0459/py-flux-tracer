@@ -62,29 +62,52 @@
 
 #### `1-reorganize_files.py`を利用する方法
 
-1. `1-reorganize_files.py`に必要な情報を入力する(`base_path`、`input_dirpath_name`、`output_dirpath_name`、`flag_filename`を適宜変更する)。
-2. `1-reorganize_files.py`を実行する。`output_dirpath_name`で指定したディレクトリに仕分けされたファイルが`good_data_all`にコピーされる(使用しないデータは`bad_data`ディレクトリに保存される)。
+1. `1-reorganize_files.py`に必要な情報を入力する(`base_path`、`input_dirnames`、`output_dirnames`、`flag_filename`を適宜変更する)。
+2. `1-reorganize_files.py`を実行する。`output_dirname`で指定したディレクトリに仕分けされたファイルが`good_data_all`にコピーされる(使用しないデータは`bad_data`ディレクトリに保存される)。
 
 ※下記のように、`FftFileReorganizer`のコンストラクタに渡す`sort_by_rh`にTrueを指定した場合、`good_data_all`に加えてRH10～RH100のディレクトリが作成され、相対湿度(RH)によってFlgが0のデータを分別する。H2Oフラックスの計算には`sort_by_rh=True`を指定すること。
 
 ```python
-# メイン処理
-try:
-   input_dirpath_path = os.path.join(base_path, input_dirpath_name)
-   output_dirpath_path = os.path.join(base_path, output_dirpath_name)
-   flag_filepath = os.path.join(base_path, flag_filename)
+import os
 
-   # インスタンスを作成
-   reoirganizer = FftFileReorganizer(
-      input_dirpath_path, output_dirpath_path, flag_filepath, sort_by_rh=True
-   )
-   reoirganizer.reorganize()
-except KeyboardInterrupt:
-   # キーボード割り込みが発生した場合、処理を中止する
-   print("KeyboardInterrupt occurred. Abort processing.")
+from py_flux_tracer import FftFileReorganizer
+
+# 変数定義
+base_path = "/mnt/c/Users/nakao/workspace/sac/transfer_function/data/ultra/2025.01.10"
+flag_filename: str = "Flg-202412231100_202501101000.csv"
+input_dirnames: list[str] = ["fft", "fft-detrend"]
+output_dirnames: list[str] = ["sorted", "sorted-detrend"]
+
+# メイン処理
+if __name__ == "__main__":
+    try:
+        flag_filepath: str = os.path.join(base_path, flag_filename)
+        for input_dirname, output_dirname in zip(
+            input_dirnames, output_dirnames, strict=True
+        ):
+            input_dirpath_path: str = os.path.join(base_path, input_dirname)
+            output_dirpath_path: str = os.path.join(base_path, output_dirname)
+
+            # インスタンスを作成
+            reorganizer = FftFileReorganizer(
+                input_dirpath=input_dirpath_path,
+                output_dirpath=output_dirpath_path,
+                flag_csv_path=flag_filepath,
+                sort_by_rh=False,
+            )
+            reorganizer.logger.info(
+                f"ファイルのコピーを開始します: {input_dirname} -> {output_dirname}"
+            )
+            reorganizer.reorganize()
+            reorganizer.logger.info("ファイルのコピーが完了しました")
+    except KeyboardInterrupt:
+        # キーボード割り込みが発生した場合、処理を中止する
+        print("KeyboardInterrupt occurred. Abort processing.")
 ```
 
 ### 3. 伝達関数の決定
+
+#### Flux Calculator での作業
 
 1. Flux Calculatorを立ち上げる。
 2. `Option`→`Determine closed path TF`
@@ -93,14 +116,67 @@ except KeyboardInterrupt:
 5. `use only negative CO2 flux`のチェックを外す。
 6. `Cutoff frequency`を設定する。Ultraにおいては`0.01~1`の範囲とした。
 7. `Determine`をクリック→ファイルが出力される。
-8. 出力されたファイルをPythonで読み込み、伝達関数を決定する。
-   - `2-calculate_transfer_function.py`を開く。
-   - パスやファイル名など必要な情報を入力して、実行する。
-   - 伝達関数の係数`a`が算出されるので、メモしておく。
-   - Ultraの場合は、伝達関数の係数を記録するCSVファイルを用意している(`tf-a/TF_Ultra_a.csv`)ので、求めた係数`a`を記録して保存する。CH4の場合を例に、以下にカラムの意味を示す。
-     - `Date`には算出した日付を`yyyy/MM/dd`の形式で記録する。
-     - `a_CH4`はトレンド除去なし、`a_CH4-detrend`は(一次)トレンド除去ありの係数。
-     - `a_CH4-used`には、最終的にFlux Calculatorの設定ファイルに入力する値を記録する。
+
+#### `2-calculate_transfer_function.py`での作業
+
+出力されたファイルをPythonで読み込み、伝達関数を決定する。
+
+- `2-calculate_transfer_function.py`を開く。
+- パスやファイル名など必要な情報を入力して、実行する。
+
+   ```python
+   if __name__ == "__main__":
+      try:
+         for date in dates_list:
+               base_path = (
+                  f"/mnt/c/Users/nakao/workspace/sac/transfer_function/data/ultra/{date}"
+               )
+
+               # 解析設定の定義
+               configs: list[TFAnalysisConfig] = [
+                  TFAnalysisConfig(
+                     input_file=os.path.join(base_path, f"TF_Ultra.{date}.csv"),
+                     output_dirpath=os.path.join(output_dirpath, "each-raw"),
+                     suffix="",  # トレンド除去なし
+                     show_co_spectra=False,
+                     show_tf=False,
+                  ),
+                  TFAnalysisConfig(
+                     input_file=os.path.join(base_path, f"TF_Ultra.{date}-detrend.csv"),
+                     output_dirpath=os.path.join(output_dirpath, "each-detrend"),
+                     suffix="-detrend",  # トレンド除去あり
+                     show_co_spectra=False,
+                     show_tf=False,
+                  ),
+               ]
+               """ ------ config end ------ """
+
+               # メイン処理
+               for config in configs:
+                  print(f"\n{os.path.basename(config.input_file)}の処理を開始...")
+
+                  tfc = TransferFunctionCalculator(
+                     filepath=config.input_file,
+                     col_freq=col_freq,
+                     cutoff_freq_low=0.01,
+                     cutoff_freq_high=1,
+                  )
+
+                  # ...
+
+                  print(f"wCH4の係数 a: {a_wch4}")
+                  print(f"wC2H6の係数 a: {a_wc2h6}")
+
+      except KeyboardInterrupt:
+         print("KeyboardInterrupt occurred. Abort processing.")
+
+   ```
+
+- 伝達関数の係数`a`が算出されるので、メモしておく。
+- Ultraの場合は、伝達関数の係数を記録するCSVファイルを用意している(`tf-a/TF_Ultra_a.csv`)ので、求めた係数`a`を記録して保存する。CH4の場合を例に、以下にカラムの意味を示す。
+  - `Date`には算出した日付を`yyyy/MM/dd`の形式で記録する。
+  - `a_CH4`はトレンド除去なし、`a_CH4-detrend`は(一次)トレンド除去ありの係数。
+  - `a_CH4-used`には、最終的にFlux Calculatorの設定ファイルに入力する値を記録する。
 
 ### 4. フラックスの計算
 
@@ -115,15 +191,23 @@ except KeyboardInterrupt:
 1. `3-plot_all_tf_curves.py`を開き、`TF_Ultra_a.csv`までの絶対パスを`tf_csv_path`に入力する。
 
    ```python
-   # メイン処理
-   try:
-      tf_csv_path: str = (
-         "C:\\Users\\nakao\\workspace\\sac\\ultra\\transfer_function\\tf-a\\TF_Ultra_a.csv"
-      )
-      plot_all_tf_curves(tf_csv_path)
-   except KeyboardInterrupt:
-      # キーボード割り込みが発生した場合、処理を中止する
-      print("KeyboardInterrupt occurred. Abort processing.")
+   if __name__ == "__main__":
+      try:
+         # 各ガスについて伝達関数曲線をプロット
+         for config in gas_configs:
+               TransferFunctionCalculator.create_plot_tf_curves_from_csv(
+                  filepath=tf_csv_path,
+                  config=config,
+                  figsize=(10, 6),
+                  output_dirpath=output_dirpath,
+                  output_filename=f"all_tf_curves-{config.gas_name}.png",
+                  line_colors=custom_colors,
+                  show_fig=False,
+               )
+
+      except KeyboardInterrupt:
+         print("KeyboardInterrupt occurred. Abort processing.")
+
    ```
 
 2. `.py`ファイルを実行すると、すべての`a`をもとにした近似曲線と、その平均が示された図が作図される。CH4とC2H6について、それぞれ一枚ずつ出力される。
