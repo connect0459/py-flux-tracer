@@ -112,19 +112,31 @@ if __name__ == "__main__":
             df_for_turb["ch4_ppm_cal"] = df_for_turb["Ultra_CH4_ppm_C"] - ch4_offset
             df_for_turb["c2h6_ppb_cal"] = df_for_turb["Ultra_C2H6_ppb"] - c2h6_offset
 
+            # 平均からの偏差(プライム)を計算
+            w_mean = df_for_turb["edp_wind_w"].mean()
+            ch4_mean = df_for_turb["ch4_ppm_cal"].mean()
+            c2h6_mean = df_for_turb["c2h6_ppb_cal"].mean()
+
+            df_for_turb["w_prime"] = df_for_turb["edp_wind_w"] - w_mean
+            df_for_turb["ch4_prime"] = df_for_turb["ch4_ppm_cal"] - ch4_mean
+            df_for_turb["c2h6_prime"] = df_for_turb["c2h6_ppb_cal"] - c2h6_mean
+
             # 図の作成と保存
             edfg.plot_turbulence(
                 df=df_for_turb,
-                col_uz="edp_wind_w",
-                col_ch4="ch4_ppm_cal",
-                col_c2h6="c2h6_ppb_cal",
+                col_uz="w_prime",  # 鉛直風速の偏差
+                col_ch4="ch4_prime",  # メタン濃度の偏差
+                col_c2h6="c2h6_prime",  # エタン濃度の偏差
                 output_dirpath=(
                     os.path.join(output_dirpath, "turbulences", "for_turb")
                 ),
-                output_filename=f"turbulence-{date}.png",
-                show_fig=False,
+                output_filename=f"turbulence_prime-{date}.png",
                 add_serial_labels=False,
                 figsize=(20, 10),
+                show_fig=False,
+                ylabel_uz=r"$w'$ (m s$^{-1}$)",  # y軸ラベルを偏差用に変更
+                ylabel_ch4=r"$\mathrm{CH_4}'$ (ppm)",
+                ylabel_c2h6=r"$\mathrm{C_2H_6}'$ (ppb)",
             )
 
         except (IndexError, ValueError) as e:

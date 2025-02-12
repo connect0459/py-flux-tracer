@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.axes import Axes
-from matplotlib.ticker import MultipleLocator
 from tqdm import tqdm
 
 from ..commons.utilities import setup_logger
@@ -487,6 +486,9 @@ class EddyDataFiguresGenerator:
         dpi: float | None = 350,
         save_fig: bool = True,
         show_fig: bool = True,
+        ylabel_uz: str = r"$w$ (m s$^{-1}$)",
+        ylabel_ch4: str = r"$\mathrm{CH_4}$ (ppm)",
+        ylabel_c2h6: str = r"$\mathrm{C_2H_6}$ (ppb)",
     ) -> None:
         """時系列データのプロットを作成する
 
@@ -516,6 +518,12 @@ class EddyDataFiguresGenerator:
                 プロットを保存するかどうか。デフォルトはTrue。
             show_fig: bool, optional
                 プロットを表示するかどうか。デフォルトはTrue。
+            ylabel_uz: str, optional
+                鉛直風速のy軸ラベル。デフォルトは"w (m s^{-1})"。
+            ylabel_ch4: str, optional
+                メタン濃度のy軸ラベル。デフォルトは"CH4 (ppm)"。
+            ylabel_c2h6: str, optional
+                エタン濃度のy軸ラベル。デフォルトは"C2H6 (ppb)"。
 
         Examples
         --------
@@ -533,10 +541,6 @@ class EddyDataFiguresGenerator:
 
         # 開始時刻と終了時刻を取得
         start_time = df_internal.index[0]
-        end_time = df_internal.index[-1]
-
-        # 開始時刻の分を取得
-        start_minute = start_time.minute
 
         # 時間軸の作成(実際の開始時刻からの経過分数)
         minutes_elapsed = (df_internal.index - start_time).total_seconds() / 60
@@ -546,33 +550,44 @@ class EddyDataFiguresGenerator:
 
         # 鉛直風速
         ax1.plot(minutes_elapsed, df_internal[col_uz], "k-", linewidth=0.5)
-        ax1.set_ylabel(r"$w$ (m s$^{-1}$)")
+        ax1.set_ylabel(ylabel_uz)
         if add_serial_labels:
             ax1.text(0.02, 0.98, "(a)", transform=ax1.transAxes, va="top")
         ax1.grid(True, alpha=0.3)
 
         # CH4濃度
         ax2.plot(minutes_elapsed, df_internal[col_ch4], "r-", linewidth=0.5)
-        ax2.set_ylabel(r"$\mathrm{CH_4}$ (ppm)")
+        ax2.set_ylabel(ylabel_ch4)
         if add_serial_labels:
             ax2.text(0.02, 0.98, "(b)", transform=ax2.transAxes, va="top")
         ax2.grid(True, alpha=0.3)
 
         # C2H6濃度
         ax3.plot(minutes_elapsed, df_internal[col_c2h6], "orange", linewidth=0.5)
-        ax3.set_ylabel(r"$\mathrm{C_2H_6}$ (ppb)")
+        ax3.set_ylabel(ylabel_c2h6)
         if add_serial_labels:
             ax3.text(0.02, 0.98, "(c)", transform=ax3.transAxes, va="top")
         ax3.grid(True, alpha=0.3)
         ax3.set_xlabel("Time (minutes)")
 
-        # x軸の範囲を実際の開始時刻から30分後までに設定
-        total_minutes = (end_time - start_time).total_seconds() / 60
-        ax3.set_xlim(0, min(30, total_minutes))
+        # x軸の範囲を設定(0から30分)
+        plot_end = 30
+        ax3.set_xlim(0, plot_end)
 
-        # x軸の目盛りを5分間隔で設定
-        np.arange(start_minute, start_minute + 35, 5)
-        ax3.xaxis.set_major_locator(MultipleLocator(5))
+        # x軸の目盛りを5分刻みで設定
+        xticks = np.arange(0, plot_end + 5, 5)  # 0, 5, 10, ..., 30
+        ax3.set_xticks(xticks)
+        ax3.grid(True, alpha=0.3)
+
+        # データのプロット(minutes_elapsedの計算を修正)
+        minutes_elapsed = (
+            np.arange(len(df_internal)) / self._fs / 60
+        )  # サンプリング周波数で割って分に変換
+
+        # 各データのプロット
+        ax1.plot(minutes_elapsed, df_internal[col_uz], "k-", linewidth=0.5)
+        ax2.plot(minutes_elapsed, df_internal[col_ch4], "r-", linewidth=0.5)
+        ax3.plot(minutes_elapsed, df_internal[col_c2h6], "orange", linewidth=0.5)
 
         # レイアウトの調整
         plt.tight_layout()
@@ -585,7 +600,7 @@ class EddyDataFiguresGenerator:
                 )
             os.makedirs(output_dirpath, exist_ok=True)
             output_filepath: str = os.path.join(output_dirpath, output_filename)
-            plt.savefig(output_filepath, bbox_inches="tight")
+            plt.savefig(output_filepath, dpi=dpi, bbox_inches="tight")
         if show_fig:
             plt.show()
         plt.close(fig=fig)
