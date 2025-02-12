@@ -25,7 +25,7 @@ setup_plot_params(
     # legend_size=24,
     # tick_size=24,
 )
-output_dirpath = (
+output_dirpath: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/outputs"
 )
 terms_tags: list[str] = [

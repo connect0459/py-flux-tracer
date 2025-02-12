@@ -14,6 +14,8 @@ from py_flux_tracer import (
     setup_plot_params,
 )
 
+""" ------ config start ------ """
+
 # picoデータの補正式に関するパラメータ
 pico_h2o_correction = H2OCorrectionConfig(
     coef_b=1.0111e-06,  # 1次の係数
@@ -105,7 +107,7 @@ configs: list[MobileMeasurementConfig] = [
 ]
 
 # フォントファイルを登録(必要な場合のみで可)
-font_filepaths: list[str | Path] = [
+font_filepaths: list[str | Path] | None = [
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/arial.ttf",  # 英語のデフォルト
     "/home/connect0459/labo/py-flux-tracer/workspace/private/fonts/msgothic.ttc",  # 日本語のデフォルト
 ]
@@ -127,9 +129,6 @@ hotspot_custom_sizes: dict[str, tuple[tuple[float, float], float]] = {
     "small": ((0, 0.5), 50),
     "medium": ((0.5, 1.0), 150),
     "large": ((1.0, float("inf")), 250),
-    # "small": ((0, 0.5), 100),
-    # "medium": ((0.5, 1.0), 200),
-    # "large": ((1.0, float("inf")), 300),
 }
 
 # ファイルおよびディレクトリのパス
@@ -143,20 +142,26 @@ start_end_dates_list: list[list[str]] = [
     ["2024-06-01", "2024-08-31"],
     ["2024-09-01", "2024-11-30"],
 ]
+# 作図フラグ
 plot_ch4: bool = False
 plot_c2h6: bool = False
-plot_ratio: bool = True
-plot_ratio_legend: bool = True
+plot_ratio: bool = False
 plot_ch4_gas: bool = False
 plot_ch4_bio: bool = False
-plot_mono: bool = False
 plot_scale_checker: bool = False
+
+""" ------ config end ------ """
 
 if __name__ == "__main__":
     # 出力先ディレクトリを作成
     os.makedirs(output_dirpath, exist_ok=True)
     # 図のスタイルの指定
-    setup_plot_params(font_family=["Arial", "MS Gothic"], font_filepaths=font_filepaths)
+    setup_plot_params(
+        font_family=["Arial", "MS Gothic"],
+        font_filepaths=font_filepaths,
+        font_size=32,
+        tick_size=32,
+    )
 
     # ホットスポットの検出
     msa = MobileMeasurementAnalyzer(
@@ -300,60 +305,6 @@ if __name__ == "__main__":
                 show_fig=False,
             )
 
-        if plot_ratio_legend:
-            x_list, y_list, c_list = ffa.calculate_flux_footprint(
-                df=df,
-                col_flux="Fratio",
-                plot_count=100,
-            )
-            # フットプリントとホットスポットの可視化
-            ffa.plot_flux_footprint_with_hotspots(
-                x_list=x_list,  # メートル単位のx座標
-                y_list=y_list,  # メートル単位のy座標
-                c_list=c_list,
-                hotspots=hotspots,
-                center_lat=center_lan,
-                center_lon=center_lon,
-                satellite_image=image,
-                cmap="jet",
-                vmin=0,
-                vmax=100,
-                xy_max=5000,
-                add_legend=True,
-                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
-                cbar_labelpad=20,
-                output_dirpath=output_dirpath,
-                output_filename="footprint_ratio-legend.png",
-                save_fig=True,
-                show_fig=False,
-            )
-            ffa.plot_flux_footprint_with_hotspots(
-                x_list=x_list,  # メートル単位のx座標
-                y_list=y_list,  # メートル単位のy座標
-                c_list=c_list,
-                hotspots=hotspots,
-                hotspot_labels={
-                    "bio": "生物起源",
-                    "gas": "都市ガス起源",
-                    "comb": "燃焼起源",
-                },
-                center_lat=center_lan,
-                center_lon=center_lon,
-                satellite_image=image,
-                cmap="jet",
-                vmin=0,
-                vmax=100,
-                xy_max=5000,
-                add_legend=True,
-                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
-                cbar_labelpad=20,
-                output_dirpath=output_dirpath,
-                output_filename="footprint_ratio-legend-ja.png",
-                save_fig=True,
-                show_fig=False,
-            )
-            del x_list, y_list, c_list
-
         # 都市ガス起源のCH4フラックス
         if plot_ch4_gas:
             df["Fch4_gas"] = (df["Fratio"] / 100) * df["Fch4_ultra"]
@@ -405,55 +356,6 @@ if __name__ == "__main__":
                 cbar_labelpad=20,
                 output_dirpath=output_dirpath,
                 output_filename=f"footprint_ch4_bio{date_tag}.png",
-                save_fig=True,
-                show_fig=False,
-            )
-            del x_list, y_list, c_list
-
-        if plot_mono:
-            image_for_mono = ffa.get_satellite_image_from_local(
-                local_image_path=local_image_path,
-                alpha=0.5,
-                grayscale=True,
-            )  # ローカル
-            x_list, y_list, c_list = ffa.calculate_flux_footprint(
-                df=df,
-                col_flux="Fch4_ultra",
-                plot_count=100,
-            )
-            # フットプリントを描画しない
-            ffa.plot_flux_footprint_with_hotspots(
-                x_list=x_list,  # メートル単位のx座標
-                y_list=y_list,  # メートル単位のy座標
-                c_list=None,
-                figsize=(8, 8),
-                hotspots=hotspots,
-                hotspots_alpha=0.5,
-                hotspot_labels={
-                    "bio": "生物起源",
-                    "gas": "都市ガス起源",
-                    "comb": "燃焼起源",
-                },
-                # hotspot_colors={"bio": "blue", "gas": "red", "comb": "green"},
-                hotspot_colors={"bio": "gray", "gas": "gray", "comb": "green"},
-                hotspot_markers={"bio": "^", "gas": "o", "comb": "s"},
-                hotspot_sizes=hotspot_custom_sizes,
-                legend_loc="upper right",
-                legend_bbox_to_anchor=(0.95, 0.95),
-                legend_ncol=1,
-                center_lat=center_lan,
-                center_lon=center_lon,
-                satellite_image=image_for_mono,
-                cmap="jet",
-                vmin=0,
-                vmax=100,
-                xy_max=5000,
-                add_legend=False,
-                add_cbar=False,
-                cbar_label=r"Gas Ratio of CH$_4$ flux (%)",
-                cbar_labelpad=20,
-                output_dirpath=output_dirpath,
-                output_filename="footprint_mono.png",
                 save_fig=True,
                 show_fig=False,
             )

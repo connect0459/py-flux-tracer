@@ -24,12 +24,14 @@ font_filepaths: list[str | Path] = [
 setup_plot_params(
     font_family=["Arial", "MS Gothic"],
     font_filepaths=font_filepaths,
-    font_size=24,
-    tick_size=24,
+    # font_size=24,
+    # tick_size=24,
+    font_size=32,
+    tick_size=32,
 )
 
 output_dirpath: str = (
-    "/home/connect0459/labo/py-flux-tracer/workspace/private/campbell/outputs"
+    "/home/connect0459/labo/py-flux-tracer/workspace/campbell/private/outputs"
 )
 
 """

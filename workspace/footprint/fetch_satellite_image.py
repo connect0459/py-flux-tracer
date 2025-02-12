@@ -8,6 +8,8 @@ from py_flux_tracer import (
     FluxFootprintAnalyzer,
 )
 
+""" ------ config start ------ """
+
 # 変数定義
 dotenv_path: str = (
     "/home/connect0459/labo/py-flux-tracer/workspace/footprint/.env"  # .envファイル
@@ -34,6 +36,7 @@ target_site_name: str = "SAC"
 zoom: float = 13
 local_image_dir: str = "/home/connect0459/labo/py-flux-tracer/storage/assets"
 
+""" ------ config end ------ """
 
 if __name__ == "__main__":
     # サイト情報の取得

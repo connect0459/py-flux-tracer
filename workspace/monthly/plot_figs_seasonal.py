@@ -23,6 +23,8 @@ font_filepaths: list[str | Path] = [
 setup_plot_params(
     font_family=["Arial", "MS Gothic"],
     font_filepaths=font_filepaths,
+    font_size=28,
+    tick_size=28,
 )
 
 include_end_date: bool = True
@@ -146,13 +148,42 @@ if __name__ == "__main__":
             # add_legend=True,
             # add_label=False,
             add_legend=False,
-            figsize=(10, 6),
+            # figsize=(10, 6),
+            figsize=(12, 5),
+            ax1_ylim=(0, 100),
+            ax2_ylim=(0, 5),
             subplot_fontsize=diurnal_subplot_fontsize,
+            subplot_label_ch4=None,
+            subplot_label_c2h6=None,
             colors_ch4=["red"],
             colors_c2h6=["orange"],
             output_dirpath=(os.path.join(output_dirpath, "diurnal")),
-            output_filename=f"diurnal-{tag}.png",  # タグ付けしたファイル名
+            output_filename=f"diurnal_ultra-{tag}.png",  # タグ付けしたファイル名
         )
+        # # 凡例のみ
+        # mfg.plot_c1c2_fluxes_diurnal_patterns(
+        #     df=df_season,
+        #     y_cols_ch4=["Fch4_ultra"],
+        #     y_cols_c2h6=["Fc2h6_ultra"],
+        #     labels_ch4=[r"CH$_4$ flux"],
+        #     labels_c2h6=[r"C$_2$H$_6$ flux"],
+        #     # legend_only_ch4=True,
+        #     # add_label=True,
+        #     add_legend=True,
+        #     # add_label=False,
+        #     # add_legend=False,
+        #     # figsize=(10, 6),
+        #     figsize=(12, 5),
+        #     ax1_ylim=(0, 100),
+        #     ax2_ylim=(0, 5),
+        #     subplot_fontsize=diurnal_subplot_fontsize,
+        #     subplot_label_ch4=None,
+        #     subplot_label_c2h6=None,
+        #     colors_ch4=["red"],
+        #     colors_c2h6=["orange"],
+        #     output_dirpath=(os.path.join(output_dirpath, "diurnal")),
+        #     output_filename="diurnal_ultra-legend.png",  # タグ付けしたファイル名
+        # )
 
         mfg.plot_c1c2_fluxes_diurnal_patterns_by_date(
             df=df_season,
@@ -194,6 +225,7 @@ if __name__ == "__main__":
             y_max=100,
             label_bio="生物起源",
             label_gas="都市ガス起源",
+            add_legend=False,
             print_summary=False,
         )
         mfg.plot_source_contributions_diurnal(
