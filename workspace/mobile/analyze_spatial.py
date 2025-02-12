@@ -1,5 +1,7 @@
 import os
 
+import pandas as pd
+
 from py_flux_tracer import (
     BiasRemovalConfig,
     EmissionData,
@@ -8,6 +10,7 @@ from py_flux_tracer import (
     HotspotData,
     HotspotEmissionAnalyzer,
     HotspotEmissionConfig,
+    KMLGeneratorConfig,
     MobileMeasurementAnalyzer,
     MobileMeasurementConfig,
 )
@@ -239,3 +242,39 @@ if __name__ == "__main__":
         save_fig=True,
         show_fig=False,
     )
+
+    # KML生成の設定
+    kml_config = KMLGeneratorConfig(
+        height_scale=2000.0,
+        min_opacity=0.4,
+        max_opacity=1.0,
+        base_color=(0, 255, 0),
+        line_width=4.0,
+    )
+
+    # KMLファイルを生成
+    print("kmlファイルを作成します。")
+    # データの前処理
+    df = msa.get_preprocessed_data()
+
+    # 10秒間の最大値を抽出
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = (
+        df.set_index("timestamp")
+        .resample("10s")  # 10秒間隔でリサンプリング
+        .agg(
+            {
+                "ch4_ppm": "max",  # メタン濃度は最大値
+                "latitude": "last",  # 位置情報は期間内の最後の値
+                "longitude": "last",
+            }
+        )
+        .reset_index()
+    )
+
+    msa.generate_kml(
+        df=df,
+        output_dirpath="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs",
+        config=kml_config,
+    )
+    print("kmlファイルを作成しました。")

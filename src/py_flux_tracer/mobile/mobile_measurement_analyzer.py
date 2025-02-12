@@ -1,3 +1,4 @@
+import colorsys
 import math
 import os
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as pyo
+import simplekml
 from geopy.distance import geodesic
 from matplotlib import gridspec
 from tqdm import tqdm
@@ -200,6 +202,17 @@ class HotspotParams:
             raise ValueError(
                 "'c2h6_ppb_delta_min' must be less than or equal to 'c2h6_ppb_delta_max'"
             )
+
+
+@dataclass
+class KMLGeneratorConfig:
+    """KMLファイル生成の設定を保持するデータクラス"""
+
+    height_scale: float = 1000.0
+    min_opacity: float = 0.3
+    max_opacity: float = 1.0
+    base_color: tuple[int, int, int] = (0, 255, 0)  # Green
+    line_width: float = 3.0
 
 
 @dataclass
@@ -903,6 +916,130 @@ class MobileMeasurementAnalyzer:
         # stem属性で拡張子なしのファイル名を取得
         source_name: str = path_obj.stem
         return source_name
+
+    def generate_kml(
+        self,
+        df: pd.DataFrame,
+        output_dirpath: str | Path | None = None,
+        output_filename: str = "methane_visualization.kml",
+        config: KMLGeneratorConfig | None = None,
+        use_3d: bool = True,  # 3D表示を使用するかどうか
+    ) -> None:
+        """メタン濃度データからKMLファイルを生成
+
+        Parameters
+        ----------
+            df : pandas.DataFrame
+                UltraやPicoのデータファイルから生成したデータフレーム。
+            output_dirpath : str | Path | None
+                出力するKMLファイルのディレクトリパス。デフォルトはNone。
+            output_filename : str
+                出力するファイル名。デフォルトは"methane_visualization.kml"。
+            config : KMLGeneratorConfig | None
+                KML生成の設定。Noneの場合はデフォルト設定が使用される。
+            use_3d : bool
+                3D表示を使用するかどうか。デフォルトはTrue。
+        """
+        config = config or KMLGeneratorConfig()
+        df_internal: pd.DataFrame = df.copy()
+
+        kml = simplekml.Kml()
+        min_conc = df_internal["ch4_ppm"].min()
+
+        # 有効な座標のみを抽出
+        valid_data = df_internal.dropna(
+            subset=["timestamp", "latitude", "longitude", "ch4_ppm"]
+        )
+
+        if len(valid_data) < 2:
+            raise ValueError("Need at least 2 valid coordinates to create a line")
+
+        # 3D表示用と2D表示用のラインストリングを作成
+        if use_3d:
+            # 3D表示用(白色)
+            linestring_3d = kml.newlinestring(name="Methane Concentration Path (3D)")
+            linestring_3d.altitudemode = simplekml.AltitudeMode.relativetoground
+            linestring_3d.extrude = 1  # 地表から高度までの面を表示
+            linestring_3d.style.linestyle.width = config.line_width
+            linestring_3d.style.linestyle.color = simplekml.Color.white  # 白色
+            linestring_3d.style.polystyle.color = simplekml.Color.white  # 面の色も白色
+
+        # 2D表示用(濃度に応じた色)
+        linestring_2d = kml.newlinestring(name="Methane Concentration Path (2D)")
+        linestring_2d.altitudemode = simplekml.AltitudeMode.clamptoground  # 地表に固定
+        linestring_2d.style.linestyle.width = config.line_width
+        linestring_2d.style.linestyle.color = simplekml.Color.green
+
+        # 座標を設定
+        coordinates_3d = []
+        coordinates_2d = []
+        for _, row in tqdm(
+            valid_data.iterrows(),
+            total=len(valid_data),
+            desc="Generating KML coordinates",
+            unit="points",
+        ):
+            height = (row["ch4_ppm"] - min_conc) * config.height_scale
+            
+            # 3D用の座標(高度あり)
+            if use_3d:
+                coordinates_3d.append((row["longitude"], row["latitude"], height))
+            
+            # 2D用の座標(高度なし)
+            coordinates_2d.append((row["longitude"], row["latitude"], 0))
+
+        # 座標を設定
+        if use_3d:
+            linestring_3d.coords = coordinates_3d
+        linestring_2d.coords = coordinates_2d
+
+        if output_dirpath is None:
+            raise ValueError("output_dirpath を指定してください。")
+        output_filepath: str = os.path.join(output_dirpath, output_filename)
+        kml.save(output_filepath)
+
+    @staticmethod
+    def _calculate_kml_color_and_opacity(
+        concentration: float,
+        min_conc: float,
+        max_conc: float,
+    ) -> tuple[str, float]:
+        """メタン濃度から色と不透明度を計算
+
+        Parameters
+        ----------
+            concentration : float
+                メタン濃度
+            min_conc : float
+                最小濃度
+            max_conc : float
+                最大濃度
+
+        Returns
+        -------
+            tuple[str, float]
+                KMLの色コードと不透明度
+        """
+        # 濃度を0-1にスケーリング
+        normalized = (concentration - min_conc) / (max_conc - min_conc)
+        
+        # 不透明度を計算(0.3-1.0の範囲)
+        opacity = 0.3 + (normalized * 0.7)
+        
+        # HSVカラースペースでの色相を計算
+        # 低濃度(青: 240度)から高濃度(赤: 0度)まで
+        hue = (1.0 - normalized) * 240 / 360  # 240度を0-1スケールに変換
+        
+        # HSVからRGBに変換
+        rgb = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+        
+        # RGBを0-255の整数値に変換
+        r, g, b = [int(x * 255) for x in rgb]
+        
+        # KML形式の色文字列を生成 (aabbggrr形式)
+        color = f"{int(opacity * 255):02x}{b:02x}{g:02x}{r:02x}"
+        
+        return color, opacity
 
     def get_preprocessed_data(
         self,

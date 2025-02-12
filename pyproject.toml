@@ -16,10 +16,11 @@ dependencies = [
   "numpy",
   "openpyxl>=3.1.5",
   "pandas",
-  "pillow",           # PILの互換ライブラリ
+  "pillow", # PILの互換ライブラリ
   "plotly>=5.24.1",
   "scipy",
-  "setuptools_scm",   # バージョン管理用に追加
+  "setuptools_scm",
+  "simplekml>=1.3.6", # バージョン管理用に追加
   "tqdm",
 ]
 readme = "README.md"

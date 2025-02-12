@@ -22,6 +22,7 @@ from .mobile.mobile_measurement_analyzer import (
     HotspotData,
     HotspotParams,
     HotspotType,
+    KMLGeneratorConfig,
     MobileMeasurementAnalyzer,
     MobileMeasurementConfig,
 )
@@ -64,6 +65,7 @@ __all__ = [
     "HotspotEmissionConfig",
     "HotspotParams",
     "HotspotType",
+    "KMLGeneratorConfig",
     "MeasuredWindKeyType",
     "MobileMeasurementAnalyzer",
     "MobileMeasurementConfig",
