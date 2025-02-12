@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as pyo
+import simplekml
 from geopy.distance import geodesic
 from matplotlib import gridspec
-from simplekml import AltitudeMode, Color, Kml
 from tqdm import tqdm
 
 from ..commons.utilities import setup_logger
@@ -928,7 +928,7 @@ class MobileMeasurementAnalyzer:
         config: KMLGeneratorConfig | None = None,
         use_3d: bool = True,
     ) -> None:
-        """メタン濃度データからKMLファイルを生成
+        """濃度データからKMLファイルを生成
 
         Parameters
         ----------
@@ -959,7 +959,7 @@ class MobileMeasurementAnalyzer:
         config = config or KMLGeneratorConfig()
         df_internal: pd.DataFrame = df.copy()
 
-        kml = Kml()
+        kml = simplekml.Kml()
         min_conc = df_internal[col_conc].min()  # 指定された列の最小値を使用
 
         # 有効な座標のみを抽出
@@ -974,17 +974,19 @@ class MobileMeasurementAnalyzer:
         if use_3d:
             # 3D表示用(白色)
             linestring_3d = kml.newlinestring(name="Methane Concentration Path (3D)")
-            linestring_3d.altitudemode = AltitudeMode.relativetoground
-            linestring_3d.extrude = 1  # 地表から高度までの面を表示
+            linestring_3d.altitudemode = simplekml.AltitudeMode.relativetoground  # type:ignore
+            # 地表から高度までの面を表示
+            linestring_3d.extrude = 1  # type:ignore
             linestring_3d.style.linestyle.width = config.line_width
-            linestring_3d.style.linestyle.color = Color.white  # 白色
-            linestring_3d.style.polystyle.color = Color.white  # 面の色も白色
+            linestring_3d.style.linestyle.color = simplekml.Color.white  # 白色
+            linestring_3d.style.polystyle.color = simplekml.Color.white  # 面の色も白色
 
         # 2D表示用(濃度に応じた色)
         linestring_2d = kml.newlinestring(name="Methane Concentration Path (2D)")
-        linestring_2d.altitudemode = AltitudeMode.clamptoground  # 地表に固定
+        # 地表に固定
+        linestring_2d.altitudemode = simplekml.AltitudeMode.clamptoground  # type:ignore
         linestring_2d.style.linestyle.width = config.line_width
-        linestring_2d.style.linestyle.color = Color.green
+        linestring_2d.style.linestyle.color = simplekml.Color.green
 
         # 座標を設定
         coordinates_3d = []
@@ -1002,8 +1004,8 @@ class MobileMeasurementAnalyzer:
 
         # 座標を設定
         if use_3d:
-            linestring_3d.coords = coordinates_3d
-        linestring_2d.coords = coordinates_2d
+            linestring_3d.coords = coordinates_3d  # type:ignore
+        linestring_2d.coords = coordinates_2d  # type:ignore
 
         # ホットスポットの追加
         if hotspots is not None:
