@@ -272,9 +272,18 @@ if __name__ == "__main__":
         .reset_index()
     )
 
+    # ホットスポットなし
     msa.generate_kml(
         df=df,
-        output_dirpath="/home/connect0459/labo/py-flux-tracer/workspace/mobile/private/outputs",
+        output_dirpath=output_dirpath,
+        output_filename="methane_visualization.kml",
         config=kml_config,
     )
-    print("kmlファイルを作成しました。")
+    # ホットスポットあり
+    msa.generate_kml(
+        df=df,
+        hotspots=unique_hotspots,
+        output_dirpath=output_dirpath,
+        output_filename="methane_visualization_with_hotspots.kml",
+        config=kml_config,
+    )

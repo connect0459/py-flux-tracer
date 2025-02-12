@@ -118,5 +118,5 @@ if __name__ == "__main__":
     )
     plot_gas_stats(
         input_csv=os.path.join(home_dirpath, "gas_stats.csv"),
-        output_dirpath=os.path.join(home_dirpath, "outputs", "gas_stats"),
+        output_dirpath=os.path.join(home_dirpath, "outputs"),
     )

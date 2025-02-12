@@ -200,7 +200,7 @@ if __name__ == "__main__":
     )
     plot_stacked_fluxes(
         input_filepath=os.path.join(home_dirpath, "analyze_monthly-2025.01.27.csv"), 
-        output_dirpath=os.path.join(home_dirpath, "outputs", "stacked_fluxes"),
+        output_dirpath=os.path.join(home_dirpath, "outputs"),
         output_filename=f"ch4_flux_stacked_bar_directions-{tag}-ja.png",
         ylim=100,
         label_bio="生物起源",

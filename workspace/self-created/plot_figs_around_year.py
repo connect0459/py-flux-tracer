@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -54,7 +53,7 @@ if __name__ == "__main__":
         df=df_around_year_for_diurnal,
         y_col_ch4="Fch4_ultra",
         y_col_c2h6="Fc2h6_ultra",
-        output_dirpath=os.path.join(output_dirpath, "around_year"),
+        output_dirpath=output_dirpath,
         output_filename="diurnal_by_date_around_year.png",
         add_label=True,
         subplot_label_ch4=None,
@@ -65,7 +64,7 @@ if __name__ == "__main__":
     )
     mfg.plot_source_contributions_diurnal_by_date(
         df=df_around_year_for_diurnal,
-        output_dirpath=(os.path.join(output_dirpath, "around_year")),
+        output_dirpath=output_dirpath,
         output_filename="source_contributions_by_date_around_year.png",
         col_ch4_flux="Fch4_ultra",
         col_c2h6_flux="Fc2h6_ultra",

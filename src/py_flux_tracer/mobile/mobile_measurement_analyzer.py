@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.offline as pyo
-import simplekml
 from geopy.distance import geodesic
 from matplotlib import gridspec
+from simplekml import AltitudeMode, Color, Kml
 from tqdm import tqdm
 
 from ..commons.utilities import setup_logger
@@ -920,17 +920,33 @@ class MobileMeasurementAnalyzer:
     def generate_kml(
         self,
         df: pd.DataFrame,
+        col_conc: str = "ch4_ppm",
+        hotspots: list[HotspotData] | None = None,
+        hotspot_colors: dict[HotspotType, str] | None = None,
         output_dirpath: str | Path | None = None,
-        output_filename: str = "methane_visualization.kml",
+        output_filename: str = "concs_visualization.kml",
         config: KMLGeneratorConfig | None = None,
-        use_3d: bool = True,  # 3D表示を使用するかどうか
+        use_3d: bool = True,
     ) -> None:
         """メタン濃度データからKMLファイルを生成
 
         Parameters
         ----------
-            df : pandas.DataFrame
+            df : pd.DataFrame
                 UltraやPicoのデータファイルから生成したデータフレーム。
+            col_conc : str
+                プロットする対象データのカラム名。デフォルトは"ch4_ppm"。
+            hotspots : list[HotspotData] | None
+                ホットスポットのリスト。デフォルトはNone。
+            hotspot_colors : dict[HotspotType, str] | None
+                ホットスポットの色。Noneの場合はデフォルト値を使用:
+                ```python
+                {
+                    "bio": "ffff0000",  # 純青 (ff=alpha, ff=blue, 00=green, 00=red)
+                    "gas": "ff0000ff",  # 純赤 (ff=alpha, 00=blue, 00=green, ff=red)
+                    "comb": "ff00ff00",  # 純緑 (ff=alpha, 00=blue, ff=green, 00=red)
+                }
+                ```
             output_dirpath : str | Path | None
                 出力するKMLファイルのディレクトリパス。デフォルトはNone。
             output_filename : str
@@ -943,12 +959,12 @@ class MobileMeasurementAnalyzer:
         config = config or KMLGeneratorConfig()
         df_internal: pd.DataFrame = df.copy()
 
-        kml = simplekml.Kml()
-        min_conc = df_internal["ch4_ppm"].min()
+        kml = Kml()
+        min_conc = df_internal[col_conc].min()  # 指定された列の最小値を使用
 
         # 有効な座標のみを抽出
         valid_data = df_internal.dropna(
-            subset=["timestamp", "latitude", "longitude", "ch4_ppm"]
+            subset=["timestamp", "latitude", "longitude", col_conc]  # col_concを使用
         )
 
         if len(valid_data) < 2:
@@ -958,17 +974,17 @@ class MobileMeasurementAnalyzer:
         if use_3d:
             # 3D表示用(白色)
             linestring_3d = kml.newlinestring(name="Methane Concentration Path (3D)")
-            linestring_3d.altitudemode = simplekml.AltitudeMode.relativetoground
+            linestring_3d.altitudemode = AltitudeMode.relativetoground
             linestring_3d.extrude = 1  # 地表から高度までの面を表示
             linestring_3d.style.linestyle.width = config.line_width
-            linestring_3d.style.linestyle.color = simplekml.Color.white  # 白色
-            linestring_3d.style.polystyle.color = simplekml.Color.white  # 面の色も白色
+            linestring_3d.style.linestyle.color = Color.white  # 白色
+            linestring_3d.style.polystyle.color = Color.white  # 面の色も白色
 
         # 2D表示用(濃度に応じた色)
         linestring_2d = kml.newlinestring(name="Methane Concentration Path (2D)")
-        linestring_2d.altitudemode = simplekml.AltitudeMode.clamptoground  # 地表に固定
+        linestring_2d.altitudemode = AltitudeMode.clamptoground  # 地表に固定
         linestring_2d.style.linestyle.width = config.line_width
-        linestring_2d.style.linestyle.color = simplekml.Color.green
+        linestring_2d.style.linestyle.color = Color.green
 
         # 座標を設定
         coordinates_3d = []
@@ -979,19 +995,42 @@ class MobileMeasurementAnalyzer:
             desc="Generating KML coordinates",
             unit="points",
         ):
-            height = (row["ch4_ppm"] - min_conc) * config.height_scale
-            
-            # 3D用の座標(高度あり)
+            height = (row[col_conc] - min_conc) * config.height_scale  # col_concを使用
             if use_3d:
                 coordinates_3d.append((row["longitude"], row["latitude"], height))
-            
-            # 2D用の座標(高度なし)
             coordinates_2d.append((row["longitude"], row["latitude"], 0))
 
         # 座標を設定
         if use_3d:
             linestring_3d.coords = coordinates_3d
         linestring_2d.coords = coordinates_2d
+
+        # ホットスポットの追加
+        if hotspots is not None:
+            # デフォルトの色設定
+            # デフォルトの色設定
+            default_colors: dict[HotspotType, str] = {
+                "bio": "ffff0000",  # 純青 (ff=alpha, ff=blue, 00=green, 00=red)
+                "gas": "ff0000ff",  # 純赤 (ff=alpha, 00=blue, 00=green, ff=red)
+                "comb": "ff00ff00",  # 純緑 (ff=alpha, 00=blue, ff=green, 00=red)
+            }
+            # ユーザー指定の色があればデフォルトを上書き
+            spot_colors: dict[HotspotType, str] = default_colors.copy()
+            if hotspot_colors is not None:
+                spot_colors.update(hotspot_colors)
+
+            for spot in hotspots:
+                if math.isnan(spot.avg_lat) or math.isnan(spot.avg_lon):
+                    continue
+
+                point = kml.newpoint(
+                    name=f"Hotspot ({spot.type})",
+                    coords=[(spot.avg_lon, spot.avg_lat)],
+                )
+                point.style.iconstyle.color = spot_colors.get(
+                    spot.type, "ff000000"
+                )  # デフォルトは黒
+                point.style.iconstyle.scale = 1.0
 
         if output_dirpath is None:
             raise ValueError("output_dirpath を指定してください。")
@@ -1022,23 +1061,23 @@ class MobileMeasurementAnalyzer:
         """
         # 濃度を0-1にスケーリング
         normalized = (concentration - min_conc) / (max_conc - min_conc)
-        
+
         # 不透明度を計算(0.3-1.0の範囲)
         opacity = 0.3 + (normalized * 0.7)
-        
+
         # HSVカラースペースでの色相を計算
         # 低濃度(青: 240度)から高濃度(赤: 0度)まで
         hue = (1.0 - normalized) * 240 / 360  # 240度を0-1スケールに変換
-        
+
         # HSVからRGBに変換
         rgb = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-        
+
         # RGBを0-255の整数値に変換
         r, g, b = [int(x * 255) for x in rgb]
-        
+
         # KML形式の色文字列を生成 (aabbggrr形式)
         color = f"{int(opacity * 255):02x}{b:02x}{g:02x}{r:02x}"
-        
+
         return color, opacity
 
     def get_preprocessed_data(
@@ -2678,8 +2717,11 @@ class MobileMeasurementAnalyzer:
 
                 if distance < hotspot_area_meter:
                     # 時間差の計算(秒単位)
+                    # time_diff = pd.Timedelta(
+                    #     pd.to_datetime(spot.name) - pd.to_datetime(used_time)
+                    # ).total_seconds()
                     time_diff = pd.Timedelta(
-                        pd.to_datetime(spot.name) - pd.to_datetime(used_time)
+                        pd.to_datetime(spot.timestamp) - pd.to_datetime(used_time)
                     ).total_seconds()
                     time_diff_abs = abs(time_diff)
 
