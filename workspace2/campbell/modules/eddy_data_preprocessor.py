@@ -11,7 +11,7 @@ import pandas as pd
 from scipy import stats
 from tqdm import tqdm
 
-from ..commons.utilities import setup_logger
+from .utilities import setup_logger
 
 MeasuredWindKeyType = Literal["u_m", "v_m", "w_m"]
 

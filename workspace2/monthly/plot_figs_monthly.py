@@ -3,12 +3,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
-from py_flux_tracer import (
-    MonthlyConverter,
-    MonthlyFiguresGenerator,
-    setup_plot_params,
-)
+from modules.monthly_converter import MonthlyConverter
+from modules.monthly_figures_generator import MonthlyFiguresGenerator
+from modules.utilities import setup_plot_params
 
 """
 ------ config start ------

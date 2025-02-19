@@ -30,6 +30,11 @@ workspace/**/private/*
 # .gitkeepは管理対象に含める
 !workspace/**/.gitkeep
 
+# privateディレクトリを無視
+workspace2/**/private/*
+# .gitkeepは管理対象に含める
+!workspace2/**/.gitkeep
+
 # workspaceのipynbは結果を追跡しないように除外し、exampleファイルのみを残す
 workspace/**/*.ipynb
 !workspace/**/*.ipynb.example
